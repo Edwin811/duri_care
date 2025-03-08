@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'core/utils/localization/localization_helper.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await LocalizationHelper.init();
+
   runApp(const DuriCare());
 }
 
@@ -10,12 +15,14 @@ class DuriCare extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'DuriCare',
-      // theme: ThemeData(
-      //   primarySwatch: Colors.blue,
-      // ),
-      // home: const HomePage(),
+    return LocalizedApp(
+      child: GetMaterialApp(
+        title: 'Duri Care',
+        locale: LocalizationHelper.currentLocale,
+        supportedLocales: LocalizationHelper.availableLocales.values.toList(),
+        theme: ThemeData(primarySwatch: Colors.blue),
+        // home: const HomeScreen(),
+      ),
     );
   }
 }
