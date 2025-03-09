@@ -1,24 +1,23 @@
+import 'package:duri_care/core/resources/resources.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'onboarding_controller.dart';
 
-class OnboardingView extends GetView<OnboardingController> {
-  static const String route = '/onboarding';
-  const OnboardingView({super.key});
+class SplashscreenView extends StatelessWidget{
+  const SplashscreenView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColor.greenPrimary,
       body: Center(
         child: Column(
           spacing: 16,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Image.asset('assets/images/logo/LOGO-AGRITECH.png', width: 120),
             Text(
-              'Onboarding',
+              'DuriCare',
               style: TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
