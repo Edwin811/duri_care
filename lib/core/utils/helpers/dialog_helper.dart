@@ -26,7 +26,7 @@ abstract class DialogHelper {
               ),
               const SizedBox(height: 16),
               Text(
-                title ?? 'Error',
+                title ?? 'txt_error'.tr,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

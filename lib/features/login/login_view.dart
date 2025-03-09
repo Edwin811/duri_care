@@ -1,6 +1,8 @@
+import 'package:duri_care/features/login/login_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
 
   @override

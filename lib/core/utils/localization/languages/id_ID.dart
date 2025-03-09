@@ -1,7 +1,7 @@
 final Map<String, String> id_ID = {
   'txt_success': 'Berhasil',
   'txt_ok': 'OK',
-  'txt_error': 'Kesalahan',
+  'txt_error': 'Terjadi Kesalahan',
   'txt_warning': 'Peringatan',
   'txt_info': 'Info',
   'txt_confirm': 'Konfirmasi',
