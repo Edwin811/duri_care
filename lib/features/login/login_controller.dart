@@ -41,6 +41,10 @@ class LoginController extends GetxController {
     passwordController.clear();
   }
 
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
   Future<void> _fetchUserData(String userId) async {
     try {
       DocumentSnapshot userDoc =
@@ -64,10 +68,6 @@ class LoginController extends GetxController {
         title: 'txt_error'.tr,
       );
     }
-  }
-
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
   }
 
   Future<void> loginWithEmail(String email, String password) async {

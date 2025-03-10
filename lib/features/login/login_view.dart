@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 
 class LoginScreen extends GetView<LoginController> {
   const LoginScreen({super.key});
+  static const String route = '/login';
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class LoginScreen extends GetView<LoginController> {
                   children: [
                     AppSpacing.xl,
                     Image.asset(
-                      'assets/images/logo/LOGO-AGRITECH.png',
+                      'assets/images/logo/DURICARE-LOGO.png',
                       width: 64,
                     ),
                     AppSpacing.md,

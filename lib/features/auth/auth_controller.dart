@@ -1,11 +1,11 @@
 import 'package:duri_care/features/auth/auth_state.dart';
 import 'package:get/get.dart';
 import 'package:duri_care/features/onboarding/onboarding_view.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class AuthController extends GetxController {
-  String tag = 'AuthController';
   static AuthController get find => Get.find();
+  final _box = Hive.box('authBox');
 
   Rxn<AuthState> authState = Rxn();
   bool get isAuthenticated => authState.value == AuthState.authenticated;
@@ -14,21 +14,35 @@ class AuthController extends GetxController {
   RxBool isFirstTime = true.obs;
 
   @override
-  void onReady() async {
-    await checkFirstTimeUser();
+  void onInit() {
+    super.onInit();
     ever(authState, authChanged);
-    authState.value = AuthState.initial;
+  }
+
+  @override
+  void onReady() async {
     super.onReady();
+    await checkFirstTimeUser();
+    _updateAuthState();
+  }
+
+  void _updateAuthState() {
+    if (isFirstTime.value) {
+      authState.value = AuthState.initial;
+    } else {
+      authState.value =
+          _box.get('isLoggedIn', defaultValue: false)
+              ? AuthState.authenticated
+              : AuthState.unauthenticated;
+    }
   }
 
   Future<void> checkFirstTimeUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    isFirstTime.value = prefs.getBool('first_time') ?? true;
+    isFirstTime.value = _box.get('first_time', defaultValue: true);
   }
 
   Future<void> completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('first_time', false);
+    await _box.put('first_time', false);
     isFirstTime.value = false;
     authState.value = AuthState.unauthenticated;
   }
@@ -37,11 +51,7 @@ class AuthController extends GetxController {
     authState.value = state;
     switch (state) {
       case AuthState.initial:
-        if (isFirstTime.value) {
-          Get.offAllNamed(OnboardingView.route);
-        } else {
-          authState.value = AuthState.unauthenticated;
-        }
+        Get.offAllNamed('/onboarding');
         break;
       case AuthState.unauthenticated:
         Get.offAllNamed('/login');
@@ -50,11 +60,19 @@ class AuthController extends GetxController {
         Get.offAllNamed('/home');
         break;
       default:
-        if (isFirstTime.value) {
-          Get.toNamed(OnboardingView.route);
-        } else {
-          Get.offAllNamed('/login');
-        }
+        break;
     }
+  }
+
+  Future<void> login(String userId) async {
+    await _box.put('isLoggedIn', true);
+    await _box.put('userId', userId);
+    authState.value = AuthState.authenticated;
+  }
+
+  Future<void> logout() async {
+    await _box.put('isLoggedIn', false);
+    await _box.delete('userId');
+    authState.value = AuthState.unauthenticated;
   }
 }

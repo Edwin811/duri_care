@@ -1,10 +1,15 @@
-import 'package:duri_care/features/onboarding/onboarding_view.dart';
+import 'package:duri_care/features/home/home_route.dart';
+import 'package:duri_care/features/login/login_route.dart';
+import 'package:duri_care/features/onboarding/onboarding_route.dart';
+import 'package:duri_care/features/splashscreen/splashscreen_view.dart';
 import 'package:get/get.dart';
 
 abstract class AppPages {
-  static String initial = OnboardingView.route;
+  static String initial = SplashscreenView.route;
 
   static final List<GetPage<dynamic>> routes = [
-    ...AppPages.routes,
+    ...onboardingRoute,
+    ...loginRoute,
+    ...homeRoute,
   ];
 }

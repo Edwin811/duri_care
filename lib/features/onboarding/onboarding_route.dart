@@ -7,7 +7,5 @@ final onboardingRoute = [
     name: OnboardingView.route,
     page: () => OnboardingView(),
     binding: OnboardingBinding(),
-    transition: Transition.fadeIn,
-    transitionDuration: const Duration(milliseconds: 500),
   ),
 ];
