@@ -22,10 +22,23 @@ class OnboardingView extends GetView<OnboardingController> {
           children: [
             Expanded(
               child: Center(
-                child: Text(
-                  'Welcome to DuriCare',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Welcome to Duri Care',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(onPressed: () {
+                      Get.toNamed('/login');
+                    }, child: Text('Login')),
+                    SizedBox(height: 10),
+                  ],
                 ),
+
               ),
             ),
           ],

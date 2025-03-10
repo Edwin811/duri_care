@@ -14,7 +14,7 @@ class SplashscreenController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    Timer(const Duration(seconds: 2), () => _navigateToNextScreen());
+    Future.delayed(const Duration(seconds: 5), () => _navigateToNextScreen());
   }
 
   void _navigateToNextScreen() {

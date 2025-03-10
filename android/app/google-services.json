@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "641473783215",
+    "project_id": "duricare",
+    "storage_bucket": "duricare.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641473783215:android:775a4b74f04ef676ab7b5a",
+        "android_client_info": {
+          "package_name": "com.example.duri_care"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8yHDyJ0_4kIjHUUE24P-M24RkAsyUYz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -29,10 +29,10 @@ class LoginScreen extends GetView<LoginController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppSpacing.xl,
+                    const SizedBox(height: 100),
                     Image.asset(
-                      'assets/images/logo/DURICARE-LOGO.png',
-                      width: 64,
+                      'assets/images/DURICARE-LOGO.png',
+                      width: 80,
                     ),
                     AppSpacing.md,
                     Text(

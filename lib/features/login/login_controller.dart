@@ -11,7 +11,7 @@ class LoginController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final formKey = GlobalKey<FormState>();
-  final isPasswordVisible = false.obs;
+  final isPasswordVisible = true.obs;
   var firebaseUser = Rxn<User>();
   var userModel = Rxn<UserModel>();
   final isLoading = false.obs;
