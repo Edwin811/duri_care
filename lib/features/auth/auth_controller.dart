@@ -1,14 +1,14 @@
-import 'package:duri_care/features/auth/auth_state.dart';
 import 'package:get/get.dart';
-import 'package:duri_care/features/onboarding/onboarding_view.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'auth_state.dart' as state;
 
 class AuthController extends GetxController {
   static AuthController get find => Get.find();
-  final _box = Hive.box('authBox');
 
-  Rxn<AuthState> authState = Rxn();
-  bool get isAuthenticated => authState.value == AuthState.authenticated;
+  Rxn<state.AuthState> authState = Rxn();
+  bool get isAuthenticated =>
+      authState.value == state.AuthState.authenticated;
   bool get isUnauthenticated => !isAuthenticated;
 
   RxBool isFirstTime = true.obs;
@@ -16,63 +16,66 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(authState, authChanged);
+    removeFirstTimeUser();
+
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      if (event == AuthChangeEvent.signedIn) {
+        authState.value = state.AuthState.authenticated;
+      } else if (event == AuthChangeEvent.signedOut) {
+        authState.value = state.AuthState.unauthenticated;
+      } else {
+        authState.value = state.AuthState.unauthenticated;
+      }
+    });
   }
 
   @override
   void onReady() async {
     super.onReady();
     await checkFirstTimeUser();
-    _updateAuthState();
+    await _updateAuthState();
   }
 
-  void _updateAuthState() {
+  Future<void> _updateAuthState() async {
+    final session = Supabase.instance.client.auth.currentSession;
+
     if (isFirstTime.value) {
-      authState.value = AuthState.initial;
+      authState.value = state.AuthState.initial;
+    } else if (session?.user != null) {
+      authState.value = state.AuthState.authenticated;
     } else {
-      authState.value =
-          _box.get('isLoggedIn', defaultValue: false)
-              ? AuthState.authenticated
-              : AuthState.unauthenticated;
+      authState.value = state.AuthState.unauthenticated;
     }
   }
 
   Future<void> checkFirstTimeUser() async {
-    isFirstTime.value = _box.get('first_time', defaultValue: true);
+    final prefs = await SharedPreferences.getInstance();
+    isFirstTime.value = prefs.getBool('first_time') ?? true;
+  }
+
+  Future<void> removeFirstTimeUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('first_time');
+    // isFirstTime.value = true;
   }
 
   Future<void> completeOnboarding() async {
-    await _box.put('first_time', false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('first_time', false);
     isFirstTime.value = false;
-    authState.value = AuthState.unauthenticated;
-  }
-
-  Future<void> authChanged(AuthState? state) async {
-    authState.value = state;
-    switch (state) {
-      case AuthState.initial:
-        Get.offAllNamed('/onboarding');
-        break;
-      case AuthState.unauthenticated:
-        Get.offAllNamed('/login');
-        break;
-      case AuthState.authenticated:
-        Get.offAllNamed('/home');
-        break;
-      default:
-        break;
-    }
+    authState.value = state.AuthState.unauthenticated;
   }
 
   Future<void> login(String userId) async {
-    await _box.put('isLoggedIn', true);
-    await _box.put('userId', userId);
-    authState.value = AuthState.authenticated;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userId', userId);
+    authState.value = state.AuthState.authenticated;
   }
 
   Future<void> logout() async {
-    await _box.put('isLoggedIn', false);
-    await _box.delete('userId');
-    authState.value = AuthState.unauthenticated;
+    await Supabase.instance.client.auth.signOut();
+    authState.value = state.AuthState.unauthenticated;
   }
 }

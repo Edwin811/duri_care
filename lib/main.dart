@@ -1,17 +1,16 @@
-import 'package:duri_care/core/di/controllers_binding.dart';
-import 'package:duri_care/features/login/login_view.dart';
-import 'package:duri_care/features/onboarding/onboarding_view.dart';
-import 'package:duri_care/features/splashscreen/splashscreen_view.dart';
+import 'package:duri_care/core/routes/app_pages.dart';
+import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await Hive.initFlutter();
-  await Hive.openBox('authBox');
+  await Supabase.initialize(
+    url: 'https://mglmoopyqftrvmuuvwyf.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nbG1vb3B5cWZ0cnZtdXV2d3lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2MjczMzMsImV4cCI6MjA1ODIwMzMzM30.59imX2uRXxMUcnk_8jk_CAgoRhGl32KyGVT9Ut5M9l8',
+  );
 
   runApp(const MyApp());
 }
@@ -22,22 +21,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'DuriCare',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
       debugShowCheckedModeBanner: false,
-      initialBinding: ControllersBinding(),
-      initialRoute: SplashscreenView.route,
-      getPages: [
-        GetPage(
-          name: SplashscreenView.route,
-          page: () => const SplashscreenView(),
-        ),
-        GetPage(name: OnboardingView.route, page: () => const OnboardingView()),
-        GetPage(name: LoginScreen.route, page: () => const LoginScreen()),
-      ],
+      initialBinding: BindingsBuilder(() {
+        Get.put(AuthController());
+      }),
+      initialRoute: AppPages.initial,
+      getPages: AppPages.routes,
     );
   }
 }

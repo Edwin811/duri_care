@@ -16,22 +16,35 @@ class SplashscreenView extends GetView<SplashscreenController> {
 
     return Scaffold(
       backgroundColor: AppColor.greenPrimary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/images/DURICARE-LOGO.png', width: 120),
-            AppSpacing.md,
-            Text(
-              'DuriCare',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: Image.asset('assets/images/DURICARE-LOGO.png', width: 200),
             ),
-          ],
-        ),
+          ),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'For\n',
+                  style: ThemeData.light().textTheme.headlineLarge?.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Muzakhar Farm',
+                  style: ThemeData.light().textTheme.displayLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 80),
+        ],
       ),
     );
   }

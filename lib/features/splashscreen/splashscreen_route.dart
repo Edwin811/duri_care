@@ -7,7 +7,5 @@ final splashscreenRoute = [
     name: SplashscreenView.route,
     page: () => SplashscreenView(),
     binding: SplashscreenBinding(),
-    transition: Transition.fadeIn,
-    transitionDuration: const Duration(milliseconds: 500),
   ),
 ];

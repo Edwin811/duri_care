@@ -1,19 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
-import 'package:duri_care/models/user/user_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginController extends GetxController {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthController _auth = AuthController.find;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final isPasswordVisible = true.obs;
-  var firebaseUser = Rxn<User>();
-  var userModel = Rxn<UserModel>();
   final isLoading = false.obs;
 
   final TextEditingController emailController = TextEditingController();
@@ -22,18 +17,6 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _setupUserListener();
-  }
-
-  void _setupUserListener() {
-    _auth.authStateChanges().listen((User? user) async {
-      firebaseUser.value = user;
-      if (user != null) {
-        await _fetchUserData(user.uid);
-      } else {
-        userModel.value = null;
-      }
-    });
   }
 
   void clearForm() {
@@ -45,48 +28,18 @@ class LoginController extends GetxController {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  Future<void> _fetchUserData(String userId) async {
-    try {
-      DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(userId).get();
-
-      if (userDoc.exists) {
-        userModel.value = UserModel.fromFirestore(userDoc);
-      } else {
-        if (firebaseUser.value != null) {
-          UserModel newUser = UserModel.fromFirebaseUser(firebaseUser.value!);
-          await _firestore.collection('users').doc(userId).set({
-            ...newUser.toMap(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-          await _fetchUserData(userId);
-        }
-      }
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        'Error fetching user data: ${e.toString()}',
-        title: 'txt_error'.tr,
-      );
-    }
-  }
-
-  Future<void> loginWithEmail(String email, String password) async {
-    if (!formKey.currentState!.validate()) return;
+  Future<void> loginWithEmail(
+    String email,
+    String password,
+    GlobalKey<FormState> dynamicFormKey,
+  ) async {
+    if (!dynamicFormKey.currentState!.validate()) return;
 
     try {
       isLoading.value = true;
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      await _firestore.collection('users').doc(userCredential.user!.uid).update(
-        {'lastLogin': FieldValue.serverTimestamp()},
-      );
-
-      String displayName = userModel.value?.displayName ?? 'User';
+      await _auth.login(email);
       DialogHelper.showSuccessDialog(
-        'Selamat Datang $displayName',
+        'Selamat Datang',
         title: 'txt_success_login'.tr,
       );
       Get.offAllNamed('/home');
@@ -100,6 +53,7 @@ class LoginController extends GetxController {
   Future<void> signInWithGoogle() async {
     try {
       await _googleSignIn.signIn();
+      // Handle Google sign-in logic here if needed
     } catch (e) {
       DialogHelper.showErrorDialog(
         e.toString(),
@@ -116,7 +70,7 @@ class LoginController extends GetxController {
       'txt_cancel'.tr,
       () async {
         try {
-          await _auth.signOut();
+          await _auth.logout();
           Get.offAllNamed('/login');
         } catch (e) {
           DialogHelper.showErrorDialog(
@@ -131,7 +85,6 @@ class LoginController extends GetxController {
 
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
       DialogHelper.showSuccessDialog(
         'Reset password link has been sent to your email',
         title: 'txt_reset_password'.tr,
