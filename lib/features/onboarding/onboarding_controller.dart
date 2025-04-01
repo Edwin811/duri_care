@@ -1,19 +1,13 @@
+import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/models/onboarding/data.dart';
 import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingController extends GetxController {
   final PageController pageController = PageController();
+  final AuthController authController = Get.find<AuthController>();
   final RxInt currentPage = 0.obs;
   final RxDouble percentage = 0.25.obs;
-  SharedPreferences? prefs;
-
-  @override
-  void onInit()  async {
-    super.onInit();
-    prefs = await SharedPreferences.getInstance();
-  }
 
   void nextPage() {
     if (currentPage.value < contentsList.length - 1) {
@@ -32,7 +26,7 @@ class OnboardingController extends GetxController {
   }
 
   void completeOnboarding() async {
-    await prefs!.setBool('firstLaunch', false);
+    await authController.completeOnboarding();
     Get.offNamed('/login');
   }
 
