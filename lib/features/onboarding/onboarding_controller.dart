@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OnboardingController extends GetxController {
   final PageController pageController = PageController();
   final RxInt currentPage = 0.obs;
+  final RxDouble percentage = 0.25.obs;
   SharedPreferences? prefs;
 
   @override
