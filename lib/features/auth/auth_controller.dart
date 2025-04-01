@@ -75,9 +75,18 @@ class AuthController extends GetxController {
   String getUsername(){
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      return user.userMetadata?['username'] ?? 'User';
+      return user.email?.split('@').first ?? 'DuriCare User';
     } else {
       return 'Unknown User';
+    }
+  }
+
+  String getProfilePicture() {
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      return user.userMetadata!['avatar_url'] ?? 'assets/images/profile.png';
+    } else {
+      return 'assets/images/profile.png';
     }
   }
 }
