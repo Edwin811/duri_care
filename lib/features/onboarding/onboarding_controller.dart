@@ -6,8 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OnboardingController extends GetxController {
   final PageController pageController = PageController();
   final RxInt currentPage = 0.obs;
-  final SharedPreferences prefs;
-  OnboardingController({required this.prefs});
+  SharedPreferences? prefs;
+
+  @override
+  void onInit()  async {
+    super.onInit();
+    prefs = await SharedPreferences.getInstance();
+  }
 
   void nextPage() {
     if (currentPage.value < contentsList.length - 1) {
@@ -26,7 +31,7 @@ class OnboardingController extends GetxController {
   }
 
   void completeOnboarding() async {
-    await prefs.setBool('firstLaunch', false);
+    await prefs!.setBool('firstLaunch', false);
     Get.offNamed('/login');
   }
 

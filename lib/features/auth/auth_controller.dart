@@ -57,7 +57,7 @@ class AuthController extends GetxController {
   Future<void> removeFirstTimeUser() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('first_time');
-    // isFirstTime.value = true;
+    isFirstTime.value = true;
   }
 
   Future<void> completeOnboarding() async {
@@ -77,5 +77,6 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     await Supabase.instance.client.auth.signOut();
     authState.value = state.AuthState.unauthenticated;
+    authState.refresh();
   }
 }
