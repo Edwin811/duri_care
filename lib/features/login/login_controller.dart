@@ -6,18 +6,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginController extends GetxController {
   final AuthController _auth = AuthController.find;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // final GoogleSignIn _googleSignIn = GoogleSignIn();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final isPasswordVisible = true.obs;
   final isLoading = false.obs;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
   void clearForm() {
     emailController.clear();
@@ -47,18 +42,6 @@ class LoginController extends GetxController {
       DialogHelper.showErrorDialog(e.toString(), title: 'txt_failed_login'.tr);
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<void> signInWithGoogle() async {
-    try {
-      await _googleSignIn.signIn();
-      // Handle Google sign-in logic here if needed
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        e.toString(),
-        title: 'txt_failed_google_sign_in'.tr,
-      );
     }
   }
 

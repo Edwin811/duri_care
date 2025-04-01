@@ -1,9 +1,6 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/app_label.dart';
 import 'package:duri_care/core/utils/widgets/button.dart';
-import 'package:duri_care/core/utils/widgets/cta_link.dart';
-import 'package:duri_care/core/utils/widgets/google_button.dart';
-import 'package:duri_care/core/utils/widgets/line_divider.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/login/login_controller.dart';
 import 'package:flutter/material.dart';
@@ -29,24 +26,24 @@ class LoginScreen extends GetView<LoginController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 150),
                     Image.asset(
                       'assets/images/DURICARE-LOGO.png',
-                      width: 80,
+                      width: 120,
                     ),
                     AppSpacing.md,
                     Text(
-                      'Welcome Back! ',
+                      'Selamat Datang di DuriCare',
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Sign In to your Account',
+                      'Silahkan masuk untuk melanjutkan',
                       style: TextStyle(fontSize: 16),
                     ),
-                    AppSpacing.xl,
+                    AppSpacing.xxl,
                     Form(
                       key: controller.formKey,
                       child: Column(
@@ -84,46 +81,14 @@ class LoginScreen extends GetView<LoginController> {
                                       controller.validatePassword(value ?? ''),
                             ),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColor.greenSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          AppSpacing.xxl,
                           AppFilledButton(
                             onPressed: () {
                               if (controller.formKey.currentState!.validate()) {
                                 controller.loginWithEmail;
                               }
                             },
-                            text: 'Login',
-                          ),
-                          AppSpacing.md,
-                          LineDivider(),
-                          AppSpacing.md,
-                          GoogleButton(
-                            onPressed: () {
-                              controller.signInWithGoogle();
-                            },
-                            text: 'Sign In with Google',
-                          ),
-                          AppSpacing.md,
-                          CtaLink(
-                            text: 'Don\'t have an account? ',
-                            onPressed: () {
-                              Get.toNamed('/register');
-                              controller.clearForm();
-                            },
-                            linkText: 'Register',
+                            text: 'Masuk',
                           ),
                         ],
                       ),

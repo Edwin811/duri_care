@@ -19,8 +19,8 @@ List<OnboardingData> contentsList = [
     imagePath: 'assets/images/onboarding-1.png', 
   ),
   OnboardingData(
-    title: 'Track Your Health',
-    description: 'Monitor your health with ease.',
+    title: 'Kurangi Risiko Gagal Tanam',
+    description: 'Cek kondisi tanaman setelah masa tanam, dan kontrol irigasi dengan satu ketukan.',
     imagePath: 'assets/images/onboarding-2.png',
   ),
   OnboardingData(
