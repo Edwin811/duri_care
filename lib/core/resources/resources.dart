@@ -9,6 +9,7 @@ abstract class AppColor {
   static const lavenderPrimary = Color(0xFF8177EA);
   static const textPrimary = Color(0xFF212121);
   static const textSecondary = Color(0xFF757575);
+  static const redOff = Color(0xFFFF0000);
 }
 
 abstract class AppSpacing {

@@ -173,21 +173,21 @@ class HomeView extends GetView<HomeController> {
                     ),
                     const SizedBox(height: 20),
                     // zone section
-                    SizedBox(
-                      height: 400,
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 14,
-                              mainAxisSpacing: 14,
-                              // childAspectRatio: 1.5,
-                            ),
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          return const Zone();
-                        },
-                      ),
+                    GridView.builder(
+                      shrinkWrap:
+                          true,
+                      physics:
+                          const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 14,
+                            mainAxisSpacing: 14,
+                          ),
+                      itemCount: 4,
+                      itemBuilder: (context, index) {
+                        return const Zone();
+                      },
                     ),
                   ],
                 ),
@@ -196,6 +196,17 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_rounded),
+          label: 'Beranda',
+        ),
+        // ButtonBarTheme(data: data, child: child),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profil',
+        ),
+      ]),
     );
   }
 
