@@ -85,7 +85,11 @@ class LoginScreen extends GetView<LoginController> {
                           AppFilledButton(
                             onPressed: () {
                               if (controller.formKey.currentState!.validate()) {
-                                controller.loginWithEmail;
+                                controller.loginWithEmail(
+                                  controller.emailController.text,
+                                  controller.passwordController.text,
+                                  controller.formKey,
+                                );
                               }
                             },
                             text: 'Masuk',

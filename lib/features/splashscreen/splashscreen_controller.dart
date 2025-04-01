@@ -11,7 +11,7 @@ class SplashscreenController extends GetxController {
   void _init() async {
     await Future.delayed(const Duration(seconds: 3));
 
-    final authController = AuthController.find;
+    final authController = Get.find<AuthController>();
 
     if (authController.isFirstTime.value) {
       Get.offNamed('/onboarding');

@@ -2,11 +2,9 @@ import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginController extends GetxController {
-  final AuthController _auth = AuthController.find;
-  // final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final AuthController _auth = Get.find<AuthController>();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final isPasswordVisible = true.obs;
   final isLoading = false.obs;
@@ -29,36 +27,49 @@ class LoginController extends GetxController {
     GlobalKey<FormState> dynamicFormKey,
   ) async {
     if (!dynamicFormKey.currentState!.validate()) return;
-
     try {
       isLoading.value = true;
-      await _auth.login(email);
+      await _auth.login(email, password);
+      Get.toNamed('/home');
       DialogHelper.showSuccessDialog(
-        'Selamat Datang',
-        title: 'txt_success_login'.tr,
+        'Selamat Datang di Aplikasi Duri Care',
+        title: 'Berhasil Masuk',
       );
-      Get.offAllNamed('/home');
     } catch (e) {
-      DialogHelper.showErrorDialog(e.toString(), title: 'txt_failed_login'.tr);
+      if (e.toString().contains('invalid_credentials')) {
+        DialogHelper.showErrorDialog(
+          'Email atau password salah',
+          title: 'Gagal Masuk',
+        );
+      } else if (e.toString().contains('user-not-found')) {
+        DialogHelper.showErrorDialog(
+          'Akun tidak ditemukan',
+          title: 'Gagal Masuk',
+        );
+      } else {
+        DialogHelper.showErrorDialog(e.toString(), title: 'Gagal Masuk');
+      }
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> logout() async {
-    DialogHelper.showConfirmationDialog(
-      'Apakah Anda yakin ingin keluar?',
-      'txt_warning'.tr,
-      'txt_confirm'.tr,
-      'txt_cancel'.tr,
+    await DialogHelper.showConfirmationDialog(
+      'Apakah Anda yakin ingin keluar dari aplikasi?',
+      'Keluar',
+      'OK',
+      'Batal',
       () async {
+        Get.back();
         try {
           await _auth.logout();
           Get.offAllNamed('/login');
         } catch (e) {
           DialogHelper.showErrorDialog(
             'Error logging out: ${e.toString()}',
-            title: 'txt_error'.tr,
+            title: 'Gagal Keluar',
+            onConfirm: () => Get.back(),
           );
         }
       },
@@ -86,18 +97,16 @@ class LoginController extends GetxController {
     );
 
     if (email.isEmpty) {
-      return 'Email cannot be empty';
+      return 'Email tidak boleh kosong';
     } else if (!emailRegex.hasMatch(email)) {
-      return 'Enter a valid email address';
+      return 'Format email tidak valid';
     }
     return null;
   }
 
   String? validatePassword(String password) {
     if (password.isEmpty) {
-      return 'Password cannot be empty';
-    } else if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
+      return 'Password tidak boleh kosong';
     }
     return null;
   }

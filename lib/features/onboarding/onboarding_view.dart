@@ -69,21 +69,31 @@ class OnboardingView extends GetView<OnboardingController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: List.generate(
                             contentsList.length,
                             (index) => buildDot(index, context),
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          'Skip',
-                          style: TextStyle(
-                            color: AppColor.greenPrimary,
-                            fontSize: 16,
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton(
+                            onPressed: controller.skipPage,
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              alignment: Alignment.centerLeft,
+                            ),
+                            child: Text(
+                              'Skip',
+                              style: TextStyle(
+                                color: AppColor.greenPrimary,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -133,7 +143,6 @@ class OnboardingView extends GetView<OnboardingController> {
       ),
     );
   }
-
   Widget buildDot(int index, BuildContext context) {
     return Obx(
       () => AnimatedContainer(

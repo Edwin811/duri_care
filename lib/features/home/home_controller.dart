@@ -1,6 +1,9 @@
+import 'package:duri_care/features/auth/auth_controller.dart';
+import 'package:duri_care/features/login/login_controller.dart';
 import 'package:get/get.dart';
 
 class HomeController extends GetxController {
+  final LoginController authController = Get.find<LoginController>();
   // Example property to hold a counter value
   var counter = 0.obs;
 

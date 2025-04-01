@@ -4,19 +4,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_state.dart' as state;
 
 class AuthController extends GetxController {
-  static AuthController get find => Get.find();
-
   Rxn<state.AuthState> authState = Rxn();
-  bool get isAuthenticated =>
-      authState.value == state.AuthState.authenticated;
+  bool get isAuthenticated => authState.value == state.AuthState.authenticated;
   bool get isUnauthenticated => !isAuthenticated;
-
   RxBool isFirstTime = true.obs;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   @override
   void onInit() {
     super.onInit();
-    removeFirstTimeUser();
 
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
@@ -54,12 +50,6 @@ class AuthController extends GetxController {
     isFirstTime.value = prefs.getBool('first_time') ?? true;
   }
 
-  Future<void> removeFirstTimeUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('first_time');
-    isFirstTime.value = true;
-  }
-
   Future<void> completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('first_time', false);
@@ -67,16 +57,27 @@ class AuthController extends GetxController {
     authState.value = state.AuthState.unauthenticated;
   }
 
-  Future<void> login(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('userId', userId);
+  Future<AuthResponse> login(String email, String password) async {
+    final response = await _supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
     authState.value = state.AuthState.authenticated;
+    return response;
   }
 
   Future<void> logout() async {
-    await Supabase.instance.client.auth.signOut();
+    await _supabase.auth.signOut();
     authState.value = state.AuthState.unauthenticated;
     authState.refresh();
+  }
+
+  String getUsername(){
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      return user.userMetadata?['username'] ?? 'User';
+    } else {
+      return 'Unknown User';
+    }
   }
 }
