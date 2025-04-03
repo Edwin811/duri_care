@@ -3,6 +3,7 @@ import 'package:duri_care/features/login/login_route.dart';
 import 'package:duri_care/features/onboarding/onboarding_route.dart';
 import 'package:duri_care/features/splashscreen/splashscreen_route.dart';
 import 'package:duri_care/features/splashscreen/splashscreen_view.dart';
+import 'package:duri_care/features/zone/zone_route.dart';
 import 'package:get/get.dart';
 
 abstract class AppPages {
@@ -13,5 +14,6 @@ abstract class AppPages {
     ...onBoardingRoute,
     ...loginRoute,
     ...homeRoute,
+    ...zoneRoute,
   ];
 }

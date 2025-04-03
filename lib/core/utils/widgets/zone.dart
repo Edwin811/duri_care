@@ -49,8 +49,7 @@ class _ZoneState extends State<Zone> {
 
   void _stopTimer() {
     _countdownTimer?.cancel();
-    _countdownTimer = null;
-    timer.value = '00:00:00';
+    timer.value = '00:00:00'; 
   }
 
   @override

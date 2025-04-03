@@ -207,15 +207,26 @@ class HomeView extends GetView<HomeController> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        fixedColor: AppColor.greenPrimary,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColor.greenPrimary,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
+        elevation: 10,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profil'),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: AppColor.greenPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
