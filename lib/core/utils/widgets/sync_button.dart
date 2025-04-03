@@ -8,8 +8,7 @@ class SyncButton extends StatefulWidget {
   State<SyncButton> createState() => _SyncButtonState();
 }
 
-class _SyncButtonState extends State<SyncButton>
-    with SingleTickerProviderStateMixin {
+class _SyncButtonState extends State<SyncButton> with TickerProviderStateMixin {
   late final AnimationController _controller;
   late Animation<double> _rotationAnimation;
 
@@ -18,12 +17,13 @@ class _SyncButtonState extends State<SyncButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 10),
     );
 
-    _rotationAnimation = Tween<double>(begin: 0, end: 2 * 3.14).animate(
-      _controller,
-    );
+    _rotationAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * 3.14,
+    ).animate(_controller);
   }
 
   @override

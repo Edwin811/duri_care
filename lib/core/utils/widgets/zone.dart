@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,19 +15,50 @@ class Zone extends StatefulWidget {
 class _ZoneState extends State<Zone> {
   final timer = '00:00:00'.obs;
   final isActive = false.obs;
+  Timer? _countdownTimer;
 
   void _powerButton() {
     isActive.value = !isActive.value;
     if (isActive.value) {
-    } else {}
+      _startTimer();
+    } else {
+      _stopTimer();
+    }
+  }
+
+  void _startTimer() {
+    const oneSecond = Duration(seconds: 1);
+    int totalSeconds = 30;
+
+    _countdownTimer = Timer.periodic(oneSecond, (timer) {
+      if (totalSeconds > 0) {
+        totalSeconds--;
+        final hours = (totalSeconds ~/ 3600).toString().padLeft(2, '0');
+        final minutes = ((totalSeconds % 3600) ~/ 60).toString().padLeft(
+          2,
+          '0',
+        );
+        final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+        this.timer.value = '$hours:$minutes:$seconds';
+      } else {
+        _stopTimer();
+        isActive.value = false;
+      }
+    });
+  }
+
+  void _stopTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    timer.value = '00:00:00';
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(
       () => Container(
-        width: 160,
-        height: 160,
+        width: 170,
+        height: 170,
         decoration: BoxDecoration(
           color: isActive.value ? AppColor.greenPrimary : AppColor.white,
           borderRadius: BorderRadius.circular(8),
@@ -34,7 +67,6 @@ class _ZoneState extends State<Zone> {
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: Column(
-            // mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // power button & timer
@@ -67,7 +99,7 @@ class _ZoneState extends State<Zone> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      '00:00:00',
+                      timer.value,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.white,
                         fontSize: 16,
@@ -158,37 +190,39 @@ class _ZoneState extends State<Zone> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Status IoT',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(
-                                  color:
-                                      isActive.value
-                                          ? AppColor.white
-                                          : AppColor.greenPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  decoration: TextDecoration.none,
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Status IoT',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.copyWith(
+                                    color:
+                                        isActive.value
+                                            ? AppColor.white
+                                            : AppColor.greenPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.none,
+                                  ),
                                 ),
-                              ),
-                              const WidgetSpan(child: SizedBox(width: 4)),
-                              WidgetSpan(
-                                child: Icon(
-                                  isActive.value
-                                      ? Icons.check_circle_outline
-                                      : Icons.cancel_outlined,
-                                  color:
-                                      isActive.value
-                                          ? AppColor.greenTertiary
-                                          : Colors.red,
-                                  size: 20,
+                                const WidgetSpan(child: SizedBox(width: 4)),
+                                WidgetSpan(
+                                  child: Icon(
+                                    isActive.value
+                                        ? Icons.check_circle_outline
+                                        : Icons.cancel_outlined,
+                                    color:
+                                        isActive.value
+                                            ? AppColor.greenTertiary
+                                            : Colors.red,
+                                    size: 20,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
