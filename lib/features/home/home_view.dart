@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone.dart';
@@ -140,73 +142,80 @@ class HomeView extends GetView<HomeController> {
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               SyncButton(),
-                              Text(
-                                'Jadwal Mendatang: ',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Jadwal Mendatang:',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Flexible(
+                                      child: Text(
+                                        'Menghidupkan aktuator di Zona 1 pada 10:00 WIB',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.copyWith(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColor.greenSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 48),
-                            child: Text(
-                              'Menghidupkan aktuator di Zona 1 pada 10:00 WIB',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyLarge?.copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColor.greenSecondary,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // zone section
-                    GridView.builder(
-                      shrinkWrap:
-                          true,
-                      physics:
-                          const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 14,
-                          ),
-                      itemCount: 4,
-                      itemBuilder: (context, index) {
-                        return const Zone();
-                      },
-                    ),
                   ],
+                ),
+                const SizedBox(height: 20),
+                // zone section
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                  ),
+                  itemCount: 4,
+                  itemBuilder: (context, index) {
+                    return const Zone();
+                  },
                 ),
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_rounded),
-          label: 'Beranda',
-        ),
-        // ButtonBarTheme(data: data, child: child),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profil',
-        ),
-      ]),
+      bottomNavigationBar: BottomNavigationBar(
+        fixedColor: AppColor.greenPrimary,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+        ],
+      ),
     );
   }
 

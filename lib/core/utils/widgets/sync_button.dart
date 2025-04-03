@@ -10,14 +10,19 @@ class SyncButton extends StatefulWidget {
 
 class _SyncButtonState extends State<SyncButton>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late final AnimationController _controller;
+  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 20),
+    );
+
+    _rotationAnimation = Tween<double>(begin: 0, end: 2 * 3.14).animate(
+      _controller,
     );
   }
 
@@ -27,8 +32,14 @@ class _SyncButtonState extends State<SyncButton>
     super.dispose();
   }
 
-  void _rotate() {
-    _controller.forward(from: 0);
+  void _rotate() async {
+    if (_controller.isAnimating) {
+      _controller.stop();
+    } else {
+      for (int i = 0; i < 2; i++) {
+        await _controller.forward(from: 0);
+      }
+    }
   }
 
   @override
@@ -39,7 +50,7 @@ class _SyncButtonState extends State<SyncButton>
         animation: _controller,
         builder: (context, child) {
           return Transform.rotate(
-            angle: -_controller.value * 2 * 3.14,
+            angle: -_rotationAnimation.value,
             child: const Icon(Icons.sync),
           );
         },
@@ -47,7 +58,7 @@ class _SyncButtonState extends State<SyncButton>
       style: IconButton.styleFrom(
         backgroundColor: AppColor.greenSecondary.withAlpha(120),
         foregroundColor: AppColor.greenPrimary,
-        padding: EdgeInsets.all(4),
+        padding: const EdgeInsets.all(4),
         shape: const CircleBorder(),
         minimumSize: const Size(20, 20),
       ),

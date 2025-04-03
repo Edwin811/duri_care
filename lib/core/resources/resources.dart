@@ -4,12 +4,13 @@ abstract class AppColor {
   static const white = Colors.white;
   static const greenPrimary = Color(0xFF093731);
   static const greenSecondary = Color(0xFF00A558);
-  static const greenTertiary = Color(0xFFC1FF72);
+  static const greenTertiary = Color(0xFF2BD006);
   static const yellowPrimary = Color(0xFFF3B81E);
   static const lavenderPrimary = Color(0xFF8177EA);
   static const textPrimary = Color(0xFF212121);
   static const textSecondary = Color(0xFF757575);
   static const redOff = Color(0xFFFF0000);
+  static const greenOn = Color(0xFFC1FF72);
 }
 
 abstract class AppSpacing {
