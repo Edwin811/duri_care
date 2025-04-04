@@ -7,6 +7,7 @@ class AppBackButton extends StatelessWidget {
     this.onPressed,
     this.icon = Icons.arrow_back_ios_rounded,
   });
+
   final VoidCallback? onPressed;
   final IconData icon;
 
@@ -15,14 +16,15 @@ class AppBackButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Container(
+        // margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey, width: 1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[400]!, width: 1.5),
         ),
         child: Center(
           child: IconButton(
             onPressed: onPressed ?? () => Get.back(),
-            icon: Icon(icon, size: 20),
+            icon: Icon(icon, size: 24),
           ),
         ),
       ),

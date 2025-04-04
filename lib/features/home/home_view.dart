@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/themes/app_themes.dart';
+import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone.dart';
 import 'package:flutter/services.dart';
@@ -93,6 +95,7 @@ class HomeView extends GetView<HomeController> {
                         children: [
                           // Weather Section
                           Expanded(
+                            flex: 3,
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -114,15 +117,30 @@ class HomeView extends GetView<HomeController> {
                           ),
                           const SizedBox(width: 12),
                           // Device Status Section
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              buildDeviceStatusContainer('Device 1'),
-                              const SizedBox(height: 8),
-                              buildDeviceStatusContainer('Device 2'),
-                              const SizedBox(height: 8),
-                              buildDeviceStatusContainer('Device 3'),
-                            ],
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                DeviceInfo(
+                                  name: 'Total Device',
+                                  total: '4',
+                                  icon: Icons.device_hub_rounded,
+                                ),
+                                const SizedBox(height: 8),
+                                DeviceInfo(
+                                  name: 'Device Aktif',
+                                  total: '2',
+                                  icon: Icons.lan_outlined,
+                                ),
+                                const SizedBox(height: 8),
+                                DeviceInfo(
+                                  name: 'Pegawai Terdaftar',
+                                  total: '3',
+                                  icon: Icons.person_rounded,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -217,7 +235,10 @@ class HomeView extends GetView<HomeController> {
             icon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profil'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: 'Profil',
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -230,24 +251,45 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget buildDeviceStatusContainer(String text) {
-    return Container(
-      width: 160,
-      height: 52,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColor.greenSecondary.withAlpha(76),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
+  // Widget buildDeviceStatusContainer(String text) {
+  //   return Container(
+  //     width: 160,
+  //     height: 52,
+  //     padding: const EdgeInsets.all(4),
+  //     decoration: BoxDecoration(
+  //       color: AppColor.greenSecondary.withAlpha(76),
+  //       borderRadius: BorderRadius.circular(6),
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.only(left: 4),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             'Total Device',
+  //             style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
+  //               color: Colors.white,
+  //               fontSize: 14,
+  //               fontWeight: FontWeight.w500,
+  //             ),
+  //           ),
+  //           Row(
+  //             children: [
+  //               Icon(Icons.device_hub_rounded, color: AppColor.white),
+  //               const SizedBox(width: 8),
+  //               Text(
+  //                 '4',
+  //                 style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
+  //                   color: Colors.white,
+  //                   fontSize: 20,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }

@@ -1,3 +1,4 @@
+import 'package:duri_care/core/middleware/connectivity_middleware.dart';
 import 'package:duri_care/core/routes/app_pages.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,9 @@ class MyApp extends StatelessWidget {
       }),
       initialRoute: AppPages.initial,
       getPages: AppPages.routes,
+      routingCallback: (routing) {
+        ConnectivityMiddleware().redirect(routing?.current);
+      },
     );
   }
 }
