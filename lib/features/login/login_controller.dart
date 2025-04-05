@@ -21,19 +21,28 @@ class LoginController extends GetxController {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  Future<void> loginWithEmail(
-    String email,
-    String password,
-    GlobalKey<FormState> dynamicFormKey,
-  ) async {
-    if (!dynamicFormKey.currentState!.validate()) return;
+  Future<void> loginWithEmail() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    final emailError = validateEmail(email);
+    final passwordError = validatePassword(password);
+
+    if (emailError != null || passwordError != null) {
+      DialogHelper.showErrorDialog(
+        'Email atau password tidak valid',
+        title: 'Gagal Masuk',
+      );
+      return;
+    }
+
     try {
       isLoading.value = true;
       await _auth.login(email, password);
-      Get.toNamed('/home');
+      Get.offAllNamed('/home');
       DialogHelper.showSuccessDialog(
-        'Selamat Datang di Aplikasi Duri Care',
-        title: 'Berhasil Masuk',
+        'Berhasil Masuk',
+        title: 'Selamat Datang di Aplikasi Duri Care',
       );
     } catch (e) {
       if (e.toString().contains('invalid_credentials')) {
@@ -41,7 +50,7 @@ class LoginController extends GetxController {
           'Email atau password salah',
           title: 'Gagal Masuk',
         );
-      } else if (e.toString().contains('user-not-found')) {
+      } else if (e.toString().contains('user_not_found')) {
         DialogHelper.showErrorDialog(
           'Akun tidak ditemukan',
           title: 'Gagal Masuk',
@@ -49,8 +58,6 @@ class LoginController extends GetxController {
       } else {
         DialogHelper.showErrorDialog(e.toString(), title: 'Gagal Masuk');
       }
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -109,5 +116,12 @@ class LoginController extends GetxController {
       return 'Password tidak boleh kosong';
     }
     return null;
+  }
+
+  @override
+  void onClose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.onClose();
   }
 }

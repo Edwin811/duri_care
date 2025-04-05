@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/core/themes/app_themes.dart';
 import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone.dart';

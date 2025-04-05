@@ -13,12 +13,12 @@ class ZoneView extends GetView<ZoneController> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (bool didPop, Object? result) {
-        Get.offAllNamed('/home');
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        Get.back(result: result);
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(onPressed: () => Get.offAllNamed('/home')),
+          leading: AppBackButton(),
           title: Text(zoneName),
           centerTitle: true,
         ),
@@ -31,11 +31,15 @@ class ZoneView extends GetView<ZoneController> {
                 style: const TextStyle(fontSize: 24),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Get.snackbar('Action', 'Button Pressed!');
-                },
-                child: const Text('Perform'),
+              Obx(
+                () => ElevatedButton(
+                  onPressed: controller.toggleActive,
+                  child: Text(
+                    controller.isActive.value
+                        ? 'Deactivate Zone'
+                        : 'Activate Zone',
+                  ),
+                ),
               ),
             ],
           ),

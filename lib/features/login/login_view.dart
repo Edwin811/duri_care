@@ -27,10 +27,7 @@ class LoginScreen extends GetView<LoginController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 150),
-                    Image.asset(
-                      'assets/images/DURICARE-LOGO.png',
-                      width: 120,
-                    ),
+                    Image.asset('assets/images/DURICARE-LOGO.png', width: 120),
                     AppSpacing.md,
                     Text(
                       'Selamat Datang di DuriCare',
@@ -84,13 +81,7 @@ class LoginScreen extends GetView<LoginController> {
                           AppSpacing.xxl,
                           AppFilledButton(
                             onPressed: () {
-                              if (controller.formKey.currentState!.validate()) {
-                                controller.loginWithEmail(
-                                  controller.emailController.text,
-                                  controller.passwordController.text,
-                                  controller.formKey,
-                                );
-                              }
+                              controller.loginWithEmail();
                             },
                             text: 'Masuk',
                           ),

@@ -1,16 +1,23 @@
 import 'package:duri_care/features/auth/auth_controller.dart';
-import 'package:duri_care/features/login/login_controller.dart';
 import 'package:get/get.dart';
 
 class HomeController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
-  final LoginController loginController = Get.find<LoginController>();
   RxString ucapan = ''.obs;
+  bool _isInitialized = false;
 
   @override
   void onInit() {
     super.onInit();
-    _getSpeech();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _getSpeech();
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
   }
 
   void _getSpeech() {

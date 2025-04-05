@@ -1,3 +1,4 @@
+import 'package:duri_care/core/routes/app_navigator.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,7 +10,6 @@ class AuthController extends GetxController {
   bool get isUnauthenticated => !isAuthenticated;
   RxBool isFirstTime = true.obs;
   final SupabaseClient _supabase = Supabase.instance.client;
-
   @override
   void onInit() {
     super.onInit();
@@ -31,7 +31,12 @@ class AuthController extends GetxController {
     super.onReady();
     await checkFirstTimeUser();
     await _updateAuthState();
+
+    if (Get.currentRoute == '/splashscreen') {
+      AppNavigator.handleInitialNavigation();
+    }
   }
+
 
   Future<void> _updateAuthState() async {
     final session = Supabase.instance.client.auth.currentSession;
@@ -72,7 +77,7 @@ class AuthController extends GetxController {
     authState.refresh();
   }
 
-  String getUsername(){
+  String getUsername() {
     final user = _supabase.auth.currentUser;
     if (user != null) {
       return user.email?.split('@').first ?? 'DuriCare User';
@@ -84,7 +89,7 @@ class AuthController extends GetxController {
   String getProfilePicture() {
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      return user.userMetadata!['avatar_url'] ?? 'assets/images/profile.png';
+      return user.userMetadata?['avatar_url'] ?? 'assets/images/profile.png';
     } else {
       return 'assets/images/profile.png';
     }

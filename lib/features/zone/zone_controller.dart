@@ -1,11 +1,20 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ZoneController extends GetxController {
   final supabase = Supabase.instance.client;
   final zones = <Map<String, dynamic>>[].obs;
   final selectedZone = <String, dynamic>{}.obs;
+  final isActive = false.obs;
+  final storage = GetStorage();
+
+  @override
+  void onInit() {
+    super.onInit();
+    isActive.value = storage.read('isActive') ?? false;
+  }
 
   Future<void> createZone(String zoneName) async {
     try {
@@ -54,4 +63,9 @@ class ZoneController extends GetxController {
   }
 
   void updateZone(String zoneId, String newZoneName) {}
+
+  void toggleActive() {
+    isActive.value = !isActive.value;
+    storage.write('isActive', isActive.value);
+  }
 }

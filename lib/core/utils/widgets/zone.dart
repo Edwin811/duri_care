@@ -61,7 +61,7 @@ class _ZoneState extends State<Zone> {
       () => InkWell(
         onTap: () {
           widget.onSelectZone?.call();
-          Get.offAllNamed('/zone');
+          Get.toNamed('/zone');
         },
         child: Container(
           width: 170,
