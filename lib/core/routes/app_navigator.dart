@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 
 class AppNavigator {
   static final _authController = Get.find<AuthController>();
+  static bool _hasNavigated = false;
 
   static void handleInitialNavigation() {
+    if (_hasNavigated) return;
     if (Get.currentRoute != '/splashscreen') return;
+
+    _hasNavigated = true;
 
     if (_authController.isFirstTime.value) {
       Get.offAllNamed('/onboarding');
