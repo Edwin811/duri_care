@@ -1,4 +1,3 @@
-import 'package:duri_care/core/routes/app_navigator.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -30,15 +29,11 @@ class AuthController extends GetxController {
   void onReady() async {
     super.onReady();
     await checkFirstTimeUser();
-    await _updateAuthState();
-
-    if (Get.currentRoute == '/splashscreen') {
-      AppNavigator.handleInitialNavigation();
-    }
+    await updateAuthState();
   }
 
 
-  Future<void> _updateAuthState() async {
+  Future<void> updateAuthState() async {
     final session = Supabase.instance.client.auth.currentSession;
 
     if (isFirstTime.value) {

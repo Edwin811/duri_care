@@ -54,6 +54,5 @@ class DeviceInfo extends StatelessWidget {
         ),
       ),
     );
-    ;
   }
 }
