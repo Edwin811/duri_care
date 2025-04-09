@@ -10,10 +10,19 @@ class ZoneController extends GetxController {
   final isActive = false.obs;
   final storage = GetStorage();
 
+  final selectedDate = Rx<DateTime?>(null);
+  final selectedTime = Rx<String?>(null);
+  final duration = 15.obs;
+  final schedules = <Map<String, dynamic>>[].obs;
+
   @override
   void onInit() {
     super.onInit();
     isActive.value = storage.read('isActive') ?? false;
+    selectedDate.value = DateTime.now();
+    selectedTime.value = '06:00';
+
+    loadSchedules();
   }
 
   Future<void> createZone(String zoneName) async {
@@ -28,13 +37,13 @@ class ZoneController extends GetxController {
       if (response.error == null) {
         zones.add(response.data[0]);
         DialogHelper.showSuccessDialog(
-          title: 'Zona Berhasil Dibuat',
           'Zona $zoneName berhasil dibuat.',
+          title: 'Zona Berhasil Dibuat',
         );
       } else {
         DialogHelper.showErrorDialog(
-          title: 'Gagal Membuat Zona',
           response.error!.message,
+          title: 'Gagal Membuat Zona',
         );
       }
     } catch (e) {
@@ -48,13 +57,13 @@ class ZoneController extends GetxController {
       if (response.error == null) {
         zones.removeWhere((zone) => zone['id'] == zoneId);
         DialogHelper.showSuccessDialog(
-          title: 'Zona Dihapus',
           'Zona berhasil dihapus.',
+          title: 'Zona Dihapus',
         );
       } else {
         DialogHelper.showErrorDialog(
-          title: 'Gagal Menghapus Zona',
           response.error!.message,
+          title: 'Gagal Menghapus Zona',
         );
       }
     } catch (e) {
@@ -62,10 +71,110 @@ class ZoneController extends GetxController {
     }
   }
 
-  void updateZone(String zoneId, String newZoneName) {}
+  void updateZone(String zoneId, String newZoneName) {
+    try {
+      supabase
+          .from('zones')
+          .update({'name': newZoneName})
+          .eq('id', zoneId)
+          .then((response) {
+            if (response.error == null) {
+              final index = zones.indexWhere((zone) => zone['id'] == zoneId);
+              if (index != -1) {
+                zones[index]['name'] = newZoneName;
+                zones.refresh();
+              }
+              DialogHelper.showSuccessDialog(
+                'Nama zona berhasil diperbarui.',
+                title: 'Zona Diperbarui',
+              );
+            } else {
+              DialogHelper.showErrorDialog(
+                response.error!.message,
+                title: 'Gagal Memperbarui Zona',
+              );
+            }
+          });
+    } catch (e) {
+      DialogHelper.showErrorDialog(title: 'Error', e.toString());
+    }
+  }
 
   void toggleActive() {
     isActive.value = !isActive.value;
     storage.write('isActive', isActive.value);
+
+    updateZoneStatus(isActive.value ? 'active' : 'inactive');
+  }
+
+  void updateZoneStatus(String status) {
+    if (selectedZone.isEmpty || selectedZone['id'] == null) return;
+
+    try {
+      supabase
+          .from('zones')
+          .update({'status': status})
+          .eq('id', selectedZone['id'])
+          .then((response) {
+            if (response.error != null) {
+              DialogHelper.showErrorDialog(
+                response.error!.message,
+                title: 'Status Update Failed',
+              );
+            }
+          });
+    } catch (e) {
+      DialogHelper.showErrorDialog(title: 'Error', e.toString());
+    }
+  }
+
+  void saveSchedule() {
+    if (selectedDate.value == null || selectedTime.value == null) {
+      DialogHelper.showErrorDialog(
+        title: 'Invalid Schedule',
+        'Please select both date and time for the schedule.',
+      );
+      return;
+    }
+
+    final schedule = {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'date': selectedDate.value!.toIso8601String(),
+      'time': selectedTime.value,
+      'duration': duration.value,
+      'zone_id': selectedZone['id'] ?? '',
+    };
+
+    schedules.add(schedule);
+    schedules.refresh();
+
+    saveSchedulesToStorage();
+
+    DialogHelper.showSuccessDialog(
+      title: 'Schedule Saved',
+      'Your irrigation schedule has been saved.',
+    );
+  }
+
+  void deleteSchedule(String scheduleId) {
+    schedules.removeWhere((schedule) => schedule['id'] == scheduleId);
+    saveSchedulesToStorage();
+  }
+
+  void loadSchedules() {
+    final String zoneId = selectedZone['id'] ?? '';
+    if (zoneId.isEmpty) return;
+
+    final List<dynamic>? savedSchedules = storage.read('schedules_$zoneId');
+    if (savedSchedules != null) {
+      schedules.value = List<Map<String, dynamic>>.from(savedSchedules);
+    }
+  }
+
+  void saveSchedulesToStorage() {
+    final String zoneId = selectedZone['id'] ?? '';
+    if (zoneId.isEmpty) return;
+
+    storage.write('schedules_$zoneId', schedules.toList());
   }
 }

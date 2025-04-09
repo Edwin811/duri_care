@@ -19,13 +19,13 @@ class Error404View extends GetView<NetworkController> {
           children: [
             SvgPicture.asset(
               'assets/images/404-Error.svg',
-              width: 250,
-              height: 250,
+              width: 280,
+              height: 280,
             ),
             const SizedBox(height: 20),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -39,12 +39,15 @@ class Error404View extends GetView<NetworkController> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    'Pastikan perangkat Anda terhubung ke jaringan Wi-Fi atau data seluler',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                      color: Colors.black,
-                      fontSize: 16,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    child: Text(
+                      'Pastikan perangkat Anda terhubung ke jaringan Wi-Fi atau data seluler',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),

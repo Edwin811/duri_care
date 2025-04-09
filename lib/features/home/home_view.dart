@@ -32,13 +32,13 @@ class HomeView extends GetView<HomeController> {
                           children: [
                             CircleAvatar(
                               radius: 25,
-                              backgroundColor: Colors.transparent,
-                              child: ClipOval(
-                                child: Image.asset(
-                                  controller.authController.getProfilePicture(),
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
+                              backgroundColor: AppColor.greenPrimary.withAlpha(100),
+                              child: Text(controller.authController.getProfilePicture(),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.copyWith(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -80,7 +80,7 @@ class HomeView extends GetView<HomeController> {
                     const SizedBox(height: 20),
                     // container
                     Container(
-                      height: 200,
+                      height: MediaQuery.of(context).size.height * 0.25,
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -94,21 +94,97 @@ class HomeView extends GetView<HomeController> {
                           Expanded(
                             flex: 3,
                             child: Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColor.greenSecondary.withAlpha(76),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               alignment: Alignment.center,
-                              child: Text(
-                                'Weather',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '28℃',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge?.copyWith(
+                                              color: Colors.white,
+                                              fontSize:
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).size.width *
+                                                  0.09,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Image.asset(
+                                            'assets/images/cerah.png',
+                                            width:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.15,
+                                            height:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.15,
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        'Cerah',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.copyWith(
+                                          color: Colors.white,
+                                          fontSize:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.05,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on_rounded,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Jember, Jawa Timur',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.copyWith(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -117,24 +193,30 @@ class HomeView extends GetView<HomeController> {
                           Expanded(
                             flex: 2,
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                DeviceInfo(
-                                  name: 'Total Device',
-                                  total: '4',
-                                  icon: Icons.device_hub_rounded,
+                                Expanded(
+                                  child: DeviceInfo(
+                                    name: 'Total Device',
+                                    total: '4',
+                                    icon: Icons.device_hub_rounded,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                DeviceInfo(
-                                  name: 'Device Aktif',
-                                  total: '2',
-                                  icon: Icons.lan_outlined,
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: DeviceInfo(
+                                    name: 'Device Aktif',
+                                    total: '2',
+                                    icon: Icons.lan_outlined,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                DeviceInfo(
-                                  name: 'Pegawai Terdaftar',
-                                  total: '3',
-                                  icon: Icons.person_rounded,
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: DeviceInfo(
+                                    name: 'Pegawai Terdaftar',
+                                    total: '3',
+                                    icon: Icons.person_rounded,
+                                  ),
                                 ),
                               ],
                             ),
@@ -239,7 +321,7 @@ class HomeView extends GetView<HomeController> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => Get.toNamed('/add-zone'),
         backgroundColor: AppColor.greenPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, color: Colors.white),
@@ -247,46 +329,4 @@ class HomeView extends GetView<HomeController> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
-
-  // Widget buildDeviceStatusContainer(String text) {
-  //   return Container(
-  //     width: 160,
-  //     height: 52,
-  //     padding: const EdgeInsets.all(4),
-  //     decoration: BoxDecoration(
-  //       color: AppColor.greenSecondary.withAlpha(76),
-  //       borderRadius: BorderRadius.circular(6),
-  //     ),
-  //     child: Padding(
-  //       padding: const EdgeInsets.only(left: 4),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             'Total Device',
-  //             style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
-  //               color: Colors.white,
-  //               fontSize: 14,
-  //               fontWeight: FontWeight.w500,
-  //             ),
-  //           ),
-  //           Row(
-  //             children: [
-  //               Icon(Icons.device_hub_rounded, color: AppColor.white),
-  //               const SizedBox(width: 8),
-  //               Text(
-  //                 '4',
-  //                 style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
-  //                   color: Colors.white,
-  //                   fontSize: 20,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }

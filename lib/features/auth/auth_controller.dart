@@ -32,7 +32,6 @@ class AuthController extends GetxController {
     await updateAuthState();
   }
 
-
   Future<void> updateAuthState() async {
     final session = Supabase.instance.client.auth.currentSession;
 
@@ -84,9 +83,16 @@ class AuthController extends GetxController {
   String getProfilePicture() {
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      return user.userMetadata?['avatar_url'] ?? 'assets/images/profile.png';
-    } else {
-      return 'assets/images/profile.png';
+      final avatarUrl = user.userMetadata?['avatar_url'];
+      if (avatarUrl != null) {
+        return avatarUrl;
+      }
+
+      String username = getUsername();
+      if (username.isNotEmpty) {
+        return username[0].toUpperCase();
+      }
     }
+    return '';
   }
 }

@@ -20,7 +20,7 @@ class AppFilledButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColor.greenPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: Text(

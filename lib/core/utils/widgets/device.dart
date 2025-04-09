@@ -15,36 +15,39 @@ class DeviceInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen size
+    final Size screenSize = MediaQuery.of(context).size;
+    
     return Container(
-      width: 160,
-      height: 52,
-      padding: const EdgeInsets.all(4),
+      width: screenSize.width * 0.4,
+      height: screenSize.height * 0.065,
+      padding: EdgeInsets.all(screenSize.width * 0.01),
       decoration: BoxDecoration(
         color: AppColor.greenSecondary.withAlpha(76),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Padding(
-        padding: const EdgeInsets.only(left: 4),
+        padding: EdgeInsets.only(left: screenSize.width * 0.01),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               name,
-              style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: screenSize.width * 0.035,
                 fontWeight: FontWeight.w500,
               ),
             ),
             Row(
               children: [
-                Icon(icon, color: AppColor.white),
-                const SizedBox(width: 8),
+                Icon(icon, color: AppColor.white, size: screenSize.width * 0.05),
+                SizedBox(width: screenSize.width * 0.02),
                 Text(
                   total,
-                  style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: screenSize.width * 0.05,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

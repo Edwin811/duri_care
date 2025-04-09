@@ -2,31 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppBackButton extends StatelessWidget {
+  final ButtonStyle? style;
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final double iconSize;
+  final EdgeInsets containerPadding;
+  final Color? iconColor;
+  final Color? borderColor;
+
   const AppBackButton({
     super.key,
     this.onPressed,
     this.icon = Icons.arrow_back_ios_rounded,
+    this.iconSize = 24,
+    this.containerPadding = const EdgeInsets.all(8),
+    this.style,
+    this.iconColor,
+    this.borderColor,
   });
 
-  final VoidCallback? onPressed;
-  final IconData icon;
+  static ButtonStyle defaultStyle({
+    Color borderColor = Colors.grey,
+    double borderWidth = 1.0,
+    double borderRadius = 8.0,
+    EdgeInsets padding = const EdgeInsets.all(8),
+  }) {
+    return IconButton.styleFrom(
+      padding: padding,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadius),
+        side: BorderSide(color: borderColor, width: borderWidth),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    ButtonStyle effectiveStyle;
+    
+    if (borderColor != null && style == null) {
+      effectiveStyle = defaultStyle(borderColor: borderColor!);
+    } else {
+      effectiveStyle = style ?? defaultStyle();
+    }
+
     return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Container(
-        // margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey, width: 1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: IconButton(
-            onPressed: onPressed ?? () => Get.back(),
-            icon: Icon(icon, size: 24),
-          ),
-        ),
+      padding: containerPadding,
+      child: IconButton(
+        onPressed: onPressed ?? () => Get.back(),
+        icon: Icon(icon, size: iconSize, color: iconColor),
+        style: effectiveStyle,
       ),
     );
   }
