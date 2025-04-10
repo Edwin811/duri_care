@@ -17,5 +17,6 @@ abstract class AppPages {
     ...homeRoute,
     ...zoneRoute,
     ...errorRoute,
+    ...addNewZone,
   ];
 }

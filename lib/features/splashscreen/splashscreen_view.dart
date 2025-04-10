@@ -30,6 +30,7 @@ class SplashscreenView extends GetView<SplashscreenController> {
                   text: 'For\n',
                   style: ThemeData.light().textTheme.headlineLarge?.copyWith(
                     color: Colors.white,
+                    fontSize: 20,
                   ),
                 ),
                 TextSpan(
@@ -37,6 +38,7 @@ class SplashscreenView extends GetView<SplashscreenController> {
                   style: ThemeData.light().textTheme.displayLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 20,
                   ),
                 ),
               ],

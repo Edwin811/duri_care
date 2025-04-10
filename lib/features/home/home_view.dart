@@ -1,7 +1,9 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/device.dart';
+import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone.dart';
+import 'package:duri_care/core/utils/widgets/zone_grid.dart';
 import 'package:flutter/services.dart';
 import 'home_controller.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +34,11 @@ class HomeView extends GetView<HomeController> {
                           children: [
                             CircleAvatar(
                               radius: 25,
-                              backgroundColor: AppColor.greenPrimary.withAlpha(100),
-                              child: Text(controller.authController.getProfilePicture(),
+                              backgroundColor: AppColor.greenPrimary.withAlpha(
+                                100,
+                              ),
+                              child: Text(
+                                controller.authController.getProfilePicture(),
                                 style: Theme.of(
                                   context,
                                 ).textTheme.bodyLarge?.copyWith(
@@ -48,14 +53,19 @@ class HomeView extends GetView<HomeController> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Obx(
-                                  () => Text(
-                                    'Halo, ${controller.ucapan.value}',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  () => Row(
+                                    children: [
+                                      Text(
+                                        'Halo, ${controller.ucapan.value}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.copyWith(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      RoleBadge(role: 'owner'),
+                                    ],
                                   ),
                                 ),
                                 Text(
@@ -285,19 +295,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 20),
                 // zone section
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                  ),
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    return const Zone();
-                  },
-                ),
+                ZoneGrid(),
               ],
             ),
           ),

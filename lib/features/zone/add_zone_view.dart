@@ -1,5 +1,6 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
+import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,91 +13,94 @@ class AddZoneView extends GetView<ZoneController> {
   Widget build(BuildContext context) {
     final TextEditingController zoneNameController = TextEditingController();
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: AppBackButton(),
-        title: Text(
-          'Tambah Zona Baru',
-          style: Theme.of(context).textTheme.titleLarge,
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: AppBackButton(),
+          title: Text(
+            'Tambah Zona Baru',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          centerTitle: true,
+          elevation: 0,
         ),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Zone name input
-              Text('Nama Zona', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              TextField(
-                controller: zoneNameController,
-                decoration: InputDecoration(
-                  hintText: 'Contoh: Kebun Depan, Taman Belakang, dll',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Form(
+                  key: controller.formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nama Zona',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      AppTextFormField(
+                        controller: controller.zoneNameController,
+                        hintText: 'Masukkan nama zona',
+                        validator:
+                            (value) => controller.validateName(value ?? ''),
+                        prefixIcon: Icons.note_alt_outlined,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
                 ),
-              ),
+                // Zone name input
 
-              const SizedBox(height: 24),
+                // Zone type selection
+                Text(
+                  'Tipe Zona',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                _buildZoneTypeSelector(context),
 
-              // Zone type selection
-              Text('Tipe Zona', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              _buildZoneTypeSelector(context),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+                // IoT device selection
+                Text(
+                  'Tambahkan Perangkat IoT',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                _buildIoTDevicesList(context),
 
-              // IoT device selection
-              Text(
-                'Tambahkan Perangkat IoT',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              _buildIoTDevicesList(context),
+                const SizedBox(height: 32),
 
-              const SizedBox(height: 32),
-
-              // Submit button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (zoneNameController.text.isNotEmpty) {
-                      controller.createZone(zoneNameController.text);
-                      Get.back();
-                    } else {
-                      Get.snackbar(
-                        'Error',
-                        'Nama zona tidak boleh kosong',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.red,
-                        colorText: Colors.white,
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.greenPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      controller.createZone(zoneNameController.text.trim());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.greenPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Simpan Zona',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                    child: Text(
+                      'Simpan Zona',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

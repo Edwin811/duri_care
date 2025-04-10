@@ -16,81 +16,103 @@ class LoginScreen extends GetView<LoginController> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
-            child: SingleChildScrollView(
-              child: Center(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 150),
-                    Image.asset('assets/images/DURICARE-LOGO.png', width: 120),
-                    AppSpacing.md,
-                    Text(
-                      'Selamat Datang di DuriCare',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Silahkan masuk untuk melanjutkan',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    AppSpacing.xxl,
-                    Form(
-                      key: controller.formKey,
-                      child: Column(
-                        children: [
-                          AppLabelText(text: 'Email'),
-                          AppSpacing.sm,
-                          AppTextFormField(
-                            controller: controller.emailController,
-                            hintText: 'Enter your email',
-                            prefixIcon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                            validator:
-                                (value) =>
-                                    controller.validateEmail(value ?? ''),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  reverse: true,
+                  child: Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: constraints.maxHeight * 0.15),
+                        Image.asset(
+                          'assets/images/DURICARE-LOGO.png',
+                          width: 120,
+                        ),
+                        AppSpacing.md,
+                        Text(
+                          'Selamat Datang di DuriCare',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
-                          AppSpacing.md,
-                          AppLabelText(text: 'Password'),
-                          AppSpacing.sm,
-                          Obx(
-                            () => AppTextFormField(
-                              controller: controller.passwordController,
-                              obscureText: controller.isPasswordVisible.value,
-                              hintText: 'Enter your password',
-                              prefixIcon: Icons.lock_outline,
-                              suffixIcon: IconButton(
-                                icon:
-                                    controller.isPasswordVisible.value
-                                        ? Icon(Icons.visibility)
-                                        : Icon(Icons.visibility_off),
-                                onPressed:
-                                    () => controller.togglePasswordVisibility(),
+                        ),
+                        Text(
+                          'Silahkan masuk untuk melanjutkan',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        AppSpacing.xl,
+                        Form(
+                          key: controller.formKey,
+                          child: Column(
+                            children: [
+                              AppLabelText(text: 'Email'),
+                              AppSpacing.sm,
+                              AppTextFormField(
+                                controller: controller.emailController,
+                                hintText: 'Enter your email',
+                                prefixIcon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                validator:
+                                    (value) =>
+                                        controller.validateEmail(value ?? ''),
                               ),
-                              validator:
-                                  (value) =>
-                                      controller.validatePassword(value ?? ''),
-                            ),
+                              AppSpacing.md,
+                              AppLabelText(text: 'Password'),
+                              AppSpacing.sm,
+                              Obx(
+                                () => AppTextFormField(
+                                  controller: controller.passwordController,
+                                  obscureText:
+                                      controller.isPasswordVisible.value,
+                                  hintText: 'Enter your password',
+                                  prefixIcon: Icons.lock_outline,
+                                  suffixIcon: IconButton(
+                                    icon:
+                                        controller.isPasswordVisible.value
+                                            ? Icon(Icons.visibility)
+                                            : Icon(Icons.visibility_off),
+                                    onPressed:
+                                        () =>
+                                            controller
+                                                .togglePasswordVisibility(),
+                                  ),
+                                  validator:
+                                      (value) => controller.validatePassword(
+                                        value ?? '',
+                                      ),
+                                ),
+                              ),
+                              AppSpacing.xl,
+                              AppFilledButton(
+                                onPressed: () {
+                                  controller.loginWithEmail();
+                                },
+                                text: 'Masuk',
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom:
+                                      MediaQuery.of(context).viewInsets.bottom >
+                                              0
+                                          ? 20
+                                          : 0,
+                                ),
+                              ),
+                            ],
                           ),
-                          AppSpacing.xxl,
-                          AppFilledButton(
-                            onPressed: () {
-                              controller.loginWithEmail();
-                            },
-                            text: 'Masuk',
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
@@ -15,6 +16,9 @@ class ZoneController extends GetxController {
   final duration = 15.obs;
   final schedules = <Map<String, dynamic>>[].obs;
 
+  final TextEditingController zoneNameController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
   @override
   void onInit() {
     super.onInit();
@@ -26,12 +30,15 @@ class ZoneController extends GetxController {
   }
 
   Future<void> createZone(String zoneName) async {
+    final zoneName = zoneNameController.text.trim();
+
+    final nameError = validateName(zoneName);
     try {
       final response = await supabase.from('zones').insert({
         'name': zoneName,
         'owner_id': supabase.auth.currentUser?.id,
         'device_count': 0,
-        'status': 'inactive',
+        'status': true,
         'created_at': DateTime.now().toIso8601String(),
       });
       if (response.error == null) {
@@ -177,4 +184,15 @@ class ZoneController extends GetxController {
 
     storage.write('schedules_$zoneId', schedules.toList());
   }
+
+  String? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Nama zona tidak boleh kosong';
+    }
+    if (value.length < 3) {
+      return 'Nama zona minimal 3 karakter';
+    }
+    return null;
+  }
+
 }

@@ -5,7 +5,7 @@ class AppTextFormField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.hintText,
-    required this.prefixIcon,
+    this.prefixIcon,
     this.obscureText = false,
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
@@ -13,7 +13,7 @@ class AppTextFormField extends StatelessWidget {
   });
   final TextEditingController controller;
   final String hintText;
-  final IconData prefixIcon;
+  final IconData? prefixIcon;
   final bool obscureText;
   final Widget? suffixIcon;
   final TextInputType keyboardType;
@@ -32,6 +32,7 @@ class AppTextFormField extends StatelessWidget {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
       validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
     );
   }
 }
