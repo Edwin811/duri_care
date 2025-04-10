@@ -11,8 +11,8 @@ class RoleBadge extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(left: 6),
-      width: 55,
-      height: 20,
+      width: 50,
+      height: 16,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: isOwner ? AppColor.greenSecondary : AppColor.yellowPrimary,
