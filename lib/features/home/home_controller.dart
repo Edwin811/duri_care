@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 class HomeController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
   RxString ucapan = ''.obs;
+  RxString username = ''.obs;
+  RxString profilePicture = ''.obs;
   bool _isInitialized = false;
 
   @override
@@ -12,6 +14,8 @@ class HomeController extends GetxController {
     if (!_isInitialized) {
       _isInitialized = true;
       _getSpeech();
+      getName();
+      getProfilePicture();
     }
   }
 
@@ -34,4 +38,15 @@ class HomeController extends GetxController {
       ucapan.value = "Selamat Malam";
     }
   }
+
+  Future<void> getName() async{
+    final name = await authController.getUsername();
+    username.value = name ?? 'User';
+  }
+
+  Future<void> getProfilePicture() async{
+    final picture = await authController.getProfilePicture();
+    profilePicture.value = picture;
+  }
+
 }

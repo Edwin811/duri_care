@@ -1,4 +1,5 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/models/iotDevice/iot_device.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,6 +20,11 @@ class ZoneController extends GetxController {
   final TextEditingController zoneNameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
+  RxBool isLoadingDevices = false.obs;
+  final devices = <IoTDevice>[].obs;
+  final selectedDeviceIds = <String>[].obs;
+  final user = Supabase.instance.client.auth.currentUser;
+
   @override
   void onInit() {
     super.onInit();
@@ -27,34 +33,107 @@ class ZoneController extends GetxController {
     selectedTime.value = '06:00';
 
     loadSchedules();
+    loadDevices();
+  }
+
+  /// Mengambil data perangkat IoT dari server
+  Future<void> loadDevices() async {
+    isLoadingDevices.value = true;
+    try {
+      final response = await supabase
+          .from('iot_devices')
+          .select('*')
+          .eq('owner_id', user?.id ?? '');
+
+      if (response != null) {
+        final List<IoTDevice> loadedDevices =
+            (response as List)
+                .map(
+                  (device) => IoTDevice(
+                    id: device['id'],
+                    name: device['name'],
+                    type: device['type'],
+                    status: device['status'] ?? 'offline',
+                  ),
+                )
+                .toList();
+
+        devices.value = loadedDevices;
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Memuat Perangkat',
+        'Gagal memuat perangkat IoT: ${e.toString()}',
+      );
+    } finally {
+      isLoadingDevices.value = false;
+    }
+  }
+
+  /// Menambah atau menghapus perangkat dari daftar perangkat yang dipilih
+  void toggleDeviceSelection(String deviceId) {
+    if (selectedDeviceIds.contains(deviceId)) {
+      selectedDeviceIds.remove(deviceId);
+    } else {
+      selectedDeviceIds.add(deviceId);
+    }
   }
 
   Future<void> createZone(String zoneName) async {
-    final zoneName = zoneNameController.text.trim();
+    if (!formKey.currentState!.validate()) return;
 
-    final nameError = validateName(zoneName);
+    final nameToUse = zoneNameController.text.trim();
+
     try {
-      final response = await supabase.from('zones').insert({
-        'name': zoneName,
-        'owner_id': supabase.auth.currentUser?.id,
-        'device_count': 0,
-        'status': true,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-      if (response.error == null) {
-        zones.add(response.data[0]);
+      final response =
+          await supabase.from('zones').insert({
+            'name': nameToUse,
+            'owner_id': supabase.auth.currentUser?.id,
+            // 'device_count': selectedDeviceIds.length,
+            'status': true,
+            'created_at': DateTime.now().toIso8601String(),
+          }).select();
+
+      if (response != null && response.isNotEmpty) {
+        final zoneId = response[0]['id'];
+
+        // Menyimpan perangkat terpilih ke zona
+        if (selectedDeviceIds.isNotEmpty) {
+          await _assignDevicesToZone(zoneId);
+        }
+
+        zones.add(response[0]);
+        Get.back();
         DialogHelper.showSuccessDialog(
-          'Zona $zoneName berhasil dibuat.',
+          'Zona $nameToUse berhasil dibuat.',
           title: 'Zona Berhasil Dibuat',
-        );
-      } else {
-        DialogHelper.showErrorDialog(
-          response.error!.message,
-          title: 'Gagal Membuat Zona',
         );
       }
     } catch (e) {
       DialogHelper.showErrorDialog(title: 'Error', e.toString());
+    }
+  }
+
+  /// Menetapkan perangkat IoT terpilih ke sebuah zona
+  Future<void> _assignDevicesToZone(String zoneId) async {
+    try {
+      final deviceAssignments =
+          selectedDeviceIds
+              .map(
+                (deviceId) => {
+                  'device_id': deviceId,
+                  'zone_id': zoneId,
+                  'assigned_at': DateTime.now().toIso8601String(),
+                },
+              )
+              .toList();
+
+      await supabase.from('zone_devices').insert(deviceAssignments);
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Peringatan',
+        'Zona berhasil dibuat tetapi gagal menambahkan beberapa perangkat: ${e.toString()}',
+      );
     }
   }
 
@@ -194,5 +273,4 @@ class ZoneController extends GetxController {
     }
     return null;
   }
-
 }

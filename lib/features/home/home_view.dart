@@ -2,7 +2,6 @@ import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
-import 'package:duri_care/core/utils/widgets/zone.dart';
 import 'package:duri_care/core/utils/widgets/zone_grid.dart';
 import 'package:flutter/services.dart';
 import 'home_controller.dart';
@@ -32,18 +31,20 @@ class HomeView extends GetView<HomeController> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            CircleAvatar(
-                              radius: 25,
-                              backgroundColor: AppColor.greenPrimary.withAlpha(
-                                100,
-                              ),
-                              child: Text(
-                                controller.authController.getProfilePicture(),
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500,
+                            Obx(
+                              () => CircleAvatar(
+                                radius: 25,
+                                backgroundColor: AppColor.greenPrimary.withAlpha(
+                                  100,
+                                ),
+                                child: Text(
+                                  controller.profilePicture.value,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
@@ -69,10 +70,13 @@ class HomeView extends GetView<HomeController> {
                                   ),
                                 ),
                                 Text(
-                                  controller.authController.getUsername(),
+                                  controller.username.value,
                                   style: Theme.of(
                                     context,
-                                  ).textTheme.bodyLarge?.copyWith(fontSize: 14),
+                                  ).textTheme.bodyLarge?.copyWith(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),

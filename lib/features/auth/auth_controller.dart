@@ -71,16 +71,26 @@ class AuthController extends GetxController {
     authState.refresh();
   }
 
-  String getUsername() {
+  Future<String?> getUsername() async {
     final user = _supabase.auth.currentUser;
-    if (user != null) {
-      return user.email?.split('@').first ?? 'DuriCare User';
+    if (user == null) return null;
+
+    final response =
+        await _supabase
+            .from('users')
+            .select('fullname')
+            .eq('id', user.id)
+            .single();
+    print('nama usernya: $response');
+
+    if (response != null) {
+      return response['fullname'] ?? user.email?.split('@').first;
     } else {
-      return 'Unknown User';
+      return user.email?.split('@').first;
     }
   }
 
-  String getProfilePicture() {
+  Future<String> getProfilePicture() async {
     final user = _supabase.auth.currentUser;
     if (user != null) {
       final avatarUrl = user.userMetadata?['avatar_url'];
@@ -88,8 +98,8 @@ class AuthController extends GetxController {
         return avatarUrl;
       }
 
-      String username = getUsername();
-      if (username.isNotEmpty) {
+      String? username = await getUsername();
+      if (username != null && username.isNotEmpty) {
         return username[0].toUpperCase();
       }
     }
