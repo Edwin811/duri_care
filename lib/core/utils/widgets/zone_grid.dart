@@ -9,8 +9,8 @@ class ZoneGrid extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    // final totalZones = controller.zones.length;
-    final totalZones = 6;
+    final totalZones = controller.zones.length;
+    // final totalZones = 6;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
