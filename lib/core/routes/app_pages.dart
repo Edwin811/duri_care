@@ -2,6 +2,7 @@ import 'package:duri_care/features/error/error_route.dart';
 import 'package:duri_care/features/home/home_route.dart';
 import 'package:duri_care/features/login/login_route.dart';
 import 'package:duri_care/features/onboarding/onboarding_route.dart';
+import 'package:duri_care/features/profile/profile_route.dart';
 import 'package:duri_care/features/splashscreen/splashscreen_route.dart';
 import 'package:duri_care/features/splashscreen/splashscreen_view.dart';
 import 'package:duri_care/features/zone/zone_route.dart';
@@ -18,5 +19,6 @@ abstract class AppPages {
     ...zoneRoute,
     ...errorRoute,
     ...addNewZone,
+    ...profileRoute,
   ];
 }

@@ -54,11 +54,27 @@ class AddZoneView extends GetView<ZoneController> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
                 // IoT device selection
-                Text(
-                  'Tambahkan Perangkat IoT',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Tambahkan Perangkat IoT',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: AppColor.greenPrimary,
+                        size: 32,
+                      ),
+                      tooltip: 'Tambah Perangkat IoT',
+                      hoverColor: AppColor.greenPrimary.withAlpha(80),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 _buildIoTDevicesList(context),
@@ -97,16 +113,18 @@ class AddZoneView extends GetView<ZoneController> {
   }
 
   Widget _buildIoTDevicesList(BuildContext context) {
-    return Obx(() => controller.isLoadingDevices.value
-        ? const Center(child: CircularProgressIndicator())
-        : controller.devices.isEmpty
-            ? Center(
+    return Obx(
+      () =>
+          controller.isLoadingDevices.value
+              ? const Center(child: CircularProgressIndicator())
+              : controller.devices.isEmpty
+              ? Center(
                 child: Text(
                   'Tidak ada perangkat IoT yang tersedia',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               )
-            : Card(
+              : Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -122,7 +140,10 @@ class AddZoneView extends GetView<ZoneController> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: AppColor.greenPrimary.withAlpha(80),
-                        child: Icon(_getDeviceIcon(device.type), color: AppColor.greenPrimary),
+                        child: Icon(
+                          _getDeviceIcon(device.type),
+                          color: AppColor.greenPrimary,
+                        ),
                       ),
                       title: Text(device.name),
                       subtitle: Text(device.status),
@@ -136,7 +157,8 @@ class AddZoneView extends GetView<ZoneController> {
                     );
                   },
                 ),
-              ));
+              ),
+    );
   }
 
   IconData _getDeviceIcon(String deviceType) {

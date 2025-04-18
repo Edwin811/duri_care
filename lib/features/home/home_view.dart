@@ -1,4 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/utils/widgets/app_bottomNavigationBar.dart';
 import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
@@ -34,9 +35,8 @@ class HomeView extends GetView<HomeController> {
                             Obx(
                               () => CircleAvatar(
                                 radius: 25,
-                                backgroundColor: AppColor.greenPrimary.withAlpha(
-                                  100,
-                                ),
+                                backgroundColor: AppColor.greenPrimary
+                                    .withAlpha(100),
                                 child: Text(
                                   controller.profilePicture.value,
                                   style: Theme.of(
@@ -305,23 +305,7 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColor.greenPrimary,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
-        elevation: 10,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      bottomNavigationBar: AppBottomNavigationBar(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/add-zone'),
         backgroundColor: AppColor.greenPrimary,
