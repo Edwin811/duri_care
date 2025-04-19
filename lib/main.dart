@@ -1,4 +1,5 @@
 import 'package:duri_care/core/routes/app_pages.dart';
+import 'package:duri_care/core/utils/helpers/tabs.dart';
 import 'package:duri_care/features/error/error_404_view.dart';
 import 'package:duri_care/features/error/network_controller.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,6 @@ class DuriCare extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Duri Care',
       theme: ThemeData(
         primaryColor: Colors.green,
         scaffoldBackgroundColor: Colors.white,

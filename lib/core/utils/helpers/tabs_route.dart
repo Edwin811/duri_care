@@ -8,7 +8,7 @@ final List<GetPage<dynamic>> tabsRoute = [
     name: '/tabs',
     page: () => Tabs(),
     binding: BindingsBuilder(() {
-      Get.lazyPut(() => TabsController(), fenix: true);
+      Get.lazyPut(() => TabsController());
       Get.lazyPut(() => ZoneController(), fenix: true);
       Get.lazyPut(() => ProfileController(), fenix: true);
     }),

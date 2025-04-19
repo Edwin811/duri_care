@@ -1,3 +1,4 @@
+import 'package:duri_care/core/utils/helpers/tabs.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:get/get.dart';
 
