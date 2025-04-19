@@ -1,6 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/features/profile/profile_controller.dart';
-import 'package:duri_care/core/utils/widgets/app_bottomNavigationBar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -10,29 +9,15 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
-        title: Text(
-          'Profil',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        centerTitle: true,
-        elevation: 0,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.edit),
-        //     onPressed: controller.editProfile,
-        //   ),
-        // ],
-      ),
-      body: SingleChildScrollView(
+    return SafeArea(
+      child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Profile Header Section
+              const SizedBox(height: 20),
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -42,7 +27,7 @@ class ProfileView extends GetView<ProfileController> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withAlpha(30),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -50,40 +35,30 @@ class ProfileView extends GetView<ProfileController> {
                 ),
                 child: Column(
                   children: [
-                    Obx(
-                      () => Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColor.greenPrimary,
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.greenPrimary.withAlpha(30),
-                              blurRadius: 12,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 55,
-                          backgroundColor: AppColor.greenPrimary.withAlpha(
-                            30,
-                          ),
-                          child: Text(
-                            controller.profilePicture.value,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.displayMedium?.copyWith(
-                              color: AppColor.greenPrimary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    Obx(() {
+                      final profilePic = controller.profilePicture.value;
+                      final isUrl = profilePic.startsWith('http');
+
+                      return CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppColor.greenPrimary.withAlpha(100),
+                        backgroundImage:
+                            isUrl ? NetworkImage(profilePic) : null,
+                        child:
+                            !isUrl
+                                ? Text(
+                                  profilePic.isNotEmpty ? profilePic : '?',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : null,
+                      );
+                    }),
                     const SizedBox(height: 20),
                     Obx(
                       () => Text(
@@ -139,17 +114,25 @@ class ProfileView extends GetView<ProfileController> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Personal Information Section
-              _buildSectionHeader(context, 'Informasi Pribadi'),
+              // _buildInfoCard(
+              //   context,
+              //   title: 'Nomor Telepon',
+              //   value:
+              //       controller.phoneNumber.value.isNotEmpty
+              //           ? controller.phoneNumber.value
+              //           : '-',
+              //   icon: Icons.phone_outlined,
+              // ),
               const SizedBox(height: 12),
-              _buildInfoCard(
-                context,
-                title: 'Nomor Telepon',
-                value: controller.phoneNumber.value,
-                icon: Icons.phone,
-              ),
+              // _buildInfoCard(
+              //   context,
+              //   title: 'Alamat',
+              //   value:
+              //       controller.address.value.isNotEmpty
+              //           ? controller.address.value
+              //           : '-',
+              //   icon: Icons.location_on_outlined,
+              // ),
               const SizedBox(height: 24),
 
               // Settings Section
@@ -197,11 +180,12 @@ class ProfileView extends GetView<ProfileController> {
               const SizedBox(height: 32),
 
               // Logout Button
+              // Logout Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () => _showLogoutConfirmationDialog(context),
+                  onPressed: () => controller.logout(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red.shade100,
                     foregroundColor: Colors.red,
@@ -231,7 +215,6 @@ class ProfileView extends GetView<ProfileController> {
           ),
         ),
       ),
-      bottomNavigationBar: AppBottomNavigationBar(),
     );
   }
 
@@ -331,33 +314,6 @@ class ProfileView extends GetView<ProfileController> {
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _showLogoutConfirmationDialog(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Konfirmasi Keluar'),
-          content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Batal'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Keluar', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                controller.logout();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

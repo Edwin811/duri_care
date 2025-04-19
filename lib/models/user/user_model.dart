@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserModel {
   final String? id;
@@ -22,39 +21,44 @@ class UserModel {
     this.lastLogin,
   });
 
-  factory UserModel.fromFirebaseUser(User user) {
+  factory UserModel.fromSupabaseUser(User user) {
     return UserModel(
-      id: user.uid,
+      id: user.id,
       email: user.email,
-      displayName: user.displayName,
-      photoUrl: user.photoURL,
-      phoneNumber: user.phoneNumber,
+      phoneNumber: user.phone,
+      displayName: user.userMetadata?['name'],
+      photoUrl: user.userMetadata?['avatar_url'],
     );
   }
 
-  factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  factory UserModel.fromSupabaseData(Map<String, dynamic> data, String userId) {
     return UserModel(
-      id: doc.id,
+      id: userId,
       email: data['email'],
-      displayName: data['displayName'],
-      photoUrl: data['photoUrl'],
-      phoneNumber: data['phoneNumber'],
-      additionalInfo: data['additionalInfo'],
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      lastLogin: (data['lastLogin'] as Timestamp?)?.toDate(),
+      displayName: data['display_name'],
+      photoUrl: data['photo_url'],
+      phoneNumber: data['phone_number'],
+      additionalInfo: data['additional_info'],
+      createdAt:
+          data['created_at'] != null
+              ? DateTime.parse(data['created_at'])
+              : null,
+      lastLogin:
+          data['last_login'] != null
+              ? DateTime.parse(data['last_login'])
+              : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'email': email,
-      'displayName': displayName,
-      'photoUrl': photoUrl,
-      'phoneNumber': phoneNumber,
-      'additionalInfo': additionalInfo,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
-      'lastLogin': lastLogin != null ? Timestamp.fromDate(lastLogin!) : null,
+      'display_name': displayName,
+      'photo_url': photoUrl,
+      'phone_number': phoneNumber,
+      'additional_info': additionalInfo,
+      'created_at': createdAt?.toIso8601String(),
+      'last_login': lastLogin?.toIso8601String(),
     };
   }
 

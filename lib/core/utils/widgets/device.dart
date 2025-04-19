@@ -1,6 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class DeviceInfo extends StatelessWidget {
   const DeviceInfo({

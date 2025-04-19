@@ -10,7 +10,7 @@ class AppNavigator {
     if (_authController.isFirstTime.value) {
       Get.offAllNamed('/onboarding');
     } else if (_authController.isAuthenticated) {
-      Get.offNamed('/home');
+      Get.offAllNamed('/tabs');
     } else {
       Get.offAllNamed('/login');
     }

@@ -1,3 +1,4 @@
+import 'package:duri_care/core/utils/helpers/tabs_route.dart';
 import 'package:duri_care/features/error/error_route.dart';
 import 'package:duri_care/features/home/home_route.dart';
 import 'package:duri_care/features/login/login_route.dart';
@@ -20,5 +21,6 @@ abstract class AppPages {
     ...errorRoute,
     ...addNewZone,
     ...profileRoute,
+    ...tabsRoute,
   ];
 }

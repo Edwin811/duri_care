@@ -1,12 +1,23 @@
-import 'package:flutter/material.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
-  final RxString username = "Sarah Wijayanto".obs;
-  final RxString email = "sarah.wijayanto@example.com".obs;
-  final RxString phoneNumber = "+62 812-3456-7890".obs;
+  final AuthController authController = Get.find<AuthController>();
+  final RxString username = ''.obs;
+  final RxString email = ''.obs;
+  final RxString profilePicture = ''.obs;
+
+
+  @override
+  void onInit() async {
+    super.onInit();
+    username.value = await authController.getUsername() ?? '';
+    email.value = await authController.getEmail() ?? '';
+    profilePicture.value = await authController.getProfilePicture();
+  }
+
   final RxString role = "Owner".obs;
-  final RxString profilePicture = "SW".obs; // User's initials for avatar
   final RxBool isDarkMode = false.obs;
   final RxBool isNotificationEnabled = true.obs;
 
@@ -18,16 +29,25 @@ class ProfileController extends GetxController {
   void toggleDarkMode(bool value) {
     isDarkMode.value = value;
     update();
-    // Would implement theme changing functionality here
   }
 
   void logout() {
-    // Implement logout functionality
-    Get.offAllNamed('/login'); // Navigate to login page
+    DialogHelper.showConfirmationDialog(
+      'Apakah anda yakin ingin keluar dari aplikasi?',
+      'Keluar',
+      'OK',
+      'Batal',
+      () async {
+        await authController.logout();
+        Get.offAllNamed('/login');
+      },
+      () {
+        Get.back();
+      },
+    );
   }
 
   void editProfile() {
-    // Would navigate to edit profile screen
     Get.toNamed('/edit-profile');
   }
 }

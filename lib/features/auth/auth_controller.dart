@@ -91,8 +91,12 @@ class AuthController extends GetxController {
       DialogHelper.showErrorDialog(title: 'Error', '$e');
     }
 
-    // Fallback to email if no fullname found or query fails
     return user.email?.split('@').first;
+  }
+
+  Future<String?> getEmail() async {
+    final user = _supabase.auth.currentUser;
+    return user?.email;
   }
 
   Future<String> getProfilePicture() async {

@@ -1,5 +1,4 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/core/utils/widgets/app_bottomNavigationBar.dart';
 import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
@@ -85,10 +84,7 @@ class HomeView extends GetView<HomeController> {
                                   controller.username.value,
                                   style: Theme.of(
                                     context,
-                                  ).textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  ).textTheme.bodyLarge?.copyWith(fontSize: 14),
                                 ),
                               ],
                             ),
@@ -317,14 +313,6 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ),
-      bottomNavigationBar: AppBottomNavigationBar(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed('/add-zone'),
-        backgroundColor: AppColor.greenPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
