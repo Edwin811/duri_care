@@ -1,5 +1,4 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -89,7 +88,7 @@ class Zone extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    zoneData['name'] ?? 'Unknown Zone',
+                    zoneData['name'],
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color:
                           isActive.value
@@ -136,7 +135,7 @@ class Zone extends StatelessWidget {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: ' ${zoneData['moisture'] ?? '60%'}',
+                                    text: ' ${zoneData['moisture'] ?? ' 0%'}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -145,7 +144,7 @@ class Zone extends StatelessWidget {
                                               ? AppColor.greenSecondary
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                       decoration: TextDecoration.none,
                                     ),
                                   ),

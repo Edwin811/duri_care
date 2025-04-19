@@ -344,7 +344,7 @@ class ZoneController extends GetxController {
         zones[index] = updatedZone;
       }
 
-      DialogHelper.showSuccessDialog('Status zona berhasil diperbarui.');
+      // DialogHelper.showSuccessDialog('Status zona berhasil diperbarui.');
     } catch (e) {
       DialogHelper.showErrorDialog(title: 'Error', e.toString());
     }
@@ -371,10 +371,13 @@ class ZoneController extends GetxController {
           totalSeconds = (latestSchedule['duration_minutes'] as int) * 60;
         }
       } catch (e) {
-        DialogHelper.showErrorDialog(
-          title: 'Gagal Memuat Jadwal',
-          'Durasi gagal diambil: ${e.toString()}',
-        );
+        if (e.toString().contains('404')) {
+          DialogHelper.showErrorDialog(
+            title: 'Data Tidak Ditemukan',
+            'Jadwal tidak ditemukan untuk zona ini.',
+          );
+        }
+        updateZoneStatus(false);
         return;
       }
     }
