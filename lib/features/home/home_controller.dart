@@ -19,10 +19,6 @@ class HomeController extends GetxController {
     }
   }
 
-  @override
-  void onReady() {
-    super.onReady();
-  }
 
   void _getSpeech() {
     DateTime now = DateTime.now();
@@ -39,12 +35,12 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> getName() async{
+  Future<void> getName() async {
     final name = await authController.getUsername();
     username.value = name ?? 'User';
   }
 
-  Future<void> getProfilePicture() async{
+  Future<void> getProfilePicture() async {
     final picture = await authController.getProfilePicture();
     profilePicture.value = picture;
   }

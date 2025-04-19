@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/features/profile/profile_view.dart';
 
 class AppBottomNavigationBar extends StatelessWidget {
   AppBottomNavigationBar({super.key});
@@ -49,7 +50,7 @@ class AppBottomNavigationBarController extends GetxController {
     super.onInit();
     // Set initial index based on current route
     updateSelectedIndex(Get.currentRoute);
-    
+
     // Add route observer to update index when route changes
     ever(Get.routing.obs, (Routing? routing) {
       if (routing != null && routing.current != null) {
@@ -78,13 +79,16 @@ class AppBottomNavigationBarController extends GetxController {
     
     // Update index
     selectedIndex.value = index;
-    
+
     // Navigate to the selected page with proper transition
     String targetRoute = routes[index];
     if (Get.currentRoute != targetRoute) {
-      Get.toNamed(
-        targetRoute,
-        preventDuplicates: true,
+      // Implement the transition during navigation
+      Get.offAll(
+        () => const ProfileView(), // Placeholder widget, will be replaced by route
+        routeName: targetRoute,
+        transition: transition,
+        duration: const Duration(milliseconds: 300), // Optional: Set transition duration
       );
     }
   }

@@ -33,27 +33,33 @@ class OnboardingView extends GetView<OnboardingController> {
                   },
                   itemCount: contentsList.length,
                   itemBuilder: (context, index) {
+                    final data = contentsList[index];
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(contentsList[index].imagePath, width: 300),
+                        Image.asset(data.imagePath, width: 300),
                         const SizedBox(height: 20),
                         Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                contentsList[index].title,
+                                data.title,
+                                textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 16),
                               Text(
-                                contentsList[index].description,
-                                style: const TextStyle(fontSize: 16),
+                                data.description,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
                               ),
                             ],
                           ),
@@ -143,6 +149,7 @@ class OnboardingView extends GetView<OnboardingController> {
       ),
     );
   }
+
   Widget buildDot(int index, BuildContext context) {
     return Obx(
       () => AnimatedContainer(

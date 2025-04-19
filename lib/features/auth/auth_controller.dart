@@ -1,3 +1,4 @@
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -75,19 +76,26 @@ class AuthController extends GetxController {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
 
-    final response =
-        await _supabase
-            .from('users')
-            .select('fullname')
-            .eq('id', user.id)
-            .single();
-    print('nama usernya: $response');
+    try {
+      final response =
+          await _supabase
+              .from('users')
+              .select('fullname')
+              .eq('id', user.id)
+              .maybeSingle();
 
-    if (response != null) {
-      return response['fullname'] ?? user.email?.split('@').first;
-    } else {
-      return user.email?.split('@').first;
+      if (response != null && response['fullname'] != null) {
+        return response['fullname'];
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Error',
+        '$e'
+      );
     }
+
+    // Fallback to email if no fullname found or query fails
+    return user.email?.split('@').first;
   }
 
   Future<String> getProfilePicture() async {

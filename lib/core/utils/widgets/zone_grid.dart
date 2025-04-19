@@ -9,14 +9,16 @@ class ZoneGrid extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    final totalZones = controller.zones.length;
-    // final totalZones = 6;
+    // Use Obx to make the widget reactive to changes in zones list
+    return Obx(() {
+      final totalZones = controller.zones.length;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [_buildZoneContent(totalZones)],
-    );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [_buildZoneContent(totalZones)],
+      );
+    });
   }
 
   Widget _buildZoneContent(int totalZones) {
@@ -77,7 +79,26 @@ class ZoneGrid extends GetView<ZoneController> {
         mainAxisSpacing: 14,
       ),
       itemCount: totalZones,
-      itemBuilder: (_, __) => const Zone(),
+      itemBuilder: (context, index) {
+        // Explicitly cast each zone to Map<String, dynamic> to ensure type safety
+        final zoneData = Map<String, dynamic>.from(controller.zones[index]);
+
+        return Zone(
+          zoneData: zoneData,
+          onPowerButtonPressed: () {
+            // Make sure we use a properly cast map when setting the selected zone
+            controller.selectedZone.value = Map<String, dynamic>.from(
+              controller.zones[index],
+            );
+            controller.toggleActive();
+          },
+          onSelectZone: () {
+            controller.selectedZone.value = Map<String, dynamic>.from(
+              controller.zones[index],
+            );
+          },
+        );
+      },
     );
   }
 }

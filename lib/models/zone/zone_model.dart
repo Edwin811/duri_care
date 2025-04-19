@@ -1,33 +1,31 @@
 class ZoneModel {
-  String? id;
-  String? name;
-  String? owner_id;
-  String? createdAt;
-  String? updatedAt;
+  final int id;
+  final String name;
+  final bool isActive;
+  final DateTime createdAt;
 
   ZoneModel({
-    this.id,
-    this.name,
-    this.owner_id,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.name,
+    required this.isActive,
+    required this.createdAt,
   });
 
-  ZoneModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    name = json['name'];
-    owner_id = json['onowner_id'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+  factory ZoneModel.fromJson(Map<String, dynamic> json) {
+    return ZoneModel(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      isActive: json['isActive'] as bool,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['name'] = name;
-    data['owner_id'] = owner_id;
-    data['created_at'] = createdAt;
-    data['updated_at'] = updatedAt;
-    return data;
+    return {
+      'id': id,
+      'name': name,
+      'isActive': isActive,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 }

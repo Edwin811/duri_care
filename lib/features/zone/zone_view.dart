@@ -7,13 +7,19 @@ import 'package:intl/intl.dart';
 import 'zone_controller.dart';
 
 class ZoneView extends GetView<ZoneController> {
-  final String zoneName;
-
-  const ZoneView({super.key, required this.zoneName});
+  const ZoneView({super.key});
   static const String route = '/zone';
 
   @override
   Widget build(BuildContext context) {
+    // Get the zoneId from route parameters
+    final zoneId = Get.parameters['zoneId'];
+
+    // Load zone data when entering the view
+    if (zoneId != null) {
+      controller.loadZoneById(int.parse(zoneId));
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
@@ -22,28 +28,37 @@ class ZoneView extends GetView<ZoneController> {
       child: Scaffold(
         appBar: AppBar(
           leading: AppBackButton(),
-          title: Text(
-            zoneName,
-            // style: AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
+          title: Obx(
+            () => Text(
+              controller.selectedZone.isNotEmpty
+                  ? controller.selectedZone['name'] ?? 'Zone Details'
+                  : 'Zone Details',
+              // style: AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
+            ),
           ),
           centerTitle: true,
           elevation: 0,
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatusCard(context),
-                const SizedBox(height: 24),
-                _buildIoTDevicesSection(context),
-                const SizedBox(height: 24),
-                _buildSchedulingSection(context),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+        body: Obx(
+          () =>
+              controller.isLoading.value
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStatusCard(context),
+                          const SizedBox(height: 24),
+                          _buildIoTDevicesSection(context),
+                          const SizedBox(height: 24),
+                          _buildSchedulingSection(context),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
         ),
       ),
     );
@@ -219,7 +234,7 @@ class ZoneView extends GetView<ZoneController> {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => _selectDate(context),
+                        onPressed: () => controller.selectDate(context),
                         child: const Text(
                           'Change',
                           style: TextStyle(color: AppColor.greenPrimary),
@@ -236,12 +251,12 @@ class ZoneView extends GetView<ZoneController> {
                       const SizedBox(width: 8),
                       Text(
                         controller.selectedTime.value != null
-                            ? controller.selectedTime.value ?? '06:00'
+                            ? '${controller.selectedTime.value!.hour.toString().padLeft(2, '0')}:${controller.selectedTime.value!.minute.toString().padLeft(2, '0')}'
                             : 'Select time',
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => _selectTime(context),
+                        onPressed: () => controller.selectTime(context),
                         child: const Text(
                           'Change',
                           style: TextStyle(color: AppColor.greenPrimary),
@@ -323,30 +338,5 @@ class ZoneView extends GetView<ZoneController> {
         ),
       ],
     );
-  }
-
-  void _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: controller.selectedDate.value ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (pickedDate != null && pickedDate != controller.selectedDate.value) {
-      controller.selectedDate.value = pickedDate;
-    }
-  }
-
-  void _selectTime(BuildContext context) async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (pickedTime != null) {
-      controller.selectedTime.value =
-          '${pickedTime.hour}:${pickedTime.minute.toString().padLeft(2, '0')}';
-    }
   }
 }

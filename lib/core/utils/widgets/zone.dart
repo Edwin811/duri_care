@@ -1,17 +1,26 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/core/utils/controllers/zone_controller.dart';
+import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
-class Zone extends GetView<ZoneController> {
-  const Zone({super.key, this.onPowerButtonPressed, this.onSelectZone});
+class Zone extends StatelessWidget {
+  const Zone({
+    super.key,
+    this.onPowerButtonPressed,
+    this.onSelectZone,
+    required this.zoneData,
+  });
+
   final void Function()? onPowerButtonPressed;
   final void Function()? onSelectZone;
+  final Map<String, dynamic> zoneData;
 
   @override
   Widget build(BuildContext context) {
-    Get.lazyPut(() => ZoneController(), fenix: true);
+    // Create a local reactive variable for zone status
+    // Use RxBool constructor instead of .obs extension
+    final isActive = RxBool(zoneData['isActive'] ?? false);
 
     return Obx(
       () => InkWell(
@@ -23,10 +32,7 @@ class Zone extends GetView<ZoneController> {
           width: 170,
           height: 170,
           decoration: BoxDecoration(
-            color:
-                controller.isActive.value
-                    ? AppColor.greenPrimary
-                    : AppColor.white,
+            color: isActive.value ? AppColor.greenPrimary : AppColor.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300, width: 2),
           ),
@@ -41,7 +47,7 @@ class Zone extends GetView<ZoneController> {
                   children: [
                     IconButton(
                       onPressed: () {
-                        controller.powerButton();
+                        isActive.value = !isActive.value;
                         onPowerButtonPressed?.call();
                       },
                       icon: SvgPicture.asset(
@@ -49,9 +55,7 @@ class Zone extends GetView<ZoneController> {
                         width: 40,
                         height: 40,
                         colorFilter: ColorFilter.mode(
-                          controller.isActive.value
-                              ? AppColor.greenOn
-                              : AppColor.redOff,
+                          isActive.value ? AppColor.greenOn : AppColor.redOff,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -64,13 +68,13 @@ class Zone extends GetView<ZoneController> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
                         color:
-                            controller.isActive.value
+                            isActive.value
                                 ? AppColor.greenSecondary
                                 : AppColor.greenPrimary,
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        controller.timer.value,
+                        zoneData['timer'] ?? '00:00:00',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.white,
                           fontSize: 16,
@@ -85,10 +89,10 @@ class Zone extends GetView<ZoneController> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'Zona 1',
+                    zoneData['name'] ?? 'Unknown Zone',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color:
-                          controller.isActive.value
+                          isActive.value
                               ? AppColor.white
                               : AppColor.greenPrimary,
                       fontSize: 24,
@@ -107,7 +111,7 @@ class Zone extends GetView<ZoneController> {
                           Icon(
                             Icons.water_drop_outlined,
                             color:
-                                controller.isActive.value
+                                isActive.value
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -123,7 +127,7 @@ class Zone extends GetView<ZoneController> {
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          controller.isActive.value
+                                          isActive.value
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -132,12 +136,12 @@ class Zone extends GetView<ZoneController> {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: ' 60%',
+                                    text: ' ${zoneData['moisture'] ?? '60%'}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          controller.isActive.value
+                                          isActive.value
                                               ? AppColor.greenSecondary
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -157,7 +161,7 @@ class Zone extends GetView<ZoneController> {
                           Icon(
                             Icons.cloud_done_outlined,
                             color:
-                                controller.isActive.value
+                                isActive.value
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -173,7 +177,7 @@ class Zone extends GetView<ZoneController> {
                                       context,
                                     ).textTheme.bodyLarge?.copyWith(
                                       color:
-                                          controller.isActive.value
+                                          isActive.value
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -184,11 +188,11 @@ class Zone extends GetView<ZoneController> {
                                   const WidgetSpan(child: SizedBox(width: 4)),
                                   WidgetSpan(
                                     child: Icon(
-                                      controller.isActive.value
+                                      isActive.value
                                           ? Icons.check_circle_outline
                                           : Icons.cancel_outlined,
                                       color:
-                                          controller.isActive.value
+                                          isActive.value
                                               ? AppColor.greenTertiary
                                               : Colors.red,
                                       size: 20,

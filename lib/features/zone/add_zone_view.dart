@@ -11,8 +11,6 @@ class AddZoneView extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController zoneNameController = TextEditingController();
-
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -77,8 +75,8 @@ class AddZoneView extends GetView<ZoneController> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _buildIoTDevicesList(context),
 
+                // _buildIoTDevicesList(context),
                 const SizedBox(height: 32),
 
                 // Submit button
@@ -86,8 +84,10 @@ class AddZoneView extends GetView<ZoneController> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      controller.createZone(zoneNameController.text.trim());
+                    onPressed: () async {
+                      if (controller.formKey.currentState!.validate()) {
+                        await controller.createZone();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.greenPrimary,
@@ -112,65 +112,65 @@ class AddZoneView extends GetView<ZoneController> {
     );
   }
 
-  Widget _buildIoTDevicesList(BuildContext context) {
-    return Obx(
-      () =>
-          controller.isLoadingDevices.value
-              ? const Center(child: CircularProgressIndicator())
-              : controller.devices.isEmpty
-              ? Center(
-                child: Text(
-                  'Tidak ada perangkat IoT yang tersedia',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              )
-              : Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.shade300),
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: controller.devices.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final device = controller.devices[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: AppColor.greenPrimary.withAlpha(80),
-                        child: Icon(
-                          _getDeviceIcon(device.type),
-                          color: AppColor.greenPrimary,
-                        ),
-                      ),
-                      title: Text(device.name),
-                      subtitle: Text(device.status),
-                      trailing: Switch(
-                        value: controller.selectedDeviceIds.contains(device.id),
-                        activeColor: AppColor.greenPrimary,
-                        onChanged: (bool value) {
-                          controller.toggleDeviceSelection(device.id);
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-    );
-  }
+  // Widget _buildIoTDevicesList(BuildContext context) {
+  //   return Obx(
+  //     () =>
+  //         controller.isLoadingDevices.value
+  //             ? const Center(child: CircularProgressIndicator())
+  //             : controller.devices.isEmpty
+  //             ? Center(
+  //               child: Text(
+  //                 'Tidak ada perangkat IoT yang tersedia',
+  //                 style: Theme.of(context).textTheme.bodyMedium,
+  //               ),
+  //             )
+  //             : Card(
+  //               elevation: 0,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //                 side: BorderSide(color: Colors.grey.shade300),
+  //               ),
+  //               child: ListView.separated(
+  //                 shrinkWrap: true,
+  //                 physics: const NeverScrollableScrollPhysics(),
+  //                 itemCount: controller.devices.length,
+  //                 separatorBuilder: (context, index) => const Divider(),
+  //                 itemBuilder: (context, index) {
+  //                   final device = controller.devices[index];
+  //                   return ListTile(
+  //                     leading: CircleAvatar(
+  //                       backgroundColor: AppColor.greenPrimary.withAlpha(80),
+  //                       child: Icon(
+  //                         _getDeviceIcon(device.type),
+  //                         color: AppColor.greenPrimary,
+  //                       ),
+  //                     ),
+  //                     title: Text(device.name),
+  //                     subtitle: Text(device.status),
+  //                     trailing: Switch(
+  //                       value: controller.selectedDeviceIds.contains(device.id),
+  //                       activeColor: AppColor.greenPrimary,
+  //                       onChanged: (bool value) {
+  //                         controller.toggleDeviceSelection(device.id);
+  //                       },
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //   );
+  // }
 
-  IconData _getDeviceIcon(String deviceType) {
-    switch (deviceType.toLowerCase()) {
-      case 'moisture_sensor':
-        return Icons.water_drop_outlined;
-      case 'valve_control':
-        return Icons.settings_input_component_outlined;
-      case 'weather_sensor':
-        return Icons.cloud_outlined;
-      default:
-        return Icons.devices_other;
-    }
-  }
+  // IconData _getDeviceIcon(String deviceType) {
+  //   switch (deviceType.toLowerCase()) {
+  //     case 'moisture_sensor':
+  //       return Icons.water_drop_outlined;
+  //     case 'valve_control':
+  //       return Icons.settings_input_component_outlined;
+  //     case 'weather_sensor':
+  //       return Icons.cloud_outlined;
+  //     default:
+  //       return Icons.devices_other;
+  //   }
+  // }
 }

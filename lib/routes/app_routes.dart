@@ -6,11 +6,7 @@ import 'package:get/get.dart';
 class AppRoutes {
   static final routes = [
     GetPage(name: HomeView.route, page: () => const HomeView()),
-    GetPage(
-      name: ZoneView.route,
-      page: () => const ZoneView(zoneName: 'Zone Detail'),
-    ),
+    GetPage(name: ZoneView.route, page: () => const ZoneView()),
     GetPage(name: AddZoneView.route, page: () => const AddZoneView()),
-    // ...other routes
   ];
 }
