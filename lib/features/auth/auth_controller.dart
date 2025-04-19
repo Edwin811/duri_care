@@ -88,10 +88,7 @@ class AuthController extends GetxController {
         return response['fullname'];
       }
     } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        '$e'
-      );
+      DialogHelper.showErrorDialog(title: 'Error', '$e');
     }
 
     // Fallback to email if no fullname found or query fails
@@ -101,16 +98,33 @@ class AuthController extends GetxController {
   Future<String> getProfilePicture() async {
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      final avatarUrl = user.userMetadata?['avatar_url'];
-      if (avatarUrl != null) {
-        return avatarUrl;
-      }
+      try {
+        final response =
+            await _supabase
+                .from('users')
+                .select('profile_image, fullname')
+                .eq('id', user.id)
+                .maybeSingle();
 
-      String? username = await getUsername();
-      if (username != null && username.isNotEmpty) {
-        return username[0].toUpperCase();
+        final profileImage = response?['profile_image'];
+        if (profileImage != null &&
+            profileImage is String &&
+            profileImage.isNotEmpty) {
+          return profileImage;
+        }
+
+        final fullname = response?['fullname'];
+        if (fullname != null && fullname is String && fullname.isNotEmpty) {
+          return fullname[0].toUpperCase();
+        }
+      } catch (e) {
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Mengambil Foto Profil',
+          'Terjadi kesalahan saat mengambil data: $e',
+        );
       }
     }
+
     return '';
   }
 }

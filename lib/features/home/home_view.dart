@@ -32,22 +32,34 @@ class HomeView extends GetView<HomeController> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Obx(
-                              () => CircleAvatar(
+                            Obx(() {
+                              final profilePic =
+                                  controller.profilePicture.value;
+                              final isUrl = profilePic.startsWith('http');
+
+                              return CircleAvatar(
                                 radius: 25,
                                 backgroundColor: AppColor.greenPrimary
                                     .withAlpha(100),
-                                child: Text(
-                                  controller.profilePicture.value,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
+                                backgroundImage:
+                                    isUrl ? NetworkImage(profilePic) : null,
+                                child:
+                                    !isUrl
+                                        ? Text(
+                                          profilePic.isNotEmpty
+                                              ? profilePic
+                                              : '?',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.copyWith(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : null,
+                              );
+                            }),
                             const SizedBox(width: 10),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

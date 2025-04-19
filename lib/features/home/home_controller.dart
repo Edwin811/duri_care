@@ -43,6 +43,7 @@ class HomeController extends GetxController {
   Future<void> getProfilePicture() async {
     final picture = await authController.getProfilePicture();
     profilePicture.value = picture;
+    print("Profile Picture: $profilePicture");
   }
 
 }
