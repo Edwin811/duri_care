@@ -1,4 +1,3 @@
-import 'package:duri_care/core/utils/helpers/tabs.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:get/get.dart';
 
@@ -11,7 +10,7 @@ class AppNavigator {
     if (_authController.isFirstTime.value) {
       Get.offAllNamed('/onboarding');
     } else if (_authController.isAuthenticated) {
-      Get.offAllNamed('/tabs');
+      Get.offAllNamed('/main');
     } else {
       Get.offAllNamed('/login');
     }

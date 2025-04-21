@@ -1,5 +1,4 @@
 import 'package:duri_care/core/routes/app_pages.dart';
-import 'package:duri_care/core/utils/helpers/tabs.dart';
 import 'package:duri_care/features/error/error_404_view.dart';
 import 'package:duri_care/features/error/network_controller.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +11,6 @@ import 'package:flutter/services.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Force portrait orientation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -47,11 +45,19 @@ class DuriCare extends StatelessWidget {
       getPages: AppPages.routes,
       defaultTransition: Transition.fade,
       builder: (context, child) {
-        return Obx(() {
-          final networkController = Get.find<NetworkController>();
-          final showError = !networkController.isConnected.value;
-          return Stack(children: [child!, if (showError) const Error404View()]);
-        });
+        return Stack(
+          children: [
+            child ?? const SizedBox(),
+            Positioned.fill(
+              child: Obx(() {
+                final networkController = Get.find<NetworkController>();
+                return networkController.isConnected.value
+                    ? const SizedBox.shrink()
+                    : const Error404View();
+              }),
+            ),
+          ],
+        );
       },
     );
   }

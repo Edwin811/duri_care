@@ -47,6 +47,7 @@ dependencies:
   intl: ^0.20.2
   lottie: ^3.3.1
   mqtt_client: ^10.8.0
+  persistent_bottom_nav_bar: ^6.2.1
   shared_preferences: ^2.5.2
   supabase_flutter: ^2.8.4
 

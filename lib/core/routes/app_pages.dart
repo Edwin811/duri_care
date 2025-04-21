@@ -1,3 +1,5 @@
+import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
+import 'package:duri_care/core/utils/helpers/navigation/navigation_route.dart';
 import 'package:duri_care/core/utils/helpers/tabs_route.dart';
 import 'package:duri_care/features/error/error_route.dart';
 import 'package:duri_care/features/home/home_route.dart';
@@ -13,6 +15,7 @@ abstract class AppPages {
   static String initial = SplashscreenView.route;
 
   static final List<GetPage<dynamic>> routes = [
+    ...mainRoute,
     ...splashscreenRoute,
     ...onBoardingRoute,
     ...loginRoute,
