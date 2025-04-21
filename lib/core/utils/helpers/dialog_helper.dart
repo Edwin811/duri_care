@@ -122,14 +122,14 @@ abstract class DialogHelper {
     );
   }
 
-  static Future<void> showConfirmationDialog(
-    String message,
-    String title,
-    String confirmText,
-    String cancelText,
-    VoidCallback onConfirm,
-    VoidCallback onCancel,
-  ) async {
+  static Future<void> showConfirmationDialog({
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+    required VoidCallback onCancel,
+    String confirmText = 'OK',
+    String cancelText = 'Cancel',
+  }) async {
     if (Get.context == null) return;
 
     return Get.dialog(
@@ -169,13 +169,10 @@ abstract class DialogHelper {
                       ),
                       minimumSize: Size(120, 50),
                     ),
-                    child:
-                        cancelText.isEmpty
-                            ? const Text('Cancel',style: TextStyle(fontSize: 14),)
-                            : Text(
-                              cancelText,
-                              style: TextStyle(color: Colors.red, fontSize: 14),
-                            ),
+                    child: Text(
+                      cancelText,
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: onConfirm,
@@ -187,10 +184,7 @@ abstract class DialogHelper {
                       ),
                       minimumSize: Size(120, 50),
                     ),
-                    child:
-                        confirmText.isEmpty
-                            ? const Text('OK')
-                            : Text(confirmText),
+                    child: Text(confirmText),
                   ),
                 ],
               ),

@@ -6,9 +6,13 @@ class AppFilledButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.text,
+    this.icon,
+    this.color,
   });
   final VoidCallback? onPressed;
   final String text;
+  final IconData? icon;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -18,18 +22,25 @@ class AppFilledButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColor.greenPrimary,
+          backgroundColor: color ?? AppColor.greenPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) Icon(icon, color: Colors.white),
+            if (icon != null) const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );

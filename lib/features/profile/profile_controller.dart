@@ -33,15 +33,13 @@ class ProfileController extends GetxController {
 
   void logout() {
     DialogHelper.showConfirmationDialog(
-      'Apakah anda yakin ingin keluar dari aplikasi?',
-      'Keluar',
-      'OK',
-      'Batal',
-      () async {
+      title: 'Konfirmasi Keluar',
+      message: 'Apakah Anda yakin ingin keluar?',
+      onConfirm: () async {
         await authController.logout();
         Get.offAllNamed('/login');
       },
-      () {
+      onCancel: () {
         Get.back();
       },
     );

@@ -1,4 +1,6 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/features/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -153,15 +155,16 @@ class ProfileView extends GetView<ProfileController> {
               const SizedBox(height: 12),
               _buildSettingsCard(
                 context,
-                title: 'Mode Gelap',
-                icon: Icons.dark_mode_outlined,
-                trailing: Obx(
-                  () => Switch(
-                    value: controller.isDarkMode.value,
-                    onChanged: controller.toggleDarkMode,
-                    activeColor: AppColor.greenPrimary,
-                  ),
-                ),
+                title: 'Manajemen Akun Pegawai',
+                icon: Icons.people_outline,
+                // onTap: () => Get.toNamed('/employee-management'),
+              ),
+              const SizedBox(height: 12),
+              _buildSettingsCard(
+                context,
+                title: 'Bayar Tagihan VPS Duri Care',
+                icon: Icons.payment_outlined,
+                // onTap: () => Get.toNamed('/employee-management'),
               ),
               const SizedBox(height: 12),
               _buildSettingsCard(
@@ -177,40 +180,16 @@ class ProfileView extends GetView<ProfileController> {
                 icon: Icons.info_outline,
                 // onTap: () => Get.toNamed('/about'),
               ),
-              const SizedBox(height: 32),
-
-              // Logout Button
-              // Logout Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => controller.logout(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade100,
-                    foregroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.logout),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Keluar',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 20),
+              AppFilledButton(
+                onPressed: () {
+                  controller.logout();
+                },
+                icon: Icons.logout_rounded,
+                text: 'Keluar',
+                color: Colors.red,
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -224,53 +203,6 @@ class ProfileView extends GetView<ProfileController> {
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
         color: AppColor.greenPrimary,
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-  }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: AppColor.greenPrimary.withAlpha(30),
-              radius: 25,
-              child: Icon(icon, color: AppColor.greenPrimary, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

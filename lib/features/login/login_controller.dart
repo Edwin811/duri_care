@@ -63,24 +63,15 @@ class LoginController extends GetxController {
 
   Future<void> logout() async {
     await DialogHelper.showConfirmationDialog(
-      'Apakah Anda yakin ingin keluar dari aplikasi?',
-      'Keluar',
-      'OK',
-      'Batal',
-      () async {
-        Get.back();
-        try {
-          await _auth.logout();
-          Get.offAllNamed('/login');
-        } catch (e) {
-          DialogHelper.showErrorDialog(
-            'Error logging out: ${e.toString()}',
-            title: 'Gagal Keluar',
-            onConfirm: () => Get.back(),
-          );
-        }
+      title: 'Konfirmasi Keluar',
+      message: 'Apakah Anda yakin ingin keluar?',
+      onConfirm: () async {
+        await _auth.logout();
+        Get.offAllNamed('/login');
       },
-      () => Get.back(),
+      onCancel: () {
+        Get.back();
+      },
     );
   }
 
