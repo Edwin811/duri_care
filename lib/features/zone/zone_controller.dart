@@ -14,11 +14,9 @@ class ZoneController extends GetxController {
   final RxBool isActive = false.obs;
   final storage = GetStorage();
 
-  // Use String keys for timers to avoid null int issues
   final Map<String, Timer?> _zoneTimers = {};
   final RxMap<String, RxString> zoneTimers = <String, RxString>{}.obs;
 
-  // Add moisture, temperature, humidity observable values
   final RxString moisture = '0%'.obs;
   final RxString temperature = '0°C'.obs;
   final RxString humidity = '0%'.obs;
@@ -43,7 +41,6 @@ class ZoneController extends GetxController {
     super.onInit();
     isActive.value = storage.read('isActive') ?? false;
 
-    // Load zones first, then set up timers after zones are loaded
     loadZones().then((_) {
       _setupZoneTimers();
       listenToZoneChanges();
@@ -53,20 +50,16 @@ class ZoneController extends GetxController {
     loadDevices();
   }
 
-  // Helper method to set up timers for all zones
   void _setupZoneTimers() {
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
       if (zoneId != null) {
-        // Initialize timer display for all zones
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
-        // Check if zone is active and start timer if needed
         if (zone['isActive'] == true) {
           startTimer(zoneId);
         }
 
-        // Check if there's a saved timer and resume it
         final remainingTime = storage.read('timer_$zoneId');
         if (remainingTime != null && remainingTime > 0) {
           startTimer(zoneId);
@@ -164,8 +157,6 @@ class ZoneController extends GetxController {
           .from('iot_devices')
           .select()
           .eq('zone_id', zoneId);
-
-      // Process devices data if needed
     } catch (e) {
       print('Failed to load devices for zone: ${e.toString()}');
     }
@@ -444,7 +435,7 @@ class ZoneController extends GetxController {
   }
 
   /// Toggle active state for a specific zone
-  Future<void> toggleActive(dynamic zoneId) async {
+  Future<void> toggleActive(dynamic zoneId, {bool fromtimer = false}) async {
     if (zoneId == null) return;
 
     final zoneIdStr = zoneId.toString();
@@ -543,13 +534,16 @@ class ZoneController extends GetxController {
     if (_zoneTimers[zoneId] != null) return;
 
     final storedSeconds = storage.read('timer_$zoneId');
-    int totalSeconds = 300; /// Set default to 5 minutes
+    int totalSeconds = 300; /// Default to 5 minutes
 
     if (storedSeconds != null) {
       try {
         totalSeconds = int.parse(storedSeconds.toString());
       } catch (e) {
-        print('Error parsing timer value: $e');
+        // print('Error parsing timer value: $e');
+        DialogHelper.showErrorDialog(
+          title: 'Error Parsing Timer',
+          message: 'Error parsing timer value: $e');
       }
     }
 
@@ -575,7 +569,7 @@ class ZoneController extends GetxController {
         storage.write('timer_$zoneId', totalSeconds);
       } else {
         stopTimer(zoneId);
-        toggleActive(zoneId);
+        toggleActive(zoneId, fromtimer: true);
       }
     });
   }

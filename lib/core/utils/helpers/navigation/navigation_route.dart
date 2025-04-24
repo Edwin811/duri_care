@@ -9,7 +9,7 @@ final List<GetPage<dynamic>> mainRoute = [
     name: MainNavigationView.route,
     page: () => MainNavigationView(),
     binding: BindingsBuilder(() {
-      Get.lazyPut(() => NavigationHelper(), fenix: true);
+      Get.put(NavigationHelper(), permanent: true);
       Get.lazyPut(() => HomeController(), fenix: true);
       Get.lazyPut(() => ZoneController(), fenix: true);
       Get.lazyPut(() => ProfileController(), fenix: true);

@@ -77,11 +77,14 @@ class AuthController extends GetxController {
       );
     }
 
+    // Ensure NavigationHelper is available
     if (!Get.isRegistered<NavigationHelper>()) {
-      Get.put(NavigationHelper());
+      Get.put(NavigationHelper(), permanent: true);
+    } else {
+      // Reset navigation index if already registered
+      Get.find<NavigationHelper>().resetNavigation();
     }
-    final navigationHelper = Get.find<NavigationHelper>();
-    navigationHelper.resetNavigation();
+
     authState.value = state.AuthState.authenticated;
     return response;
   }
@@ -89,12 +92,15 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     await _supabase.auth.signOut();
     await SessionService.to.clearSession();
+
+    // Instead of deleting NavigationHelper, just reset it
+    if (Get.isRegistered<NavigationHelper>()) {
+      Get.find<NavigationHelper>().resetNavigation();
+    }
+
     authState.value = state.AuthState.unauthenticated;
     authState.refresh();
     Get.offAllNamed('/login');
-    if (Get.isRegistered<NavigationHelper>()) {
-      Get.delete<NavigationHelper>();
-    }
   }
 
   Future<String?> getUsername() async {
@@ -147,10 +153,7 @@ class AuthController extends GetxController {
           return fullname[0].toUpperCase();
         }
       } catch (e) {
-        DialogHelper.showErrorDialog(
-          title: 'Error',
-          message: e.toString(),
-        );
+        DialogHelper.showErrorDialog(title: 'Error', message: e.toString());
       }
     }
 

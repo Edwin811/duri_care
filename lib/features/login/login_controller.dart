@@ -51,7 +51,7 @@ class LoginController extends GetxController {
 
       final userData = SessionService.to.getUserData();
       if (userData != null) {
-        Get.offAllNamed('/home');
+        Get.offAllNamed('/main');
         DialogHelper.showSuccessDialog(
           title: 'Berhasil Masuk',
           message: 'Selamat datang, ${userData['fullname']}',
