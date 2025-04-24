@@ -11,16 +11,15 @@ class NavigationHelper extends GetxController {
     currentIndex.value = 0;
   }
 
-  // Make sure the instance is accessible even after widget disposal
   @override
   void onClose() {
-    // Don't call super.onClose() to prevent full disposal
+    super.onClose();
+    currentIndex.value = 0;
   }
 }
 
 class MainNavigationView extends StatelessWidget {
   MainNavigationView({super.key});
-  // Make sure NavigationHelper is always available
   final navigationHelper = Get.find<NavigationHelper>();
   static const String route = '/main';
 
@@ -28,11 +27,6 @@ class MainNavigationView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Make sure NavigationHelper is registered if not already
-    if (!Get.isRegistered<NavigationHelper>()) {
-      Get.put(NavigationHelper(), permanent: true);
-    }
-
     return Scaffold(
       body: Obx(
         () => IndexedStack(

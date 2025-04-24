@@ -1,5 +1,4 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
-import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
 import 'package:duri_care/core/utils/services/session_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,14 +76,6 @@ class AuthController extends GetxController {
       );
     }
 
-    // Ensure NavigationHelper is available
-    if (!Get.isRegistered<NavigationHelper>()) {
-      Get.put(NavigationHelper(), permanent: true);
-    } else {
-      // Reset navigation index if already registered
-      Get.find<NavigationHelper>().resetNavigation();
-    }
-
     authState.value = state.AuthState.authenticated;
     return response;
   }
@@ -92,11 +83,6 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     await _supabase.auth.signOut();
     await SessionService.to.clearSession();
-
-    // Instead of deleting NavigationHelper, just reset it
-    if (Get.isRegistered<NavigationHelper>()) {
-      Get.find<NavigationHelper>().resetNavigation();
-    }
 
     authState.value = state.AuthState.unauthenticated;
     authState.refresh();
