@@ -1,4 +1,5 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/utils/services/session_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -21,6 +22,14 @@ class LoginController extends GetxController {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
 
+  @override
+  void onInit() {
+    super.onInit();
+    if (SessionService.to.token != null) {
+      Get.offAllNamed('/home');
+    }
+  }
+
   Future<void> loginWithEmail() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -30,8 +39,8 @@ class LoginController extends GetxController {
 
     if (emailError != null || passwordError != null) {
       DialogHelper.showErrorDialog(
-        'Email atau password tidak valid',
         title: 'Gagal Masuk',
+        message: 'Email atau password tidak valid',
       );
       return;
     }
@@ -39,52 +48,63 @@ class LoginController extends GetxController {
     try {
       isLoading.value = true;
       await _auth.login(email, password);
-      Get.offAllNamed('/home');
-      DialogHelper.showSuccessDialog(
-        'Berhasil Masuk',
-        title: 'Selamat Datang di Aplikasi Duri Care',
-      );
+
+      final userData = SessionService.to.getUserData();
+      if (userData != null) {
+        Get.offAllNamed('/home');
+        DialogHelper.showSuccessDialog(
+          title: 'Berhasil Masuk',
+          message: 'Selamat datang, ${userData['fullname']}',
+        );
+      }
     } catch (e) {
       if (e.toString().contains('invalid_credentials')) {
         DialogHelper.showErrorDialog(
-          'Email atau password salah',
           title: 'Gagal Masuk',
+          message: 'Email atau password salah',
         );
       } else if (e.toString().contains('user_not_found')) {
         DialogHelper.showErrorDialog(
-          'Akun tidak ditemukan',
           title: 'Gagal Masuk',
+          message: 'Akun tidak ditemukan',
         );
       } else {
-        DialogHelper.showErrorDialog(e.toString(), title: 'Gagal Masuk');
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Masuk',
+          message: 'Terjadi kesalahan, silakan coba lagi',
+        );
       }
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> logout() async {
     await DialogHelper.showConfirmationDialog(
-      title: 'Konfirmasi Keluar',
+      title: 'Konfirmasi',
       message: 'Apakah Anda yakin ingin keluar?',
       onConfirm: () async {
         await _auth.logout();
         Get.offAllNamed('/login');
+        DialogHelper.showSuccessDialog(
+          title: 'Berhasil Keluar',
+          message: 'Anda telah keluar dari akun Anda',
+        );
       },
-      onCancel: () {
-        Get.back();
-      },
+      onCancel: () => Get.back(),
     );
   }
 
   Future<void> resetPassword(String email) async {
     try {
       DialogHelper.showSuccessDialog(
-        'Reset password link has been sent to your email',
         title: 'txt_reset_password'.tr,
+        message: 'Reset password link has been sent to your email',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
-        e.toString(),
-        title: 'txt_reset_password_failed'.tr,
+        title: 'Error',
+        message: 'Failed to send reset password link',
       );
     }
   }

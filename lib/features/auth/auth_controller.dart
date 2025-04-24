@@ -1,4 +1,6 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
+import 'package:duri_care/core/utils/services/session_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -62,14 +64,37 @@ class AuthController extends GetxController {
       email: email,
       password: password,
     );
+
+    if (response.user != null) {
+      final userData = {
+        'id': response.user!.id,
+        'email': response.user!.email,
+        'fullname': await getUsername(),
+      };
+      await SessionService.to.saveSession(
+        response.session!.accessToken,
+        userData,
+      );
+    }
+
+    if (!Get.isRegistered<NavigationHelper>()) {
+      Get.put(NavigationHelper());
+    }
+    final navigationHelper = Get.find<NavigationHelper>();
+    navigationHelper.resetNavigation();
     authState.value = state.AuthState.authenticated;
     return response;
   }
 
   Future<void> logout() async {
     await _supabase.auth.signOut();
+    await SessionService.to.clearSession();
     authState.value = state.AuthState.unauthenticated;
     authState.refresh();
+    Get.offAllNamed('/login');
+    if (Get.isRegistered<NavigationHelper>()) {
+      Get.delete<NavigationHelper>();
+    }
   }
 
   Future<String?> getUsername() async {
@@ -88,7 +113,7 @@ class AuthController extends GetxController {
         return response['fullname'];
       }
     } catch (e) {
-      DialogHelper.showErrorDialog(title: 'Error', '$e');
+      DialogHelper.showErrorDialog(title: 'Error', message: e.toString());
     }
 
     return user.email?.split('@').first;
@@ -123,8 +148,8 @@ class AuthController extends GetxController {
         }
       } catch (e) {
         DialogHelper.showErrorDialog(
-          title: 'Gagal Mengambil Foto Profil',
-          'Terjadi kesalahan saat mengambil data: $e',
+          title: 'Error',
+          message: e.toString(),
         );
       }
     }

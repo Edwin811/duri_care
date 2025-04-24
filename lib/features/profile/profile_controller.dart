@@ -8,7 +8,6 @@ class ProfileController extends GetxController {
   final RxString email = ''.obs;
   final RxString profilePicture = ''.obs;
 
-
   @override
   void onInit() async {
     super.onInit();
@@ -37,7 +36,6 @@ class ProfileController extends GetxController {
       message: 'Apakah Anda yakin ingin keluar?',
       onConfirm: () async {
         await authController.logout();
-        Get.offAllNamed('/login');
       },
       onCancel: () {
         Get.back();

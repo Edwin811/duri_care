@@ -49,6 +49,7 @@ dependencies:
   mqtt_client: ^10.8.0
   persistent_bottom_nav_bar: ^6.2.1
   shared_preferences: ^2.5.2
+  supabase: ^2.6.3
   supabase_flutter: ^2.8.4
 
 dev_dependencies:

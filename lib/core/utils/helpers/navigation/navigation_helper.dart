@@ -6,11 +6,15 @@ import 'package:get/get.dart';
 
 class NavigationHelper extends GetxController {
   var currentIndex = 0.obs;
+
+  void resetNavigation() {
+    currentIndex.value = 0;
+  }
 }
 
 class MainNavigationView extends StatelessWidget {
   MainNavigationView({super.key});
-  final NavigationHelper navigationHelper = Get.put(NavigationHelper());
+  final navigationHelper = Get.find<NavigationHelper>();
   static const String route = '/main';
 
   final List<Widget> pages = [HomeView(), ProfileView()];

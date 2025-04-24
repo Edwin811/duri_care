@@ -16,8 +16,8 @@ class ZoneView extends GetView<ZoneController> {
     final zoneId = Get.parameters['zoneId'];
 
     // Load zone data when entering the view
-    if (zoneId != null) {
-      controller.loadZoneById(int.parse(zoneId));
+    if (zoneId != null && zoneId.isNotEmpty) {
+      controller.loadZoneById(zoneId);
     }
 
     return PopScope(
@@ -36,6 +36,28 @@ class ZoneView extends GetView<ZoneController> {
               // style: AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
             ),
           ),
+          actions: [
+            // Edit button
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit Zone',
+              onPressed: () {
+                if (zoneId != null) {
+                  Get.toNamed('/edit-zone', parameters: {'zoneId': zoneId});
+                }
+              },
+            ),
+            // Delete button
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Delete Zone',
+              onPressed: () {
+                if (zoneId != null) {
+                  controller.deleteZone(int.parse(zoneId));
+                }
+              },
+            ),
+          ],
           centerTitle: true,
           elevation: 0,
         ),
@@ -92,7 +114,12 @@ class ZoneView extends GetView<ZoneController> {
                 Obx(
                   () => Switch(
                     value: controller.isActive.value,
-                    onChanged: (value) => controller.toggleActive(),
+                    onChanged: (value) {
+                      final zoneId = controller.selectedZone['id']?.toString();
+                      if (zoneId != null && zoneId.isNotEmpty) {
+                        controller.toggleActive(zoneId);
+                      }
+                    },
                     activeTrackColor: AppColor.greenPrimary,
                   ),
                 ),
@@ -101,19 +128,30 @@ class ZoneView extends GetView<ZoneController> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildInfoItem(
-                  context,
-                  'Soil Moisture',
-                  '78%',
-                  Icons.water_drop_outlined,
+                Obx(
+                  () => _buildInfoItem(
+                    context,
+                    'Soil Moisture',
+                    controller.moisture.value,
+                    Icons.water_drop_outlined,
+                  ),
                 ),
-                _buildInfoItem(
-                  context,
-                  'Temperature',
-                  '28°C',
-                  Icons.thermostat,
+                Obx(
+                  () => _buildInfoItem(
+                    context,
+                    'Temperature',
+                    controller.temperature.value,
+                    Icons.thermostat,
+                  ),
                 ),
-                _buildInfoItem(context, 'Humidity', '65%', Icons.cloud),
+                Obx(
+                  () => _buildInfoItem(
+                    context,
+                    'Humidity',
+                    controller.humidity.value,
+                    Icons.cloud,
+                  ),
+                ),
               ],
             ),
           ],
@@ -311,29 +349,45 @@ class ZoneView extends GetView<ZoneController> {
           ),
         ),
         const SizedBox(height: 16),
-        // Scheduled times
+        // Scheduled times list - updated to use actual schedules from database
         Card(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return ListTile(
-                leading: const Icon(Icons.schedule),
-                title: Text('Schedule ${index + 1}'),
-                subtitle: Text(
-                  'Daily at ${6 + index}:00 AM (${10 + index * 5} mins)',
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () {},
-                ),
-              );
-            },
+          child: Obx(
+            () =>
+                controller.schedules.isEmpty
+                    ? const ListTile(
+                      leading: Icon(Icons.info_outline),
+                      title: Text('No schedules'),
+                      subtitle: Text('Create a new irrigation schedule above'),
+                    )
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: controller.schedules.length,
+                      itemBuilder: (context, index) {
+                        final schedule = controller.schedules[index];
+                        final scheduledAt = DateTime.parse(
+                          schedule['scheduled_at'],
+                        );
+                        final duration = schedule['duration_minutes'];
+
+                        return ListTile(
+                          leading: const Icon(Icons.schedule),
+                          title: Text('Schedule ${index + 1}'),
+                          subtitle: Text(
+                            '${DateFormat('dd MMM').format(scheduledAt)} at ${DateFormat('HH:mm').format(scheduledAt)} (${duration} mins)',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed:
+                                () => controller.deleteSchedule(schedule['id']),
+                          ),
+                        );
+                      },
+                    ),
           ),
         ),
       ],

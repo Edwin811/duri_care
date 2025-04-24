@@ -11,11 +11,17 @@ class ZoneController extends GetxController {
   final supabase = Supabase.instance.client;
   final zones = <Map<String, dynamic>>[].obs;
   final selectedZone = <String, dynamic>{}.obs;
-  final isActive = false.obs;
+  final RxBool isActive = false.obs;
   final storage = GetStorage();
 
-  final timer = '00:00:00'.obs;
-  Timer? _countdownTimer;
+  // Use String keys for timers to avoid null int issues
+  final Map<String, Timer?> _zoneTimers = {};
+  final RxMap<String, RxString> zoneTimers = <String, RxString>{}.obs;
+
+  // Add moisture, temperature, humidity observable values
+  final RxString moisture = '0%'.obs;
+  final RxString temperature = '0°C'.obs;
+  final RxString humidity = '0%'.obs;
 
   final selectedDate = Rx<DateTime?>(DateTime.now());
   final selectedTime = Rx<TimeOfDay?>(const TimeOfDay(hour: 6, minute: 0));
@@ -36,12 +42,37 @@ class ZoneController extends GetxController {
   void onInit() {
     super.onInit();
     isActive.value = storage.read('isActive') ?? false;
-    selectedDate.value = DateTime.now();
-    selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
 
-    loadZones();
+    // Load zones first, then set up timers after zones are loaded
+    loadZones().then((_) {
+      _setupZoneTimers();
+      listenToZoneChanges();
+    });
+
     loadSchedules();
     loadDevices();
+  }
+
+  // Helper method to set up timers for all zones
+  void _setupZoneTimers() {
+    for (var zone in zones) {
+      final zoneId = zone['id']?.toString();
+      if (zoneId != null) {
+        // Initialize timer display for all zones
+        zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
+
+        // Check if zone is active and start timer if needed
+        if (zone['isActive'] == true) {
+          startTimer(zoneId);
+        }
+
+        // Check if there's a saved timer and resume it
+        final remainingTime = storage.read('timer_$zoneId');
+        if (remainingTime != null && remainingTime > 0) {
+          startTimer(zoneId);
+        }
+      }
+    }
   }
 
   /// Loads all zones for the current user
@@ -51,7 +82,7 @@ class ZoneController extends GetxController {
       if (userId == null) {
         DialogHelper.showErrorDialog(
           title: 'Authentication Error',
-          'User not logged in. Please log in to view your zones.',
+          message: 'User not logged in. Please log in to view your zones.',
         );
         return;
       }
@@ -65,14 +96,9 @@ class ZoneController extends GetxController {
       final List<Map<String, dynamic>> zonesList = [];
 
       for (var item in response) {
-        Map<String, dynamic> zoneMap = {};
-        item.forEach((key, value) {
-          zoneMap[key.toString()] = value;
-        });
-
+        Map<String, dynamic> zoneMap = Map<String, dynamic>.from(item);
         zoneMap['timer'] = '00:00:00';
         zoneMap['moisture'] = '60%';
-
         zonesList.add(zoneMap);
       }
 
@@ -80,20 +106,22 @@ class ZoneController extends GetxController {
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Load Zones',
-        'Error: ${e.toString()}',
+        message: 'Error: ${e.toString()}',
       );
     }
   }
 
   /// Loads a specific zone by ID
-  Future<void> loadZoneById(int zoneId) async {
+  Future<void> loadZoneById(String zoneId) async {
+    if (zoneId.isEmpty) return;
+
     isLoading.value = true;
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         DialogHelper.showErrorDialog(
           title: 'Authentication Error',
-          'User not logged in. Please log in to view your zones.',
+          message: 'User not logged in. Please log in to view your zones.',
         );
         isLoading.value = false;
         return;
@@ -107,27 +135,57 @@ class ZoneController extends GetxController {
               .eq('zone_users.user_id', userId)
               .single();
 
-      Map<String, dynamic> zoneMap = {};
-      response.forEach((key, value) {
-        zoneMap[key.toString()] = value;
-      });
-
-      zoneMap['timer'] = '00:00:00';
+      Map<String, dynamic> zoneMap = Map<String, dynamic>.from(response);
+      zoneMap['timer'] = zoneTimers[zoneId]?.value ?? '00:00:00';
       zoneMap['moisture'] = '60%';
 
       selectedZone.value = zoneMap;
       loadSchedules();
 
-      // Also update isActive status based on selected zone
       isActive.value = zoneMap['isActive'] ?? false;
       storage.write('isActive', isActive.value);
+
+      getSoilMoisture(zoneId);
+      loadDevicesForZone(zoneId);
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Load Zone',
-        'Error: ${e.toString()}',
+        message: 'Error: ${e.toString()}',
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Load devices for a specific zone
+  Future<void> loadDevicesForZone(String zoneId) async {
+    try {
+      final response = await supabase
+          .from('iot_devices')
+          .select()
+          .eq('zone_id', zoneId);
+
+      // Process devices data if needed
+    } catch (e) {
+      print('Failed to load devices for zone: ${e.toString()}');
+    }
+  }
+
+  Future<void> getSoilMoisture(String zoneId) async {
+    try {
+      // Simulate sensor data
+      moisture.value = '${60 + DateTime.now().second % 20}%';
+      temperature.value = '${25 + DateTime.now().minute % 10}°C';
+      humidity.value = '${60 + DateTime.now().hour % 25}%';
+
+      if (selectedZone.isNotEmpty) {
+        selectedZone['moisture'] = moisture.value;
+      }
+    } catch (e) {
+      print('Error getting sensor data: ${e.toString()}');
+      moisture.value = '60%';
+      temperature.value = '28°C';
+      humidity.value = '65%';
     }
   }
 
@@ -137,62 +195,63 @@ class ZoneController extends GetxController {
     try {
       final response = await supabase
           .from('iot_devices')
-          .select(
-            '*, zones!inner(id, name, isActive, created_at, zone_users!inner(user_id))',
-          )
-          .eq('zones.zone_users.user_id', userId ?? '')
+          .select('*, zone:zones(*)')
           .order('id', ascending: true);
 
-      final List<IoTDevice> loadedDevices =
-          (response as List).map((device) {
-            final zoneData = device['zone'];
+      final List<IoTDevice> loadedDevices = [];
 
-            return IoTDevice(
-              id: device['id'],
-              name: device['name'],
-              type: device['type'],
-              status: device['status'] ?? 'offline',
-              zone: ZoneModel(
-                id: zoneData['id'],
-                name: zoneData['name'],
-                isActive: zoneData['isActive'] ?? false,
-                createdAt: DateTime.parse(zoneData['created_at']),
+      for (var device in response) {
+        try {
+          if (device['zone'] != null) {
+            loadedDevices.add(
+              IoTDevice(
+                id: device['id'] ?? 0,
+                name: device['name'] ?? 'Unknown Device',
+                type: device['type'] ?? 'unknown',
+                status: device['status'] ?? 'offline',
+                zone: ZoneModel(
+                  id: device['zone']['id'] ?? 0,
+                  name: device['zone']['name'] ?? 'Unknown Zone',
+                  isActive: device['zone']['isActive'] ?? false,
+                  createdAt: DateTime.parse(
+                    device['zone']['created_at'] ??
+                        DateTime.now().toIso8601String(),
+                  ),
+                ),
               ),
             );
-          }).toList();
+          }
+        } catch (e) {
+          print('Error processing device: $e');
+        }
+      }
 
       devices.value = loadedDevices;
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Memuat Perangkat',
-        'Gagal memuat perangkat IoT: ${e.toString()}',
+        message: 'Gagal memuat perangkat IoT: ${e.toString()}',
       );
     } finally {
       isLoadingDevices.value = false;
     }
   }
 
-  /// Menambah atau menghapus perangkat dari daftar perangkat yang dipilih
-  void toggleDeviceSelection(int deviceId) {
-    if (selectedDeviceIds.contains(deviceId)) {
-      selectedDeviceIds.remove(deviceId);
-    } else {
-      selectedDeviceIds.add(deviceId);
-    }
-  }
-
+  /// Create a new zone in Supabase with the given name
   Future<void> createZone() async {
     final userId = supabase.auth.currentUser?.id;
     final name = zoneNameController.text.trim();
     if (userId == null || name.isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Error',
-        'User belum login atau nama zona kosong.',
+        message: 'User belum login atau nama zona kosong.',
       );
       return;
     }
 
     try {
+      isLoading.value = true;
+
       final existing =
           await supabase
               .from('zones')
@@ -203,7 +262,8 @@ class ZoneController extends GetxController {
       if (existing != null) {
         DialogHelper.showErrorDialog(
           title: 'Nama Zona Sudah Ada',
-          'Zona dengan nama "$name" sudah terdaftar. Silakan gunakan nama lain.',
+          message:
+              'Zona dengan nama "$name" sudah terdaftar. Silakan gunakan nama lain.',
         );
         return;
       }
@@ -219,7 +279,10 @@ class ZoneController extends GetxController {
               .select()
               .single();
 
-      final zoneId = newZone['id'];
+      final zoneId = newZone['id']?.toString();
+      if (zoneId == null) {
+        throw Exception('Failed to get zone ID after creation');
+      }
 
       await supabase.from('zone_users').insert({
         'zone_id': zoneId,
@@ -231,23 +294,29 @@ class ZoneController extends GetxController {
         await _assignDevicesToZone(zoneId);
       }
 
-      zones.add(newZone);
+      final Map<String, dynamic> completeZone = Map<String, dynamic>.from(
+        newZone,
+      );
+      completeZone['timer'] = '00:00:00';
+      completeZone['moisture'] = '60%';
+      zones.add(completeZone);
+
+      zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
+
       await DialogHelper.showSuccessDialog(
-        '$name berhasil dibuat.',
         title: 'Berhasil',
+        message: '$name berhasil dibuat.',
       );
       zoneNameController.clear();
+      selectedDeviceIds.clear();
       Get.back();
     } catch (e) {
-      if (e.toString().contains('duplicate key value') ||
-          e.toString().contains('unique constraint')) {
-        DialogHelper.showErrorDialog(
-          title: 'Nama Zona Sudah Ada',
-          'Zona dengan nama "$name" sudah ada. Silakan gunakan nama lain.',
-        );
-      } else {
-        DialogHelper.showErrorDialog(title: 'Gagal membuat zona', e.toString());
-      }
+      DialogHelper.showErrorDialog(
+        title: 'Gagal membuat zona',
+        message: e.toString(),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -269,123 +338,226 @@ class ZoneController extends GetxController {
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Peringatan',
-        'Zona berhasil dibuat tetapi gagal menambahkan beberapa perangkat: ${e.toString()}',
+        message:
+            'Zona berhasil dibuat tetapi gagal menambahkan beberapa perangkat: ${e.toString()}',
       );
     }
   }
 
+  /// Perform actual zone deletion in the database
   Future<void> deleteZone(int zoneId) async {
     try {
+      isLoading.value = true;
+
+      await supabase.from('iot_devices').delete().eq('zone_id', zoneId);
       await supabase.from('zone_users').delete().eq('zone_id', zoneId);
       await supabase.from('zones').delete().eq('id', zoneId);
+
       zones.removeWhere((z) => z['id'] == zoneId);
-      DialogHelper.showSuccessDialog('Zona berhasil dihapus.');
+      stopTimer(zoneId.toString());
+
+      if (selectedZone['id'] == zoneId) {
+        selectedZone.clear();
+      }
+
+      DialogHelper.showSuccessDialog(
+        title: 'Berhasil',
+        message: 'Zona berhasil dihapus.',
+      );
+
+      Get.offAllNamed('/home');
     } catch (e) {
-      DialogHelper.showErrorDialog(title: 'Gagal hapus zona', e.toString());
+      DialogHelper.showErrorDialog(
+        title: 'Gagal hapus zona',
+        message: e.toString(),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  Future<void> updateZone(int zoneId, {String? newName}) async {
-    final data = <String, dynamic>{};
-
-    if (newName != null) data['name'] = newName.trim();
-
-    if (data.isEmpty) return;
+  /// Update an existing zone with new information
+  Future<void> updateZone(String zoneId, {required String newName}) async {
+    if (newName.trim().isEmpty) {
+      DialogHelper.showErrorDialog(
+        title: 'Nama Tidak Valid',
+        message: 'Nama zona tidak boleh kosong.',
+      );
+      return;
+    }
 
     try {
+      isLoading.value = true;
+
+      final existing =
+          await supabase
+              .from('zones')
+              .select('id')
+              .eq('name', newName.trim())
+              .neq('id', zoneId)
+              .maybeSingle();
+
+      if (existing != null) {
+        DialogHelper.showErrorDialog(
+          title: 'Nama Zona Sudah Ada',
+          message:
+              'Zona dengan nama "$newName" sudah terdaftar. Silakan gunakan nama lain.',
+        );
+        return;
+      }
+
       final updated =
           await supabase
               .from('zones')
-              .update(data)
+              .update({'name': newName.trim()})
               .eq('id', zoneId)
               .select()
               .single();
 
-      final index = zones.indexWhere((z) => z['id'] == zoneId);
-      if (index != -1) zones[index] = updated;
+      final index = zones.indexWhere((z) => z['id'].toString() == zoneId);
+      if (index != -1) {
+        final currentZone = zones[index];
+        zones[index] = Map<String, dynamic>.from({
+          ...updated,
+          'timer': currentZone['timer'] ?? '00:00:00',
+          'moisture': currentZone['moisture'] ?? '60%',
+        });
+      }
 
-      DialogHelper.showSuccessDialog('Zona berhasil diperbarui.');
+      if (selectedZone['id'].toString() == zoneId) {
+        selectedZone['name'] = newName.trim();
+      }
+
+      await DialogHelper.showSuccessDialog(
+        title: 'Berhasil',
+        message: 'Zona berhasil diperbarui.',
+      );
+      Get.back();
     } catch (e) {
-      DialogHelper.showErrorDialog(title: 'Gagal update', e.toString());
+      DialogHelper.showErrorDialog(
+        title: 'Gagal update',
+        message: e.toString(),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  void toggleActive() {
-    isActive.value = !isActive.value;
-    storage.write('isActive', isActive.value);
+  /// Toggle active state for a specific zone
+  Future<void> toggleActive(dynamic zoneId) async {
+    if (zoneId == null) return;
 
-    updateZoneStatus(isActive.value);
-
-    if (isActive.value) {
-      startTimer();
-    } else {
-      stopTimer();
-    }
-  }
-
-  void updateZoneStatus(bool newStatus) async {
-    if (selectedZone.isEmpty || selectedZone['id'] == null) return;
-
-    final zoneId = selectedZone['id'];
+    final zoneIdStr = zoneId.toString();
 
     try {
+      final zoneIndex = zones.indexWhere(
+        (z) => z['id'].toString() == zoneIdStr,
+      );
+      if (zoneIndex == -1) {
+        DialogHelper.showErrorDialog(
+          title: 'Error',
+          message: 'Zone not found. Please refresh the zones list.',
+        );
+        return;
+      }
+
+      final currentState = zones[zoneIndex]['isActive'] ?? false;
+      final newActiveState = !currentState;
+
       final updatedZone =
           await supabase
               .from('zones')
-              .update({'isActive': newStatus})
+              .update({'isActive': newActiveState})
               .eq('id', zoneId)
               .select()
               .single();
 
-      selectedZone['isActive'] = updatedZone['isActive'];
+      // Update the local zones list
+      zones[zoneIndex] = Map<String, dynamic>.from({
+        ...updatedZone,
+        'timer': zones[zoneIndex]['timer'] ?? '00:00:00',
+        'moisture': zones[zoneIndex]['moisture'] ?? '60%',
+      });
 
-      final index = zones.indexWhere((z) => z['id'] == zoneId);
-      if (index != -1) {
-        zones[index] = updatedZone;
+      if (selectedZone['id'].toString() == zoneIdStr) {
+        selectedZone['isActive'] = newActiveState;
+        isActive.value = newActiveState;
       }
 
-      // DialogHelper.showSuccessDialog('Status zona berhasil diperbarui.');
+      if (newActiveState) {
+        startTimer(zoneIdStr);
+      } else {
+        stopTimer(zoneIdStr);
+      }
+
+      storage.write('zone_active_$zoneIdStr', newActiveState);
     } catch (e) {
-      DialogHelper.showErrorDialog(title: 'Error', e.toString());
+      DialogHelper.showErrorDialog(title: 'Error', message: e.toString());
     }
   }
 
-  Future<void> startTimer() async {
-    int totalSeconds = 300;
-    updateZoneStatus(true);
+  void listenToZoneChanges() {
+    supabase.from('zones').stream(primaryKey: ['id']).listen((updates) {
+      for (final update in updates) {
+        final updatedZone = update['new'];
+        if (updatedZone == null) continue;
 
-    final zoneId = selectedZone['id'];
-    if (zoneId != null) {
+        final updatedZoneId = updatedZone['id']?.toString();
+        if (updatedZoneId == null) continue;
+
+        final updatedIsActive = updatedZone['isActive'] ?? false;
+
+        final zoneIndex = zones.indexWhere(
+          (z) => z['id'].toString() == updatedZoneId,
+        );
+        if (zoneIndex != -1) {
+          final existingZone = zones[zoneIndex];
+          zones[zoneIndex] = {
+            ...existingZone,
+            ...updatedZone,
+            'timer': existingZone['timer'] ?? '00:00:00',
+            'moisture': existingZone['moisture'] ?? '60%',
+          };
+
+          if (updatedIsActive && _zoneTimers[updatedZoneId] == null) {
+            startTimer(updatedZoneId);
+          } else if (!updatedIsActive && _zoneTimers[updatedZoneId] != null) {
+            stopTimer(updatedZoneId);
+          }
+
+          if (selectedZone['id']?.toString() == updatedZoneId) {
+            selectedZone.value = {
+              ...selectedZone,
+              ...updatedZone,
+              'timer': selectedZone['timer'] ?? '00:00:00',
+              'moisture': selectedZone['moisture'] ?? '60%',
+            };
+            isActive.value = updatedIsActive;
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> startTimer(String zoneId) async {
+    if (_zoneTimers[zoneId] != null) return;
+
+    final storedSeconds = storage.read('timer_$zoneId');
+    int totalSeconds = 300; /// Set default to 5 minutes
+
+    if (storedSeconds != null) {
       try {
-        final latestSchedule =
-            await supabase
-                .from('schedules')
-                .select('duration_minutes')
-                .eq('zone_id', zoneId)
-                .order('scheduled_at', ascending: false)
-                .limit(1)
-                .maybeSingle();
-
-        if (latestSchedule != null &&
-            latestSchedule['duration_minutes'] != null) {
-          totalSeconds = (latestSchedule['duration_minutes'] as int) * 60;
-        }
+        totalSeconds = int.parse(storedSeconds.toString());
       } catch (e) {
-        if (e.toString().contains('404')) {
-          DialogHelper.showErrorDialog(
-            title: 'Data Tidak Ditemukan',
-            'Jadwal tidak ditemukan untuk zona ini.',
-          );
-        }
-        updateZoneStatus(false);
-        return;
+        print('Error parsing timer value: $e');
       }
     }
 
-    _countdownTimer?.cancel();
-
     const oneSecond = Duration(seconds: 1);
-    _countdownTimer = Timer.periodic(oneSecond, (timer) {
+
+    zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
+
+    _zoneTimers[zoneId] = Timer.periodic(oneSecond, (timer) {
       if (totalSeconds > 0) {
         totalSeconds--;
         final hours = (totalSeconds ~/ 3600).toString().padLeft(2, '0');
@@ -394,48 +566,59 @@ class ZoneController extends GetxController {
           '0',
         );
         final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
-        this.timer.value = '$hours:$minutes:$seconds';
+
+        if (zoneTimers.containsKey(zoneId)) {
+          zoneTimers[zoneId]?.value = '$hours:$minutes:$seconds';
+        }
+
+        // Save timer to storage
+        storage.write('timer_$zoneId', totalSeconds);
       } else {
-        stopTimer();
-        isActive.value = false;
-        updateZoneStatus(false);
+        stopTimer(zoneId);
+        toggleActive(zoneId);
       }
     });
   }
 
-  void stopTimer() {
-    _countdownTimer?.cancel();
-    timer.value = '00:00:00';
+  void stopTimer(String zoneId) {
+    _zoneTimers[zoneId]?.cancel();
+    _zoneTimers[zoneId] = null;
+
+    if (zoneTimers.containsKey(zoneId)) {
+      zoneTimers[zoneId]?.value = '00:00:00';
+    }
+
+    storage.remove('timer_$zoneId');
   }
 
   Future<void> saveSchedule() async {
     if (selectedDate.value == null || selectedTime.value == null) {
       DialogHelper.showErrorDialog(
         title: 'Invalid Schedule',
-        'Please select both date and time for the schedule.',
+        message: 'Please select both date and time for the schedule.',
       );
       return;
     }
 
-    final zoneId = selectedZone['id'];
-    if (zoneId == null) {
+    final zoneId = selectedZone['id']?.toString();
+    if (zoneId == null || zoneId.isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'No Zone Selected',
-        'Please select a zone.',
+        message: 'Please select a zone.',
       );
       return;
     }
 
-    final time = selectedTime.value!;
-    final combinedDateTime = DateTime(
-      selectedDate.value!.year,
-      selectedDate.value!.month,
-      selectedDate.value!.day,
-      time.hour,
-      time.minute,
-    );
-
     try {
+      final time = selectedTime.value!;
+      final combinedDateTime = DateTime(
+        selectedDate.value!.year,
+        selectedDate.value!.month,
+        selectedDate.value!.day,
+        time.hour,
+        time.minute,
+      );
+
       final inserted =
           await supabase
               .from('schedules')
@@ -451,12 +634,12 @@ class ZoneController extends GetxController {
       schedules.add(inserted);
       DialogHelper.showSuccessDialog(
         title: 'Schedule Saved',
-        'Your irrigation schedule has been saved.',
+        message: 'Your irrigation schedule has been saved.',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Save Schedule',
-        e.toString(),
+        message: e.toString(),
       );
     }
   }
@@ -465,17 +648,21 @@ class ZoneController extends GetxController {
     try {
       await supabase.from('schedules').delete().eq('id', scheduleId);
       schedules.removeWhere((schedule) => schedule['id'] == scheduleId);
+      DialogHelper.showSuccessDialog(
+        title: 'Success',
+        message: 'Schedule has been deleted.',
+      );
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Delete Schedule',
-        e.toString(),
+        message: e.toString(),
       );
     }
   }
 
   Future<void> loadSchedules() async {
-    final zoneId = selectedZone['id'];
-    if (zoneId == null) return;
+    final zoneId = selectedZone['id']?.toString();
+    if (zoneId == null || zoneId.isEmpty) return;
 
     try {
       final data = await supabase
@@ -486,10 +673,7 @@ class ZoneController extends GetxController {
 
       schedules.value = List<Map<String, dynamic>>.from(data);
     } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Failed to Load Schedules',
-        e.toString(),
-      );
+      schedules.value = [];
     }
   }
 
@@ -529,7 +713,7 @@ class ZoneController extends GetxController {
 
   @override
   void onClose() {
-    _countdownTimer?.cancel();
+    _zoneTimers.forEach((_, timer) => timer?.cancel());
     super.onClose();
   }
 }

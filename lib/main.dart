@@ -7,16 +7,17 @@ import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:duri_care/core/bindings/initial_binding.dart';
 import 'package:flutter/services.dart';
+import 'package:duri_care/core/utils/services/session_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
+  await Get.putAsync(() => SessionService().init());
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
-  await GetStorage.init();
 
   await Supabase.initialize(
     url: 'https://mglmoopyqftrvmuuvwyf.supabase.co',

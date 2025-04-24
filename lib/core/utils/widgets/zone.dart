@@ -1,9 +1,10 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
-class Zone extends StatelessWidget {
+class Zone extends GetView<ZoneController> {
   const Zone({
     super.key,
     this.onPowerButtonPressed,
@@ -17,21 +18,29 @@ class Zone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create a local reactive variable for zone status
-    // Use RxBool constructor instead of .obs extension
-    final isActive = RxBool(zoneData['isActive'] ?? false);
+    return Obx(() {
+      // Find the current zone data in the controller's zones list
+      final zoneIndex = controller.zones.indexWhere(
+        (z) => z['id'].toString() == zoneData['id'].toString(),
+      );
+      final currentZoneData =
+          zoneIndex != -1 ? controller.zones[zoneIndex] : zoneData;
+      final bool isActiveStatus = currentZoneData['isActive'] ?? false;
+      final zoneIdStr = zoneData['id']?.toString() ?? '';
 
-    return Obx(
-      () => InkWell(
+      return InkWell(
         onTap: () {
           onSelectZone?.call();
-          Get.toNamed('/zone');
+          Get.toNamed(
+            '/zone',
+            parameters: {'zoneId': zoneData['id'].toString()},
+          );
         },
         child: Container(
           width: 170,
           height: 170,
           decoration: BoxDecoration(
-            color: isActive.value ? AppColor.greenPrimary : AppColor.white,
+            color: isActiveStatus ? AppColor.greenPrimary : AppColor.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300, width: 2),
           ),
@@ -46,15 +55,17 @@ class Zone extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: () {
-                        isActive.value = !isActive.value;
-                        onPowerButtonPressed?.call();
+                        // Call toggleActive with the correct zone ID as string
+                        if (zoneIdStr.isNotEmpty) {
+                          controller.toggleActive(zoneIdStr);
+                        }
                       },
                       icon: SvgPicture.asset(
                         'assets/icons/power.svg',
                         width: 40,
                         height: 40,
                         colorFilter: ColorFilter.mode(
-                          isActive.value ? AppColor.greenOn : AppColor.redOff,
+                          isActiveStatus ? AppColor.greenOn : AppColor.redOff,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -67,18 +78,22 @@ class Zone extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
                         color:
-                            isActive.value
+                            isActiveStatus
                                 ? AppColor.greenSecondary
                                 : AppColor.greenPrimary,
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        zoneData['timer'] ?? '00:00:00',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.none,
+                      child: Obx(
+                        () => Text(
+                          controller.zoneTimers[zoneIdStr]?.value ?? '00:00:00',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.none,
+                          ),
                         ),
                       ),
                     ),
@@ -88,10 +103,10 @@ class Zone extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    zoneData['name'],
+                    zoneData['name'] ?? 'Unnamed Zone',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color:
-                          isActive.value
+                          isActiveStatus
                               ? AppColor.white
                               : AppColor.greenPrimary,
                       fontSize: 24,
@@ -110,7 +125,7 @@ class Zone extends StatelessWidget {
                           Icon(
                             Icons.water_drop_outlined,
                             color:
-                                isActive.value
+                                isActiveStatus
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -126,7 +141,7 @@ class Zone extends StatelessWidget {
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          isActive.value
+                                          isActiveStatus
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -140,7 +155,7 @@ class Zone extends StatelessWidget {
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          isActive.value
+                                          isActiveStatus
                                               ? AppColor.greenSecondary
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -160,7 +175,7 @@ class Zone extends StatelessWidget {
                           Icon(
                             Icons.cloud_done_outlined,
                             color:
-                                isActive.value
+                                isActiveStatus
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -176,7 +191,7 @@ class Zone extends StatelessWidget {
                                       context,
                                     ).textTheme.bodyLarge?.copyWith(
                                       color:
-                                          isActive.value
+                                          isActiveStatus
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -187,11 +202,11 @@ class Zone extends StatelessWidget {
                                   const WidgetSpan(child: SizedBox(width: 4)),
                                   WidgetSpan(
                                     child: Icon(
-                                      isActive.value
+                                      isActiveStatus
                                           ? Icons.check_circle_outline
                                           : Icons.cancel_outlined,
                                       color:
-                                          isActive.value
+                                          isActiveStatus
                                               ? AppColor.greenTertiary
                                               : Colors.red,
                                       size: 20,
@@ -210,7 +225,7 @@ class Zone extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

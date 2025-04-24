@@ -54,15 +54,16 @@ class LoginScreen extends GetView<LoginController> {
                             children: [
                               AppLabelText(text: 'Email'),
                               AppSpacing.sm,
-                              AppTextFormField(
+                                AppTextFormField(
                                 controller: controller.emailController,
                                 hintText: 'Enter your email',
+                                obscureText: false,
                                 prefixIcon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
                                 validator:
-                                    (value) =>
-                                        controller.validateEmail(value ?? ''),
-                              ),
+                                  (value) =>
+                                    controller.validateEmail(value ?? ''),
+                                ),
                               AppSpacing.md,
                               AppLabelText(text: 'Password'),
                               AppSpacing.sm,

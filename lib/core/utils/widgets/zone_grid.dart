@@ -9,7 +9,6 @@ class ZoneGrid extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    // Use Obx to make the widget reactive to changes in zones list
     return Obx(() {
       final totalZones = controller.zones.length;
 
@@ -80,22 +79,21 @@ class ZoneGrid extends GetView<ZoneController> {
       ),
       itemCount: totalZones,
       itemBuilder: (context, index) {
-        // Explicitly cast each zone to Map<String, dynamic> to ensure type safety
-        final zoneData = Map<String, dynamic>.from(controller.zones[index]);
+        final zoneData = controller.zones[index];
+        final zoneIdStr = zoneData['id']?.toString() ?? '';
 
         return Zone(
-          zoneData: zoneData,
+          zoneData: Map<String, dynamic>.from(zoneData),
           onPowerButtonPressed: () {
-            // Make sure we use a properly cast map when setting the selected zone
-            controller.selectedZone.value = Map<String, dynamic>.from(
-              controller.zones[index],
-            );
-            controller.toggleActive();
+            if (zoneIdStr.isNotEmpty) {
+              controller.toggleActive(zoneIdStr);
+            }
           },
           onSelectZone: () {
-            controller.selectedZone.value = Map<String, dynamic>.from(
-              controller.zones[index],
-            );
+            controller.selectedZone.value = Map<String, dynamic>.from(zoneData);
+            if (zoneIdStr.isNotEmpty) {
+              controller.loadZoneById(zoneIdStr);
+            }
           },
         );
       },
