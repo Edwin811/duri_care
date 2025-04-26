@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
@@ -19,7 +17,12 @@ class AddZoneView extends GetView<ZoneController> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(),
+          leading: AppBackButton(
+            onPressed: () {
+              controller.clearForm();
+              Get.back();
+            },
+          ),
           title: Text(
             'Tambah Zona Baru',
             style: Theme.of(context).textTheme.titleLarge,
@@ -60,7 +63,7 @@ class AddZoneView extends GetView<ZoneController> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  '*Kode Zona digunakan untuk mengidentifikasi kode pada alat IoT',
+                  '*Kode Zona digunakan untuk mengubuhungkan dengan alat IoT',
                   style: Theme.of(context).textTheme.labelMedium!.copyWith(
                     color: Colors.grey.shade500,
                   ),

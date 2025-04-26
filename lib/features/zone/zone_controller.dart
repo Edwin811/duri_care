@@ -89,6 +89,7 @@ class ZoneController extends GetxController {
           .from('zones')
           .select('*, zone_users!inner(*)')
           .eq('zone_users.user_id', userId)
+          .filter('deleted_at', 'is', 'null')
           .order('created_at', ascending: true);
 
       final List<Map<String, dynamic>> zonesList = [];
@@ -131,6 +132,7 @@ class ZoneController extends GetxController {
               .select('*, zone_users!inner(*)')
               .eq('id', zoneId)
               .eq('zone_users.user_id', userId)
+              .filter('deleted_at', 'is', null)
               .single();
 
       Map<String, dynamic> zoneMap = Map<String, dynamic>.from(response);
@@ -178,7 +180,6 @@ class ZoneController extends GetxController {
         selectedZone['moisture'] = moisture.value;
       }
     } catch (e) {
-      print('Error getting sensor data: ${e.toString()}');
       moisture.value = '60%';
       temperature.value = '28°C';
       humidity.value = '65%';
@@ -218,7 +219,7 @@ class ZoneController extends GetxController {
             );
           }
         } catch (e) {
-          print('Error processing device: $e');
+          DialogHelper.showErrorDialog(message: e.toString());
         }
       }
 
@@ -347,33 +348,33 @@ class ZoneController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Perform a soft delete by updating the 'deleted_at' column
-      await supabase
-          .from('zones')
-          .update({'deleted_at': DateTime.now().toIso8601String()})
-          .eq('id', zoneId);
+      // Show confirmation dialog before proceeding with deletion
+      await DialogHelper.showConfirmationDialog(
+        title: 'Hapus Zona',
+        message:
+            'Apakah Anda yakin ingin menghapus zona ${selectedZone['name']}?',
+        onConfirm: () async {
+          await supabase
+              .from('zones')
+              .update({'deleted_at': DateTime.now().toIso8601String()})
+              .eq('id', zoneId);
 
-      zones.removeWhere((z) => z['id'] == zoneId);
-      stopTimer(zoneId.toString());
+          zones.removeWhere((z) => z['id'] == zoneId);
+          stopTimer(zoneId.toString());
 
-      if (selectedZone['id'] == zoneId) {
-        DialogHelper.showConfirmationDialog(
-          title: 'Hapus Zona',
-          message:
-              'Apakah Anda yakin ingin menghapus zona ${selectedZone['name']}?',
-          onConfirm: () {
+          if (selectedZone['id'] == zoneId) {
             selectedZone.clear();
-          },
-          onCancel: Get.back,
-        );
-      }
+          }
 
-      DialogHelper.showSuccessDialog(
-        title: 'Berhasil',
-        message: 'Zona berhasil dihapus.',
+          DialogHelper.showSuccessDialog(
+            title: 'Berhasil',
+            message: 'Zona berhasil dihapus.',
+          );
+
+          Get.offAllNamed('/main');
+        },
+        onCancel: Get.back,
       );
-
-      Get.offAllNamed('/main');
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal hapus zona',
@@ -725,9 +726,15 @@ class ZoneController extends GetxController {
     return null;
   }
 
+  void clearForm() {
+    selectedZoneCode.value = 1;
+    zoneNameController.clear();
+  }
+
   @override
   void onClose() {
     _zoneTimers.forEach((_, timer) => timer?.cancel());
+    clearForm();
     super.onClose();
   }
 }
