@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
@@ -52,33 +54,49 @@ class AddZoneView extends GetView<ZoneController> {
                     ],
                   ),
                 ),
-                // IoT device selection
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Tambahkan Perangkat IoT',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.add_circle,
-                        color: AppColor.greenPrimary,
-                        size: 32,
-                      ),
-                      tooltip: 'Tambah Perangkat IoT',
-                      hoverColor: AppColor.greenPrimary.withAlpha(80),
-                    ),
-                  ],
+                // Zone code selection
+                Text(
+                  'Kode Zona',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  '*Kode Zona digunakan untuk mengidentifikasi kode pada alat IoT',
+                  style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
                 ),
                 const SizedBox(height: 8),
-
-                // _buildIoTDevicesList(context),
-                const SizedBox(height: 32),
-
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: Obx(
+                      () => DropdownButton<String>(
+                        isExpanded: true,
+                        value: controller.selectedZoneCode.value.toString(),
+                        items:
+                            controller.zoneCodes.map((int zoneCode) {
+                              return DropdownMenuItem<String>(
+                                value: zoneCode.toString(),
+                                child: Text(zoneCode.toString()),
+                              );
+                            }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            controller.selectedZoneCode.value = int.parse(
+                              newValue,
+                            );
+                          }
+                        },
+                        hint: const Text('Pilih Kode Zona'),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 // Submit button
                 SizedBox(
                   width: double.infinity,
@@ -111,66 +129,4 @@ class AddZoneView extends GetView<ZoneController> {
       ),
     );
   }
-
-  // Widget _buildIoTDevicesList(BuildContext context) {
-  //   return Obx(
-  //     () =>
-  //         controller.isLoadingDevices.value
-  //             ? const Center(child: CircularProgressIndicator())
-  //             : controller.devices.isEmpty
-  //             ? Center(
-  //               child: Text(
-  //                 'Tidak ada perangkat IoT yang tersedia',
-  //                 style: Theme.of(context).textTheme.bodyMedium,
-  //               ),
-  //             )
-  //             : Card(
-  //               elevation: 0,
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 side: BorderSide(color: Colors.grey.shade300),
-  //               ),
-  //               child: ListView.separated(
-  //                 shrinkWrap: true,
-  //                 physics: const NeverScrollableScrollPhysics(),
-  //                 itemCount: controller.devices.length,
-  //                 separatorBuilder: (context, index) => const Divider(),
-  //                 itemBuilder: (context, index) {
-  //                   final device = controller.devices[index];
-  //                   return ListTile(
-  //                     leading: CircleAvatar(
-  //                       backgroundColor: AppColor.greenPrimary.withAlpha(80),
-  //                       child: Icon(
-  //                         _getDeviceIcon(device.type),
-  //                         color: AppColor.greenPrimary,
-  //                       ),
-  //                     ),
-  //                     title: Text(device.name),
-  //                     subtitle: Text(device.status),
-  //                     trailing: Switch(
-  //                       value: controller.selectedDeviceIds.contains(device.id),
-  //                       activeColor: AppColor.greenPrimary,
-  //                       onChanged: (bool value) {
-  //                         controller.toggleDeviceSelection(device.id);
-  //                       },
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //   );
-  // }
-
-  // IconData _getDeviceIcon(String deviceType) {
-  //   switch (deviceType.toLowerCase()) {
-  //     case 'moisture_sensor':
-  //       return Icons.water_drop_outlined;
-  //     case 'valve_control':
-  //       return Icons.settings_input_component_outlined;
-  //     case 'weather_sensor':
-  //       return Icons.cloud_outlined;
-  //     default:
-  //       return Icons.devices_other;
-  //   }
-  // }
 }

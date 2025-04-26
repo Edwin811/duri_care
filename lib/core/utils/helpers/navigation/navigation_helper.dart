@@ -43,28 +43,38 @@ class MainNavigationView extends StatelessWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
-          currentIndex: navigationHelper.currentIndex.value,
-          onTap: (index) {
-            navigationHelper.currentIndex.value = index;
-          },
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppColor.greenPrimary,
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'Beranda',
+        () => Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Colors.grey.shade300,
+                width: 1,
+              ), // Add stroke at the top
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
-              label: 'Profil',
-            ),
-          ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: navigationHelper.currentIndex.value,
+            onTap: (index) {
+              navigationHelper.currentIndex.value = index;
+            },
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColor.greenPrimary,
+            unselectedItemColor: Colors.grey,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_rounded, size: 30),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_rounded, size: 30),
+                label: 'Profil',
+              ),
+            ],
+          ),
         ),
       ),
     );

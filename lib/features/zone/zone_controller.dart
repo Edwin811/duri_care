@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/iotDevice/iot_device.dart';
 import 'package:duri_care/models/zone/zone_model.dart';
@@ -13,6 +15,9 @@ class ZoneController extends GetxController {
   final selectedZone = <String, dynamic>{}.obs;
   final RxBool isActive = false.obs;
   final storage = GetStorage();
+
+  final zoneCodes = [1, 2, 3, 4, 5, 6, 7, 8].obs;
+  final RxInt selectedZoneCode = 1.obs;
 
   final Map<String, Timer?> _zoneTimers = {};
   final RxMap<String, RxString> zoneTimers = <String, RxString>{}.obs;
@@ -232,6 +237,7 @@ class ZoneController extends GetxController {
   Future<void> createZone() async {
     final userId = supabase.auth.currentUser?.id;
     final name = zoneNameController.text.trim();
+
     if (userId == null || name.isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Error',
@@ -265,6 +271,7 @@ class ZoneController extends GetxController {
               .insert({
                 'name': name,
                 'isActive': false,
+                'zone_code': selectedZoneCode.value,
                 'created_at': DateTime.now().toIso8601String(),
               })
               .select()
@@ -340,15 +347,25 @@ class ZoneController extends GetxController {
     try {
       isLoading.value = true;
 
-      await supabase.from('iot_devices').delete().eq('zone_id', zoneId);
-      await supabase.from('zone_users').delete().eq('zone_id', zoneId);
-      await supabase.from('zones').delete().eq('id', zoneId);
+      // Perform a soft delete by updating the 'deleted_at' column
+      await supabase
+          .from('zones')
+          .update({'deleted_at': DateTime.now().toIso8601String()})
+          .eq('id', zoneId);
 
       zones.removeWhere((z) => z['id'] == zoneId);
       stopTimer(zoneId.toString());
 
       if (selectedZone['id'] == zoneId) {
-        selectedZone.clear();
+        DialogHelper.showConfirmationDialog(
+          title: 'Hapus Zona',
+          message:
+              'Apakah Anda yakin ingin menghapus zona ${selectedZone['name']}?',
+          onConfirm: () {
+            selectedZone.clear();
+          },
+          onCancel: Get.back,
+        );
       }
 
       DialogHelper.showSuccessDialog(
@@ -356,7 +373,7 @@ class ZoneController extends GetxController {
         message: 'Zona berhasil dihapus.',
       );
 
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal hapus zona',
@@ -534,7 +551,9 @@ class ZoneController extends GetxController {
     if (_zoneTimers[zoneId] != null) return;
 
     final storedSeconds = storage.read('timer_$zoneId');
-    int totalSeconds = 300; /// Default to 5 minutes
+    int totalSeconds = 300;
+
+    /// Default to 5 minutes
 
     if (storedSeconds != null) {
       try {
@@ -543,7 +562,8 @@ class ZoneController extends GetxController {
         // print('Error parsing timer value: $e');
         DialogHelper.showErrorDialog(
           title: 'Error Parsing Timer',
-          message: 'Error parsing timer value: $e');
+          message: 'Error parsing timer value: $e',
+        );
       }
     }
 

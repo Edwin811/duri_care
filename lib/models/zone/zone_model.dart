@@ -3,12 +3,14 @@ class ZoneModel {
   final String name;
   final bool isActive;
   final DateTime createdAt;
+  final String? zoneCode;
 
   ZoneModel({
     required this.id,
     required this.name,
     required this.isActive,
     required this.createdAt,
+    this.zoneCode,
   });
 
   factory ZoneModel.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class ZoneModel {
       name: json['name'] as String,
       isActive: json['isActive'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
+      zoneCode: json['zone_code'] as String?,
     );
   }
 
@@ -26,6 +29,7 @@ class ZoneModel {
       'name': name,
       'isActive': isActive,
       'created_at': createdAt.toIso8601String(),
+      'zone_code': zoneCode,
     };
   }
 }
