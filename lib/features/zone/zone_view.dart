@@ -1,4 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/themes/app_themes.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +13,8 @@ class ZoneView extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the zoneId from route parameters
     final zoneId = Get.parameters['zoneId'];
 
-    // Load zone data when entering the view
     if (zoneId != null && zoneId.isNotEmpty) {
       controller.loadZoneById(zoneId);
     }
@@ -27,19 +26,23 @@ class ZoneView extends GetView<ZoneController> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(),
+          backgroundColor: AppColor.greenPrimary,
+          leading: AppBackButton(
+            iconColor: AppColor.white,
+          ),
           title: Obx(
             () => Text(
               controller.selectedZone.isNotEmpty
                   ? controller.selectedZone['name'] ?? 'Zone Details'
                   : 'Zone Details',
-              // style: AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
+              style:
+                  AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
             ),
           ),
           actions: [
             // Edit button
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: const Icon(Icons.edit_rounded, color: AppColor.white,),
               tooltip: 'Edit Zone',
               onPressed: () {
                 if (zoneId != null) {
@@ -49,7 +52,7 @@ class ZoneView extends GetView<ZoneController> {
             ),
             // Delete button
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: const Icon(Icons.delete_outline, color: AppColor.redOff),
               tooltip: 'Delete Zone',
               onPressed: () {
                 if (zoneId != null) {
@@ -191,51 +194,202 @@ class ZoneView extends GetView<ZoneController> {
           'Perangkat IoT Terhubung',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const SizedBox(height: 8),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ListView.separated(
+        const SizedBox(height: 12),
+        Obx(() {
+          if (controller.isLoadingDevices.value) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 30),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          if (controller.devices.isEmpty) {
+            return Card(
+              elevation: 0,
+              color: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey[500]!),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(34),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.devices_other,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Tidak ada perangkat IoT terhubung',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tambahkan perangkat IoT untuk memonitor zona ini',
+                      style: TextStyle(color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 3,
-            separatorBuilder: (context, index) => const Divider(),
+            itemCount: controller.devices.length,
             itemBuilder: (context, index) {
-              List<Map<String, dynamic>> devices = [
-                {
-                  'name': 'Soil Moisture Sensor',
-                  'status': 'Online',
-                  'battery': '85%',
-                },
-                {
-                  'name': 'Water Valve Controller',
-                  'status': 'Online',
-                  'battery': '72%',
-                },
-                {
-                  'name': 'Weather Station',
-                  'status': 'Online',
-                  'battery': '90%',
-                },
-              ];
+              final device = controller.devices[index];
 
-              return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.sensors, color: Colors.white),
+              IconData deviceIcon = Icons.sensors;
+              if (device.type == 'moisture_sensor') {
+                deviceIcon = Icons.water_drop;
+              } else if (device.type == 'valve_controller') {
+                deviceIcon = Icons.device_hub_outlined;
+              } else if (device.type == 'weather_station') {
+                deviceIcon = Icons.cloud;
+              }
+
+              Color statusColor = Colors.grey;
+              if (device.status == 'online') {
+                statusColor = Colors.green;
+              } else if (device.status == 'offline') {
+                statusColor = Colors.red;
+              } else if (device.status == 'warning') {
+                statusColor = Colors.orange;
+              }
+
+              final batteryLevel = 60 + (index * 10) % 40;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                title: Text(devices[index]['name']),
-                subtitle: Text('Status: ${devices[index]['status']}'),
-                trailing: Text(
-                  '${devices[index]['battery']}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColor.greenSecondary.withAlpha(50),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              deviceIcon,
+                              color: AppColor.greenPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  device.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: statusColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      device.status.capitalize!,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.battery_full,
+                                    color:
+                                        batteryLevel > 20
+                                            ? AppColor.greenPrimary
+                                            : Colors.red,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$batteryLevel%',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: 100,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: batteryLevel.toDouble(),
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            batteryLevel > 20
+                                                ? AppColor.greenPrimary
+                                                : Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (index < controller.devices.length - 1)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Divider(height: 1),
+                        ),
+                    ],
+                  ),
                 ),
               );
             },
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -245,14 +399,16 @@ class ZoneView extends GetView<ZoneController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Jadwal Penyiraman Otomatis',
+          'Buat Jadwal Penyiraman Otomatis',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
         Card(
-          elevation: 2,
+          elevation: 0,
+          color: AppColor.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColor.greenPrimary),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -355,7 +511,6 @@ class ZoneView extends GetView<ZoneController> {
           ),
         ),
         const SizedBox(height: 16),
-        // Scheduled times list - updated to use actual schedules from database
         Text('Jadwal Tersimpan', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Obx(() {
@@ -369,10 +524,10 @@ class ZoneView extends GetView<ZoneController> {
           if (controller.schedules.isEmpty) {
             return Card(
               color: AppColor.white,
-              elevation: 2,
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppColor.greenPrimary.withAlpha(20)),
+                side: BorderSide(color: AppColor.greenPrimary.withAlpha(120)),
               ),
               child: const ListTile(
                 leading: Icon(Icons.info_outline, color: Colors.grey),
@@ -432,8 +587,9 @@ class ZoneView extends GetView<ZoneController> {
                   ),
                   trailing: IconButton(
                     icon: const Icon(
-                      Icons.delete_forever,
-                      color: Colors.redAccent,
+                      Icons.delete_forever_rounded,
+                      color: Colors.red,
+                      size: 32,
                     ),
                     onPressed: () {
                       controller.deleteSchedule(schedule['id']);
