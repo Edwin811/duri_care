@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/iotDevice/iot_device.dart';
 import 'package:duri_care/models/zone/zone_model.dart';
@@ -16,6 +14,7 @@ class ZoneController extends GetxController {
   final RxBool isActive = false.obs;
   final storage = GetStorage();
   final RxInt activeCount = 0.obs;
+  final RxBool isLoadingSchedules = false.obs;
 
   final zoneCodes = [1, 2, 3, 4, 5, 6, 7, 8].obs;
   final RxInt selectedZoneCode = 1.obs;
@@ -29,7 +28,7 @@ class ZoneController extends GetxController {
 
   final selectedDate = Rx<DateTime?>(DateTime.now());
   final selectedTime = Rx<TimeOfDay?>(const TimeOfDay(hour: 6, minute: 0));
-  final duration = RxInt(5);
+  final duration = 5.obs;
   final schedules = <Map<String, dynamic>>[].obs;
 
   final TextEditingController zoneNameController = TextEditingController();
@@ -640,17 +639,17 @@ class ZoneController extends GetxController {
 
       final inserted =
           await supabase
-              .from('schedules')
+              .from('irrigation_schedules')
               .insert({
-                'zone_id': zoneId,
+                'zone_id': int.parse(zoneId),
+                'duration': duration.value,
                 'scheduled_at': combinedDateTime.toIso8601String(),
-                'duration_minutes': duration.value,
-                'created_at': DateTime.now().toIso8601String(),
               })
               .select()
               .single();
 
       schedules.add(inserted);
+
       DialogHelper.showSuccessDialog(
         title: 'Schedule Saved',
         message: 'Your irrigation schedule has been saved.',
@@ -665,11 +664,24 @@ class ZoneController extends GetxController {
 
   Future<void> deleteSchedule(int scheduleId) async {
     try {
-      await supabase.from('schedules').delete().eq('id', scheduleId);
-      schedules.removeWhere((schedule) => schedule['id'] == scheduleId);
-      DialogHelper.showSuccessDialog(
-        title: 'Success',
-        message: 'Schedule has been deleted.',
+      await DialogHelper.showConfirmationDialog(
+        title: 'Hapus Jadwal',
+        message: 'Apakah anda yakin ingin menghapus jadwal penyiraman ini?',
+        onConfirm: () async {
+          Get.back();
+          await supabase
+              .from('irrigation_schedules')
+              .delete()
+              .eq('id', scheduleId);
+
+          schedules.removeWhere((schedule) => schedule['id'] == scheduleId);
+
+          await DialogHelper.showSuccessDialog(
+            title: 'Success',
+            message: 'Schedule has been deleted.',
+          );
+        },
+        onCancel: () => Get.back(),
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -680,12 +692,16 @@ class ZoneController extends GetxController {
   }
 
   Future<void> loadSchedules() async {
+    isLoadingSchedules.value = true;
     final zoneId = selectedZone['id']?.toString();
-    if (zoneId == null || zoneId.isEmpty) return;
+    if (zoneId == null || zoneId.isEmpty) {
+      isLoadingSchedules.value = false;
+      return;
+    }
 
     try {
       final data = await supabase
-          .from('schedules')
+          .from('irrigation_schedules')
           .select()
           .eq('zone_id', zoneId)
           .order('scheduled_at', ascending: true);
@@ -693,6 +709,8 @@ class ZoneController extends GetxController {
       schedules.value = List<Map<String, dynamic>>.from(data);
     } catch (e) {
       schedules.value = [];
+    } finally {
+      isLoadingSchedules.value = false;
     }
   }
 

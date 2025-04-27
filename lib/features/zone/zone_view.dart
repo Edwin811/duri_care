@@ -71,8 +71,8 @@ class ZoneView extends GetView<ZoneController> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildStatusCard(context),
-                          const SizedBox(height: 24),
+                          // _buildStatusCard(context),
+                          // const SizedBox(height: 24),
                           _buildIoTDevicesSection(context),
                           const SizedBox(height: 24),
                           _buildSchedulingSection(context),
@@ -188,7 +188,7 @@ class ZoneView extends GetView<ZoneController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Connected Devices',
+          'Perangkat IoT Terhubung',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
@@ -245,7 +245,7 @@ class ZoneView extends GetView<ZoneController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Irrigation Schedule',
+          'Jadwal Penyiraman Otomatis',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
@@ -261,7 +261,7 @@ class ZoneView extends GetView<ZoneController> {
                 Obx(
                   () => Row(
                     children: [
-                      const Icon(Icons.calendar_today),
+                      const Icon(Icons.calendar_today_outlined),
                       const SizedBox(width: 8),
                       Text(
                         controller.selectedDate.value != null
@@ -271,10 +271,13 @@ class ZoneView extends GetView<ZoneController> {
                             : 'Select date',
                       ),
                       const Spacer(),
-                      TextButton(
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColor.greenPrimary),
+                        ),
                         onPressed: () => controller.selectDate(context),
                         child: const Text(
-                          'Change',
+                          'Pilih',
                           style: TextStyle(color: AppColor.greenPrimary),
                         ),
                       ),
@@ -293,10 +296,13 @@ class ZoneView extends GetView<ZoneController> {
                             : 'Select time',
                       ),
                       const Spacer(),
-                      TextButton(
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColor.greenPrimary),
+                        ),
                         onPressed: () => controller.selectTime(context),
                         child: const Text(
-                          'Change',
+                          'Pilih',
                           style: TextStyle(color: AppColor.greenPrimary),
                         ),
                       ),
@@ -308,7 +314,7 @@ class ZoneView extends GetView<ZoneController> {
                   children: [
                     const Icon(Icons.water),
                     const SizedBox(width: 8),
-                    const Text('Duration: '),
+                    const Text('Durasi: '),
                     Expanded(
                       child: SliderTheme(
                         data: SliderThemeData(
@@ -341,7 +347,7 @@ class ZoneView extends GetView<ZoneController> {
                   width: double.infinity,
                   child: AppFilledButton(
                     onPressed: () => controller.saveSchedule(),
-                    text: 'Save Schedule',
+                    text: 'Simpan Jadwal',
                   ),
                 ),
               ],
@@ -350,46 +356,94 @@ class ZoneView extends GetView<ZoneController> {
         ),
         const SizedBox(height: 16),
         // Scheduled times list - updated to use actual schedules from database
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Obx(
-            () =>
-                controller.schedules.isEmpty
-                    ? const ListTile(
-                      leading: Icon(Icons.info_outline),
-                      title: Text('No schedules'),
-                      subtitle: Text('Create a new irrigation schedule above'),
-                    )
-                    : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: controller.schedules.length,
-                      itemBuilder: (context, index) {
-                        final schedule = controller.schedules[index];
-                        final scheduledAt = DateTime.parse(
-                          schedule['scheduled_at'],
-                        );
-                        final duration = schedule['duration_minutes'];
+        Text('Jadwal Tersimpan', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Obx(() {
+          if (controller.isLoadingSchedules.value) {
+            return const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-                        return ListTile(
-                          leading: const Icon(Icons.schedule),
-                          title: Text('Schedule ${index + 1}'),
-                          subtitle: Text(
-                            '${DateFormat('dd MMM').format(scheduledAt)} at ${DateFormat('HH:mm').format(scheduledAt)} (${duration} mins)',
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed:
-                                () => controller.deleteSchedule(schedule['id']),
-                          ),
-                        );
-                      },
+          if (controller.schedules.isEmpty) {
+            return Card(
+              color: AppColor.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: AppColor.greenPrimary.withAlpha(20)),
+              ),
+              child: const ListTile(
+                leading: Icon(Icons.info_outline, color: Colors.grey),
+                title: Text(
+                  'Tidak ada jadwal',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'Buatlah jadwal penyiraman otomatis terlebih dahulu.',
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.schedules.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final schedule = controller.schedules[index];
+              final scheduledAt = DateTime.parse(schedule['scheduled_at']);
+              final duration = schedule['duration'];
+
+              return Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppColor.greenPrimary.withAlpha(150)),
+                ),
+                color: AppColor.white,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColor.greenPrimary,
+                    child: const Icon(Icons.water_drop, color: Colors.white),
+                  ),
+                  title: Text(
+                    DateFormat('dd MMMM yyyy').format(scheduledAt),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-          ),
-        ),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Jam ${DateFormat('HH:mm').format(scheduledAt)} • Durasi $duration menit',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.delete_forever,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: () {
+                      controller.deleteSchedule(schedule['id']);
+                    },
+                  ),
+                ),
+              );
+            },
+          );
+        }),
       ],
     );
   }
