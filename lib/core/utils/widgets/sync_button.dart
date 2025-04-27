@@ -1,4 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class SyncButton extends StatefulWidget {
@@ -50,8 +51,8 @@ class _SyncButtonState extends State<SyncButton> with TickerProviderStateMixin {
         animation: _controller,
         builder: (context, child) {
           return Transform.rotate(
-            angle: -_rotationAnimation.value,
-            child: const Icon(Icons.sync),
+            angle: _rotationAnimation.value,
+            child: const Icon(CupertinoIcons.arrow_2_circlepath),
           );
         },
       ),

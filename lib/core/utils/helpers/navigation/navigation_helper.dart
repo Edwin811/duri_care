@@ -49,7 +49,7 @@ class MainNavigationView extends StatelessWidget {
               top: BorderSide(
                 color: Colors.grey.shade300,
                 width: 1,
-              ), // Add stroke at the top
+              ),
             ),
           ),
           child: BottomNavigationBar(

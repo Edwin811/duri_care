@@ -63,8 +63,8 @@ class AddZoneView extends GetView<ZoneController> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  '*Kode Zona digunakan untuk mengubuhungkan dengan alat IoT',
-                  style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                  '* Kode Zona digunakan untuk menghubungkan dengan alat IoT',
+                  style: Theme.of(context).textTheme.labelLarge!.copyWith(
                     color: Colors.grey.shade500,
                   ),
                 ),

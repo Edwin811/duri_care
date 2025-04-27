@@ -55,7 +55,6 @@ class Zone extends GetView<ZoneController> {
                   children: [
                     IconButton(
                       onPressed: () {
-                        // Call toggleActive with the correct zone ID as string
                         if (zoneIdStr.isNotEmpty) {
                           controller.toggleActive(zoneIdStr);
                         }

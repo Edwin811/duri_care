@@ -1,5 +1,6 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class DeviceInfo extends StatelessWidget {
   const DeviceInfo({
@@ -9,14 +10,14 @@ class DeviceInfo extends StatelessWidget {
     required this.icon,
   });
   final String name;
-  final String total;
+  final RxInt total;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     // Get screen size
     final Size screenSize = MediaQuery.of(context).size;
-    
+
     return Container(
       width: screenSize.width * 0.4,
       height: screenSize.height * 0.065,
@@ -40,14 +41,20 @@ class DeviceInfo extends StatelessWidget {
             ),
             Row(
               children: [
-                Icon(icon, color: AppColor.white, size: screenSize.width * 0.05),
+                Icon(
+                  icon,
+                  color: AppColor.white,
+                  size: screenSize.width * 0.05,
+                ),
                 SizedBox(width: screenSize.width * 0.02),
-                Text(
-                  total,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                    fontSize: screenSize.width * 0.05,
-                    fontWeight: FontWeight.bold,
+                Obx(
+                  () => Text(
+                    total.toString(),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.white,
+                      fontSize: screenSize.width * 0.05,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

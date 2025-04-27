@@ -36,30 +36,64 @@ class ProfileView extends GetView<ProfileController> {
                 ),
                 child: Column(
                   children: [
-                    Obx(() {
-                      final profilePic = controller.profilePicture.value;
-                      final isUrl = profilePic.startsWith('http');
+                    Stack(
+                      children: [
+                        Obx(() {
+                          final profilePic = controller.profilePicture.value;
+                          final isUrl = profilePic.startsWith('http');
 
-                      return CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColor.greenPrimary.withAlpha(100),
-                        backgroundImage:
-                            isUrl ? NetworkImage(profilePic) : null,
-                        child:
-                            !isUrl
-                                ? Text(
-                                  profilePic.isNotEmpty ? profilePic : '?',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
+                          return CircleAvatar(
+                            radius: 50,
+                            backgroundColor: AppColor.greenPrimary.withAlpha(
+                              100,
+                            ),
+                            backgroundImage:
+                                isUrl ? NetworkImage(profilePic) : null,
+                            child:
+                                !isUrl
+                                    ? Text(
+                                      profilePic.isNotEmpty ? profilePic : '?',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                    : null,
+                          );
+                        }),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Material(
+                            color: Colors.transparent,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              onTap: () => controller.editProfile(),
+                              customBorder: const CircleBorder(),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColor.greenPrimary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
                                     color: Colors.white,
+                                    width: 2,
                                   ),
-                                )
-                                : null,
-                      );
-                    }),
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 20),
                     Obx(
                       () => Text(

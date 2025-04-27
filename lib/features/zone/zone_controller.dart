@@ -15,6 +15,7 @@ class ZoneController extends GetxController {
   final selectedZone = <String, dynamic>{}.obs;
   final RxBool isActive = false.obs;
   final storage = GetStorage();
+  final RxInt activeCount = 0.obs;
 
   final zoneCodes = [1, 2, 3, 4, 5, 6, 7, 8].obs;
   final RxInt selectedZoneCode = 1.obs;
@@ -49,6 +50,7 @@ class ZoneController extends GetxController {
     loadZones().then((_) {
       _setupZoneTimers();
       listenToZoneChanges();
+      countActive();
     });
 
     loadSchedules();
@@ -308,7 +310,7 @@ class ZoneController extends GetxController {
       );
       zoneNameController.clear();
       selectedDeviceIds.clear();
-      Get.back();
+      Get.offAllNamed('/main');
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal membuat zona',
@@ -494,8 +496,10 @@ class ZoneController extends GetxController {
       }
 
       if (newActiveState) {
+        activeCount.value += 1;
         startTimer(zoneIdStr);
       } else {
+        activeCount.value -= 1;
         stopTimer(zoneIdStr);
       }
 
@@ -724,6 +728,16 @@ class ZoneController extends GetxController {
       return 'Nama zona minimal 3 karakter';
     }
     return null;
+  }
+
+  Future<void> countActive() async {
+    final response = await supabase
+        .from('zones')
+        .select('id')
+        .eq('isActive', true);
+
+    final List<dynamic> data = response as List<dynamic>;
+    activeCount.value = data.length;
   }
 
   void clearForm() {

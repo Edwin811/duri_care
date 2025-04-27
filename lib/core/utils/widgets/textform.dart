@@ -10,6 +10,7 @@ class AppTextFormField extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.autovalidateMode,
   });
   final TextEditingController controller;
   final String hintText;
@@ -18,6 +19,7 @@ class AppTextFormField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final AutovalidateMode? autovalidateMode;
 
   @override
   Widget build(BuildContext context) {

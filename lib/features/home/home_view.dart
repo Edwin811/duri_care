@@ -19,7 +19,7 @@ class HomeView extends GetView<HomeController> {
       body: Center(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             child: ListView(
               children: [
                 Column(
@@ -220,7 +220,7 @@ class HomeView extends GetView<HomeController> {
                                 Expanded(
                                   child: DeviceInfo(
                                     name: 'Total Device',
-                                    total: '4',
+                                    total: 4.obs,
                                     icon: Icons.device_hub_rounded,
                                   ),
                                 ),
@@ -228,7 +228,8 @@ class HomeView extends GetView<HomeController> {
                                 Expanded(
                                   child: DeviceInfo(
                                     name: 'Device Aktif',
-                                    total: '2',
+                                    total:
+                                        controller.zoneController.activeCount,
                                     icon: Icons.lan_outlined,
                                   ),
                                 ),
@@ -236,7 +237,7 @@ class HomeView extends GetView<HomeController> {
                                 Expanded(
                                   child: DeviceInfo(
                                     name: 'Pegawai Terdaftar',
-                                    total: '3',
+                                    total: 3.obs,
                                     icon: Icons.person_rounded,
                                   ),
                                 ),
@@ -285,7 +286,7 @@ class HomeView extends GetView<HomeController> {
                                     ),
                                     Flexible(
                                       child: Text(
-                                        'Menghidupkan aktuator di Zona 1 pada 10:00 WIB',
+                                        'Senin, 28 April 2025 | 09:00 - 10:00 WIB',
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodyLarge?.copyWith(
@@ -308,6 +309,7 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 20),
                 // zone section
                 ZoneGrid(),
+                const SizedBox(height: 20),
               ],
             ),
           ),

@@ -1,8 +1,12 @@
 import 'package:duri_care/features/auth/auth_controller.dart';
+import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
+  final zoneController = Get.put(ZoneController());
+  final supabase = Supabase.instance.client;
   RxString ucapan = ''.obs;
   RxString username = ''.obs;
   RxString profilePicture = ''.obs;
@@ -18,7 +22,6 @@ class HomeController extends GetxController {
       getProfilePicture();
     }
   }
-
 
   void _getSpeech() {
     DateTime now = DateTime.now();
@@ -44,5 +47,4 @@ class HomeController extends GetxController {
     final picture = await authController.getProfilePicture();
     profilePicture.value = picture;
   }
-
 }
