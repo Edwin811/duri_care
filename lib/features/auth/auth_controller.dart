@@ -123,7 +123,7 @@ class AuthController extends GetxController {
         final response =
             await _supabase
                 .from('users')
-                .select('profile_image, fullname')
+                .select('profile_url, fullname')
                 .eq('id', user.id)
                 .maybeSingle();
 
