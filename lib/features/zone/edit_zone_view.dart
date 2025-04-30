@@ -1,5 +1,5 @@
-import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +12,20 @@ class EditZoneView extends GetView<ZoneController> {
   @override
   Widget build(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
+    // final DropdownButtonFormField zoneCodeController = DropdownButtonFormField(
+    //   items: controller.zoneCodes.map((zoneCode) {
+    //     return DropdownMenuItem(
+    //       value: zoneCode['code'],
+    //       child: Text(zoneCode['code']),
+    //     );
+    //   }).toList(),
+    //   onChanged: (value) {
+    //     controller. = value;
+    //   },
+    // );
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final zoneId = Get.parameters['zoneId'] ?? '';
 
-    // Set initial value from selected zone
     if (controller.selectedZone.isNotEmpty) {
       nameController.text = controller.selectedZone['name'] ?? '';
     }
@@ -38,6 +48,7 @@ class EditZoneView extends GetView<ZoneController> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              spacing: 16,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Form(
@@ -57,51 +68,55 @@ class EditZoneView extends GetView<ZoneController> {
                             (value) => controller.validateName(value ?? ''),
                         prefixIcon: Icons.note_alt_outlined,
                       ),
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
-
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: Obx(
-                    () => ElevatedButton(
-                      onPressed:
-                          controller.isLoading.value
-                              ? null
-                              : () async {
-                                if (formKey.currentState!.validate() &&
-                                    zoneId.isNotEmpty) {
-                                  await controller.updateZone(
-                                    zoneId,
-                                    newName: nameController.text,
-                                  );
-                                }
-                              },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColor.greenPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kode Zona',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    DropdownButtonHideUnderline(
+                      child: DropdownButtonFormField(
+                        value:
+                            controller.selectedZone['zone_code'] ??
+                            controller.selectedZoneCode.value,
+                        items:
+                            controller.zoneCodes.map((zoneCode) {
+                              return DropdownMenuItem<int>(
+                                value: zoneCode,
+                                child: Text('$zoneCode'),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            controller.selectedZoneCode.value = value as int;
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Pilih kode zona',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          prefixIcon: const Icon(Icons.code),
                         ),
                       ),
-                      child:
-                          controller.isLoading.value
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : Text(
-                                'Simpan Perubahan',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                     ),
-                  ),
+                  ],
+                ),
+                AppFilledButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate() && zoneId.isNotEmpty) {
+                      controller.updateZone(
+                        zoneId,
+                        newName: nameController.text,
+                      );
+                    }
+                  },
+                  text: 'Simpan Perubahan',
                 ),
               ],
             ),

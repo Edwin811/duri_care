@@ -15,6 +15,7 @@ class ZoneController extends GetxController {
   final storage = GetStorage();
   final RxInt activeCount = 0.obs;
   final RxBool isLoadingSchedules = false.obs;
+  final Map<int, Timer> _scheduleTimers = {};
 
   final zoneCodes = [1, 2, 3, 4, 5, 6, 7, 8].obs;
   final RxInt selectedZoneCode = 1.obs;
@@ -50,6 +51,7 @@ class ZoneController extends GetxController {
       _setupZoneTimers();
       listenToZoneChanges();
       countActive();
+      loadAllZoneSchedules();
     });
 
     loadSchedules();
@@ -63,12 +65,12 @@ class ZoneController extends GetxController {
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
         if (zone['isActive'] == true) {
-          startTimer(zoneId);
+          startTimer(zoneId, duration.value);
         }
 
         final remainingTime = storage.read('timer_$zoneId');
         if (remainingTime != null && remainingTime > 0) {
-          startTimer(zoneId);
+          startTimer(zoneId, duration.value);
         }
       }
     }
@@ -419,7 +421,10 @@ class ZoneController extends GetxController {
       final updated =
           await supabase
               .from('zones')
-              .update({'name': newName.trim()})
+              .update({
+                'name': newName.trim(),
+                'zone_code': selectedZoneCode.value,
+              })
               .eq('id', zoneId)
               .select()
               .single();
@@ -496,7 +501,7 @@ class ZoneController extends GetxController {
 
       if (newActiveState) {
         activeCount.value += 1;
-        startTimer(zoneIdStr);
+        startTimer(zoneIdStr, duration.value);
       } else {
         activeCount.value -= 1;
         stopTimer(zoneIdStr);
@@ -532,7 +537,7 @@ class ZoneController extends GetxController {
           };
 
           if (updatedIsActive && _zoneTimers[updatedZoneId] == null) {
-            startTimer(updatedZoneId);
+            startTimer(updatedZoneId, duration.value);
           } else if (!updatedIsActive && _zoneTimers[updatedZoneId] != null) {
             stopTimer(updatedZoneId);
           }
@@ -551,19 +556,19 @@ class ZoneController extends GetxController {
     });
   }
 
-  Future<void> startTimer(String zoneId) async {
-    if (_zoneTimers[zoneId] != null) return;
+  Future<void> startTimer(String zoneId, int durationMinutes) async {
+    if (_zoneTimers[zoneId] != null) {
+      _zoneTimers[zoneId]?.cancel();
+      _zoneTimers[zoneId] = null;
+    }
 
+    int totalSeconds = durationMinutes * 60;
     final storedSeconds = storage.read('timer_$zoneId');
-    int totalSeconds = 300;
-
-    /// Default to 5 minutes
 
     if (storedSeconds != null) {
       try {
         totalSeconds = int.parse(storedSeconds.toString());
       } catch (e) {
-        // print('Error parsing timer value: $e');
         DialogHelper.showErrorDialog(
           title: 'Error Parsing Timer',
           message: 'Error parsing timer value: $e',
@@ -571,10 +576,10 @@ class ZoneController extends GetxController {
       }
     }
 
-    const oneSecond = Duration(seconds: 1);
-
+    // Initialize the timer display
     zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
+    const oneSecond = Duration(seconds: 1);
     _zoneTimers[zoneId] = Timer.periodic(oneSecond, (timer) {
       if (totalSeconds > 0) {
         totalSeconds--;
@@ -609,26 +614,56 @@ class ZoneController extends GetxController {
     storage.remove('timer_$zoneId');
   }
 
+  Future<void> _executeScheduledIrrigation(
+    String zoneId,
+    int duration,
+    int scheduleId,
+  ) async {
+    try {
+      final zoneIndex = zones.indexWhere((z) => z['id'].toString() == zoneId);
+      if (zoneIndex == -1) return;
+
+      final isZoneActive = zones[zoneIndex]['isActive'] ?? false;
+      if (!isZoneActive) {
+        this.duration.value = duration;
+
+        storage.remove('timer_$zoneId');
+        await toggleActive(zoneId);
+        stopTimer(zoneId);
+
+        await startTimer(zoneId, duration);
+        final updatedIndex = zones.indexWhere(
+          (z) => z['id'].toString() == zoneId,
+        );
+        if (updatedIndex != -1) {
+          zones.refresh();
+        }
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Memuat Jadwal',
+        message: 'Error ketika memuat jadwal: $e',
+      );
+    } finally {
+      _scheduleTimers.remove(scheduleId);
+    }
+  }
+
   Future<void> saveSchedule() async {
     if (selectedDate.value == null || selectedTime.value == null) {
       DialogHelper.showErrorDialog(
-        title: 'Invalid Schedule',
-        message: 'Please select both date and time for the schedule.',
+        title: 'Gagal Membuat Jadwal',
+        message:
+            'Tanggal dan waktu tidak boleh kosong. Silahkan pilih tanggal dan waktu terlebih dahulu!',
       );
       return;
     }
 
-    final zoneId = selectedZone['id']?.toString();
-    if (zoneId == null || zoneId.isEmpty) {
-      DialogHelper.showErrorDialog(
-        title: 'No Zone Selected',
-        message: 'Please select a zone.',
-      );
-      return;
-    }
+    final zoneId = selectedZone['id'].toString();
 
     try {
       final time = selectedTime.value!;
+      final now = DateTime.now();
       final combinedDateTime = DateTime(
         selectedDate.value!.year,
         selectedDate.value!.month,
@@ -636,6 +671,14 @@ class ZoneController extends GetxController {
         time.hour,
         time.minute,
       );
+      if (combinedDateTime.isBefore(now)) {
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Membuat Jadwal',
+          message:
+              'Jadwal tidak boleh lebih awal dari waktu saat ini. Silahkan pilih waktu yang lebih baru!',
+        );
+        return;
+      }
 
       final inserted =
           await supabase
@@ -649,14 +692,15 @@ class ZoneController extends GetxController {
               .single();
 
       schedules.add(inserted);
-
+      loadAllZoneSchedules();
+      clearForm();
       DialogHelper.showSuccessDialog(
-        title: 'Schedule Saved',
-        message: 'Your irrigation schedule has been saved.',
+        title: 'Jadwal Berhasil Disimpan',
+        message: 'Jadwal irigasi otomatis Anda berhasil disimpan',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
-        title: 'Failed to Save Schedule',
+        title: 'Gagal Menyimpan Jadwal',
         message: e.toString(),
       );
     }
@@ -675,17 +719,18 @@ class ZoneController extends GetxController {
               .eq('id', scheduleId);
 
           schedules.removeWhere((schedule) => schedule['id'] == scheduleId);
+          loadAllZoneSchedules();
 
           await DialogHelper.showSuccessDialog(
-            title: 'Success',
-            message: 'Schedule has been deleted.',
+            title: 'Berhasil',
+            message: 'Jadwal berhasil dihapus',
           );
         },
         onCancel: () => Get.back(),
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
-        title: 'Failed to Delete Schedule',
+        title: 'Gagal Menghapus Jadwal',
         message: e.toString(),
       );
     }
@@ -707,10 +752,77 @@ class ZoneController extends GetxController {
           .order('scheduled_at', ascending: true);
 
       schedules.value = List<Map<String, dynamic>>.from(data);
+
+      // final now = DateTime.now();
+      // for (var schedule in schedules) {
+      //   try {
+      //     final scheduledAt = DateTime.parse(schedule['scheduled_at']);
+      //     final scheduledId = schedule['id'];
+      //     final duration = schedule['duration'] ?? 5;
+
+      //     if (scheduledAt.isAfter(now)) {
+      //       final timeUntilSchedule = scheduledAt.difference(now);
+
+      //       _scheduleTimers[schedule['id']] = Timer(timeUntilSchedule, () {
+      //         _executeScheduledIrrigation(zoneId, duration, scheduledId);
+      //       });
+      //     }
+      //   } catch (e) {
+      //     DialogHelper.showErrorDialog(
+      //       title: 'Failed to Parse Schedule',
+      //       message: 'Error parsing schedule date: $e',
+      //     );
+      //   }
+      // }
     } catch (e) {
       schedules.value = [];
     } finally {
       isLoadingSchedules.value = false;
+    }
+  }
+
+  Future<void> loadAllZoneSchedules() async {
+    try {
+      // Cancel any existing schedule timers
+      _scheduleTimers.forEach((id, timer) {
+        timer.cancel();
+      });
+      _scheduleTimers.clear();
+
+      // Load schedules for ALL zones, not just the selected one
+      final data = await supabase
+          .from('irrigation_schedules')
+          .select('*, zone:zones(*)')
+          .order('scheduled_at', ascending: true);
+
+      final now = DateTime.now();
+      for (var schedule in data) {
+        try {
+          final scheduledId = schedule['id'];
+          final zoneId = schedule['zone_id'].toString();
+          final duration = schedule['duration'] ?? 5;
+          final scheduledAt = DateTime.parse(schedule['scheduled_at']);
+
+          // Only set timers for future schedules
+          if (scheduledAt.isAfter(now)) {
+            final timeUntilSchedule = scheduledAt.difference(now);
+
+            _scheduleTimers[scheduledId] = Timer(timeUntilSchedule, () {
+              _executeScheduledIrrigation(zoneId, duration, scheduledId);
+            });
+          }
+        } catch (e) {
+          DialogHelper.showErrorDialog(
+            title: 'Gagal Memuat Jadwal',
+            message: 'Error parsing schedule date: $e',
+          );
+        }
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Failed to Load Schedules',
+        message: 'Error: ${e.toString()}',
+      );
     }
   }
 
@@ -731,6 +843,12 @@ class ZoneController extends GetxController {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
 
     if (pickedTime != null) {
@@ -752,7 +870,8 @@ class ZoneController extends GetxController {
     final response = await supabase
         .from('zones')
         .select('id')
-        .eq('isActive', true);
+        .eq('isActive', true)
+        .filter('deleted_at', 'is', null);
 
     final List<dynamic> data = response as List<dynamic>;
     activeCount.value = data.length;
@@ -761,6 +880,9 @@ class ZoneController extends GetxController {
   void clearForm() {
     selectedZoneCode.value = 1;
     zoneNameController.clear();
+    selectedDate.value = DateTime.now();
+    selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
+    duration.value = 5;
   }
 
   @override

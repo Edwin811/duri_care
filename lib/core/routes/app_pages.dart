@@ -22,6 +22,7 @@ abstract class AppPages {
     ...errorRoute,
     ...addNewZone,
     ...profileRoute,
-    ...editProfileRoute
+    ...editProfileRoute,
+    ...editZone,
   ];
 }

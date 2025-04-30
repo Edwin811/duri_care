@@ -1,5 +1,5 @@
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
-import 'package:duri_care/core/utils/services/session_service.dart';
+import 'package:duri_care/core/services/session_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

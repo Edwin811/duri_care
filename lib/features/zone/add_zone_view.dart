@@ -53,7 +53,7 @@ class AddZoneView extends GetView<ZoneController> {
                             (value) => controller.validateName(value ?? ''),
                         prefixIcon: Icons.note_alt_outlined,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 24.0),
                     ],
                   ),
                 ),
@@ -64,9 +64,9 @@ class AddZoneView extends GetView<ZoneController> {
                 ),
                 Text(
                   '* Kode Zona digunakan untuk menghubungkan dengan alat IoT',
-                  style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                    color: Colors.grey.shade500,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium!.copyWith(color: Colors.grey.shade500),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -77,7 +77,7 @@ class AddZoneView extends GetView<ZoneController> {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: Obx(
-                      () => DropdownButton<String>(
+                      () => DropdownButtonFormField<String>(
                         isExpanded: true,
                         value: controller.selectedZoneCode.value.toString(),
                         items:
@@ -94,12 +94,27 @@ class AddZoneView extends GetView<ZoneController> {
                             );
                           }
                         },
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 8,
+                          ),
+                          prefixIcon: const Icon(Icons.code),
+                        ),
+                        icon: const Icon(Icons.arrow_drop_down),
                         hint: const Text('Pilih Kode Zona'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Kode Zona harus dipilih';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 24.0),
                 // Submit button
                 SizedBox(
                   width: double.infinity,
@@ -127,6 +142,7 @@ class AddZoneView extends GetView<ZoneController> {
                 ),
               ],
             ),
+            //
           ),
         ),
       ),

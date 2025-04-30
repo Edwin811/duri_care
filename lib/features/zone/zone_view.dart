@@ -76,8 +76,8 @@ class ZoneView extends GetView<ZoneController> {
                         children: [
                           // _buildStatusCard(context),
                           // const SizedBox(height: 24),
-                          _buildIoTDevicesSection(context),
-                          const SizedBox(height: 24),
+                          // _buildIoTDevicesSection(context),
+                          // const SizedBox(height: 24),
                           _buildSchedulingSection(context),
                           const SizedBox(height: 24),
                         ],
@@ -572,16 +572,17 @@ class ZoneView extends GetView<ZoneController> {
                     DateFormat('dd MMMM yyyy').format(scheduledAt),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 20,
                     ),
                   ),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      'Jam ${DateFormat('HH:mm').format(scheduledAt)} • Durasi $duration menit',
+                      'Jam ${DateFormat('HH:mm').format(scheduledAt)} | Durasi $duration menit',
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: Colors.black54,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),

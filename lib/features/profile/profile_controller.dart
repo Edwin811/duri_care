@@ -29,6 +29,12 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    usernameController = TextEditingController();
+    emailController = TextEditingController();
+    phoneController = TextEditingController();
+    addressController = TextEditingController();
+
     _initializeProfileData();
   }
 

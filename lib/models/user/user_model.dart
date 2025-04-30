@@ -3,20 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class UserModel {
   final String? id;
   final String? email;
-  final String? displayName;
-  final String? photoUrl;
-  final String? phoneNumber;
-  final Map<String, dynamic>? additionalInfo;
+  final String? fullname;
+  final String? profileUrl;
   final DateTime? createdAt;
   final DateTime? lastLogin;
 
   UserModel({
     this.id,
     this.email,
-    this.displayName,
-    this.photoUrl,
-    this.phoneNumber,
-    this.additionalInfo,
+    this.fullname,
+    this.profileUrl,
     this.createdAt,
     this.lastLogin,
   });
@@ -25,20 +21,17 @@ class UserModel {
     return UserModel(
       id: user.id,
       email: user.email,
-      phoneNumber: user.phone,
-      displayName: user.userMetadata?['name'],
-      photoUrl: user.userMetadata?['avatar_url'],
+      fullname: user.userMetadata?['fullname'],
+      profileUrl: user.userMetadata?['profile_url'],
     );
   }
 
-  factory UserModel.fromSupabaseData(Map<String, dynamic> data, String userId) {
+  factory UserModel.fromSupabaseData(Map<String, dynamic> data) {
     return UserModel(
-      id: userId,
+      id: data['id'],
       email: data['email'],
-      displayName: data['display_name'],
-      photoUrl: data['photo_url'],
-      phoneNumber: data['phone_number'],
-      additionalInfo: data['additional_info'],
+      fullname: data['fullname'],
+      profileUrl: data['profile_url'],
       createdAt:
           data['created_at'] != null
               ? DateTime.parse(data['created_at'])
@@ -52,11 +45,10 @@ class UserModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'email': email,
-      'display_name': displayName,
-      'photo_url': photoUrl,
-      'phone_number': phoneNumber,
-      'additional_info': additionalInfo,
+      'fullname': fullname,
+      'profile_url': profileUrl,
       'created_at': createdAt?.toIso8601String(),
       'last_login': lastLogin?.toIso8601String(),
     };
@@ -75,10 +67,8 @@ class UserModel {
     return UserModel(
       id: id ?? this.id,
       email: email ?? this.email,
-      displayName: displayName ?? this.displayName,
-      photoUrl: photoUrl ?? this.photoUrl,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      additionalInfo: additionalInfo ?? this.additionalInfo,
+      fullname: displayName ?? fullname,
+      profileUrl: photoUrl ?? profileUrl,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
     );
