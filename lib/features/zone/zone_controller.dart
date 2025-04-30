@@ -355,7 +355,7 @@ class ZoneController extends GetxController {
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Zona',
         message:
-            'Apakah Anda yakin ingin menghapus zona ${selectedZone['name']}?',
+            'Apakah Anda yakin ingin menghapus ${selectedZone['name']}?',
         onConfirm: () async {
           await supabase
               .from('zones')

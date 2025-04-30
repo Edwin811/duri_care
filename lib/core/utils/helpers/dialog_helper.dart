@@ -145,7 +145,6 @@ abstract class DialogHelper {
                 'assets/animations/warning.json',
                 width: 100,
                 height: 100,
-                repeat: false,
               ),
               const SizedBox(height: 16),
               Text(
@@ -173,7 +172,7 @@ abstract class DialogHelper {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      minimumSize: Size(140, 50),
+                      minimumSize: Size(120, 50),
                     ),
                     child: Text(
                       cancelText,
@@ -188,7 +187,7 @@ abstract class DialogHelper {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      minimumSize: Size(140, 50),
+                      minimumSize: Size(120, 50),
                     ),
                     child: Text(confirmText, style: TextStyle(fontSize: 16)),
                   ),

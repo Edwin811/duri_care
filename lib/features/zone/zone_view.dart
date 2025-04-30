@@ -572,7 +572,7 @@ class ZoneView extends GetView<ZoneController> {
                     DateFormat('dd MMMM yyyy').format(scheduledAt),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 18,
                     ),
                   ),
                   subtitle: Padding(

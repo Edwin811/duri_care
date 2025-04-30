@@ -1,3 +1,4 @@
+import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
@@ -12,17 +13,6 @@ class EditZoneView extends GetView<ZoneController> {
   @override
   Widget build(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
-    // final DropdownButtonFormField zoneCodeController = DropdownButtonFormField(
-    //   items: controller.zoneCodes.map((zoneCode) {
-    //     return DropdownMenuItem(
-    //       value: zoneCode['code'],
-    //       child: Text(zoneCode['code']),
-    //     );
-    //   }).toList(),
-    //   onChanged: (value) {
-    //     controller. = value;
-    //   },
-    // );
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final zoneId = Get.parameters['zoneId'] ?? '';
 
@@ -36,11 +26,14 @@ class EditZoneView extends GetView<ZoneController> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(),
+          leading: AppBackButton(iconColor: AppColor.white),
           title: Text(
             'Edit Zona',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: AppColor.white),
           ),
+          backgroundColor: AppColor.greenPrimary,
           centerTitle: true,
           elevation: 0,
         ),
