@@ -1,7 +1,9 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/button.dart';
+import 'package:duri_care/features/profile/edit_profile_view.dart';
 import 'package:duri_care/features/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class ProfileView extends GetView<ProfileController> {
@@ -10,220 +12,232 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Header Section
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(30),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        Obx(() {
-                          final profilePic = controller.profilePicture.value;
-                          final isUrl = profilePic.startsWith('http');
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Profile Header Section
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 10,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Obx(() {
+                            final profilePic = controller.profilePicture.value;
+                            final isUrl = profilePic.startsWith('http');
 
-                          return CircleAvatar(
-                            radius: 50,
-                            backgroundColor: AppColor.greenPrimary.withAlpha(
-                              100,
-                            ),
-                            backgroundImage:
-                                isUrl ? NetworkImage(profilePic) : null,
-                            child:
-                                !isUrl
-                                    ? Text(
-                                      profilePic.isNotEmpty ? profilePic : '?',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyLarge?.copyWith(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                    : null,
-                          );
-                        }),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Material(
-                            color: Colors.transparent,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              onTap: () => controller.editProfile(),
-                              customBorder: const CircleBorder(),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColor.greenPrimary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
+                            return CircleAvatar(
+                              radius: 50,
+                              backgroundColor: AppColor.greenPrimary.withAlpha(
+                                100,
+                              ),
+                              backgroundImage:
+                                  isUrl ? NetworkImage(profilePic) : null,
+                              child:
+                                  !isUrl
+                                      ? Text(
+                                        profilePic.isNotEmpty
+                                            ? profilePic
+                                            : '?',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.copyWith(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : null,
+                            );
+                          }),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Material(
+                              color: Colors.transparent,
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                onTap: () {
+                                  Get.toNamed(EditProfileView.route);
+                                },
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColor.greenPrimary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
                                   ),
-                                ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  color: Colors.white,
-                                  size: 16,
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Obx(
-                      () => Text(
-                        controller.username.value,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Obx(
-                      () => Text(
-                        controller.email.value,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColor.greenPrimary,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.greenPrimary.withAlpha(30),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
                         ],
                       ),
-                      child: Obx(
+                      const SizedBox(height: 20),
+                      Obx(
                         () => Text(
-                          controller.role.value,
+                          controller.username.value,
                           style: Theme.of(
                             context,
-                          ).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
+                          ).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 0.3,
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // _buildInfoCard(
-              //   context,
-              //   title: 'Nomor Telepon',
-              //   value:
-              //       controller.phoneNumber.value.isNotEmpty
-              //           ? controller.phoneNumber.value
-              //           : '-',
-              //   icon: Icons.phone_outlined,
-              // ),
-              const SizedBox(height: 12),
-              // _buildInfoCard(
-              //   context,
-              //   title: 'Alamat',
-              //   value:
-              //       controller.address.value.isNotEmpty
-              //           ? controller.address.value
-              //           : '-',
-              //   icon: Icons.location_on_outlined,
-              // ),
-              const SizedBox(height: 24),
-
-              // Settings Section
-              _buildSectionHeader(context, 'Pengaturan'),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                title: 'Notifikasi',
-                icon: Icons.notifications_outlined,
-                trailing: Obx(
-                  () => Switch(
-                    value: controller.isNotificationEnabled.value,
-                    onChanged: controller.toggleNotification,
-                    activeColor: AppColor.greenPrimary,
+                      const SizedBox(height: 6),
+                      Obx(
+                        () => Text(
+                          controller.email.value,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(
+                            color: Colors.grey[600],
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColor.greenPrimary,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColor.greenPrimary.withAlpha(30),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Obx(
+                          () => Text(
+                            controller.role.value,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                title: 'Manajemen Akun Pegawai',
-                icon: Icons.people_outline,
-                // onTap: () => Get.toNamed('/employee-management'),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                title: 'Bayar Tagihan VPS Duri Care',
-                icon: Icons.payment_outlined,
-                // onTap: () => Get.toNamed('/employee-management'),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                title: 'Bantuan',
-                icon: Icons.help_outline,
-                // onTap: () => Get.toNamed('/help'),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                title: 'Tentang Aplikasi',
-                icon: Icons.info_outline,
-                // onTap: () => Get.toNamed('/about'),
-              ),
-              const SizedBox(height: 20),
-              AppFilledButton(
-                onPressed: () {
-                  controller.logout();
-                },
-                icon: Icons.logout_rounded,
-                text: 'Keluar',
-                color: Colors.red,
-              ),
-              const SizedBox(height: 32),
-            ],
+                // _buildInfoCard(
+                //   context,
+                //   title: 'Nomor Telepon',
+                //   value:
+                //       controller.phoneNumber.value.isNotEmpty
+                //           ? controller.phoneNumber.value
+                //           : '-',
+                //   icon: Icons.phone_outlined,
+                // ),
+                const SizedBox(height: 12),
+                // _buildInfoCard(
+                //   context,
+                //   title: 'Alamat',
+                //   value:
+                //       controller.address.value.isNotEmpty
+                //           ? controller.address.value
+                //           : '-',
+                //   icon: Icons.location_on_outlined,
+                // ),
+                const SizedBox(height: 24),
+
+                // Settings Section
+                _buildSectionHeader(context, 'Pengaturan'),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  context,
+                  title: 'Notifikasi',
+                  icon: Icons.notifications_outlined,
+                  trailing: Obx(
+                    () => Switch(
+                      value: controller.isNotificationEnabled.value,
+                      onChanged: (value) => controller.toggleNotification(),
+                      activeColor: AppColor.greenPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  context,
+                  title: 'Manajemen Akun Pegawai',
+                  icon: Icons.people_outline,
+                  // onTap: () => Get.toNamed('/employee-management'),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  context,
+                  title: 'Bayar Tagihan VPS Duri Care',
+                  icon: Icons.payment_outlined,
+                  // onTap: () => Get.toNamed('/employee-management'),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  context,
+                  title: 'Bantuan',
+                  icon: Icons.help_outline,
+                  // onTap: () => Get.toNamed('/help'),
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  context,
+                  title: 'Tentang Aplikasi',
+                  icon: Icons.info_outline,
+                  // onTap: () => Get.toNamed('/about'),
+                ),
+                const SizedBox(height: 20),
+                AppFilledButton(
+                  onPressed: () {
+                    controller.logout();
+                  },
+                  icon: Icons.logout_rounded,
+                  text: 'Keluar',
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),

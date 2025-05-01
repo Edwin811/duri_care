@@ -15,7 +15,7 @@ final profileRoute = [
 final editProfileRoute = [
   GetPage(
     name: EditProfileView.route,
-    page: () => ProfileView(),
+    page: () => EditProfileView(),
     binding: ProfileBinding(),
   ),
 ];

@@ -1,5 +1,7 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/utils/widgets/app_label.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -12,16 +14,26 @@ class EditProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    if (!Get.isRegistered<ProfileController>()) {
+      Get.put(ProfileController());
+    }
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(onPressed: () => Get.back()),
+          backgroundColor: AppColor.greenPrimary,
+          leading: AppBackButton(
+            onPressed: () => Get.back(),
+            iconColor: AppColor.white,
+          ),
           title: Text(
             'Edit Profil',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: AppColor.white),
           ),
           centerTitle: true,
           elevation: 0,
@@ -97,10 +109,7 @@ class EditProfileView extends GetView<ProfileController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Nama Pengguna',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      AppLabelText(text: 'Nama Pengguna'),
                       const SizedBox(height: 8),
                       AppTextFormField(
                         controller: controller.usernameController,
@@ -114,109 +123,81 @@ class EditProfileView extends GetView<ProfileController> {
                         prefixIcon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
-
-                      Text(
-                        'Email',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      AppLabelText(text: 'Email'),
                       const SizedBox(height: 8),
                       AppTextFormField(
                         controller: controller.emailController,
                         hintText: 'Masukkan email',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email tidak boleh kosong';
-                          } else if (!GetUtils.isEmail(value)) {
-                            return 'Email tidak valid';
-                          }
-                          return null;
-                        },
+                        validator:
+                            (value) => controller.validateEmail(value ?? ''),
                         prefixIcon: Icons.email_outlined,
                       ),
                       const SizedBox(height: 16),
-
-                      Text(
-                        'Nomor Telepon',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      AppTextFormField(
-                        controller: controller.phoneController,
-                        hintText: 'Masukkan nomor telepon',
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              !GetUtils.isPhoneNumber(value)) {
-                            return 'Nomor telepon tidak valid';
-                          }
-                          return null;
-                        },
-                        prefixIcon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
+                      AppLabelText(text: 'Password'),
+                      AppSpacing.sm,
+                      Obx(
+                        () => AppTextFormField(
+                          controller: controller.passwordController,
+                          obscureText: controller.isPasswrodVisible.value,
+                          hintText: 'Masukkan password',
+                          prefixIcon: Icons.lock_outline,
+                          suffixIcon: IconButton(
+                            icon:
+                                controller.isPasswrodVisible.value
+                                    ? const Icon(Icons.visibility)
+                                    : const Icon(Icons.visibility_off),
+                            onPressed:
+                                () => controller.togglePasswordVisibility(),
+                          ),
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty) {
+                              return controller.validatePassword(value);
+                            }
+                            return null;
+                          },
+                        ),
                       ),
                       const SizedBox(height: 16),
-
-                      Text(
-                        'Alamat',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      AppLabelText(text: 'Konfirmasi Password'),
+                      AppSpacing.sm,
+                      Obx(
+                        () => AppTextFormField(
+                          controller: controller.confirmPasswordController,
+                          obscureText:
+                              controller.isConfirmPasswordVisible.value,
+                          hintText: 'Masukkan konfirmasi password',
+                          prefixIcon: Icons.lock_outline,
+                          suffixIcon: IconButton(
+                            icon:
+                                controller.isConfirmPasswordVisible.value
+                                    ? const Icon(Icons.visibility)
+                                    : const Icon(Icons.visibility_off),
+                            onPressed:
+                                () =>
+                                    controller
+                                        .toggleConfirmPasswordVisibility(),
+                          ),
+                          validator: (value) {
+                            return controller.validateConfirmPassword(
+                              value ?? '',
+                            );
+                          },
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      AppTextFormField(
-                        controller: controller.addressController,
-                        hintText: 'Masukkan alamat',
-                        prefixIcon: Icons.home_outlined,
-                      ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (controller.formKey.currentState!.validate()) {
-                        controller.updateProfile();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.greenPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Simpan Perubahan',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                AppFilledButton(
+                  onPressed: () {
+                    if (controller.formKey.currentState!.validate()) {
+                      controller.updateProfile();
+                    }
+                  },
+                  text: 'Simpan Perubahan',
                 ),
                 const SizedBox(height: 16),
-                // Cancel button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => Get.back(),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      side: BorderSide(color: AppColor.greenPrimary),
-                    ),
-                    child: Text(
-                      'Batal',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColor.greenPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

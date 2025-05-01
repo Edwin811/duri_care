@@ -1,4 +1,3 @@
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,11 +64,14 @@ class AuthController extends GetxController {
     );
 
     if (response.user != null) {
+      final username = await getUsername();
+
       final userData = {
         'id': response.user!.id,
         'email': response.user!.email,
-        'fullname': await getUsername(),
+        'fullname': username,
       };
+
       await SessionService.to.saveSession(
         response.session!.accessToken,
         userData,
@@ -89,26 +91,34 @@ class AuthController extends GetxController {
     Get.offAllNamed('/login');
   }
 
-  Future<String?> getUsername() async {
+  Future<String> getUsername() async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return null;
+    if (user == null) return 'User';
+
+    final cached = await SessionService.to.getCachedUsername(user.id);
+    if (cached != null && cached.isNotEmpty) return cached;
 
     try {
-      final response =
+      final res =
           await _supabase
               .from('users')
               .select('fullname')
               .eq('id', user.id)
-              .maybeSingle();
+              .limit(1)
+              .single();
 
-      if (response != null && response['fullname'] != null) {
-        return response['fullname'];
-      }
+      final fullname = res['fullname']?.toString().trim();
+
+      final nameToUse =
+          (fullname != null && fullname.isNotEmpty)
+              ? fullname
+              : (user.email?.split('@').first ?? 'User');
+
+      await SessionService.to.cacheUsername(user.id, nameToUse);
+      return nameToUse;
     } catch (e) {
-      DialogHelper.showErrorDialog(title: 'Error', message: e.toString());
+      return user.email?.split('@').first ?? 'User';
     }
-
-    return user.email?.split('@').first;
   }
 
   Future<String?> getEmail() async {
@@ -123,26 +133,46 @@ class AuthController extends GetxController {
         final response =
             await _supabase
                 .from('users')
-                .select('profile_url, fullname')
+                .select('profile_image, fullname')
                 .eq('id', user.id)
                 .maybeSingle();
 
-        final profileImage = response?['profile_image'];
-        if (profileImage != null &&
-            profileImage is String &&
-            profileImage.isNotEmpty) {
-          return profileImage;
+        final profileImagePath = response?['profile_image'];
+
+        if (profileImagePath != null &&
+            profileImagePath is String &&
+            profileImagePath.isNotEmpty) {
+          final publicUrl = _supabase.storage
+              .from('duricare')
+              .getPublicUrl(profileImagePath);
+          return publicUrl;
         }
 
-        final fullname = response?['fullname'];
+        final fullname = response!['fullname'];
         if (fullname != null && fullname is String && fullname.isNotEmpty) {
           return fullname[0].toUpperCase();
         }
       } catch (e) {
-        DialogHelper.showErrorDialog(title: 'Error', message: e.toString());
+        throw Exception('Error fetching profile picture: $e');
       }
     }
 
     return '';
+  }
+
+  Future<String?> getRole() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return null;
+
+    final response =
+        await Supabase.instance.client
+            .from('user_roles')
+            .select('roles ( role_name )')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+    if (response == null) return null;
+
+    return response['roles']?['role_name'];
   }
 }

@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 class SessionService extends GetxService {
   final GetStorage _box = GetStorage();
   final RxBool _isLoggedIn = false.obs;
+  final _storage = GetStorage();
   final Rx<Map<String, dynamic>?> userData = Rx<Map<String, dynamic>>({});
 
   static SessionService get to => Get.find<SessionService>();
@@ -23,6 +24,24 @@ class SessionService extends GetxService {
     }
     return this;
   }
+
+  Future<void> cacheUsername(String userId, String fullname) async {
+    await _storage.write('username_$userId', fullname);
+  }
+
+  Future<String?> getCachedUsername(String userId) async {
+    return _storage.read('username_$userId');
+  }
+
+  Future<void> cacheProfilePicture(String userId, String profilePicture) async {
+    await _storage.write('profile_image_$userId', profilePicture);
+  }
+
+  Future<void> clearUserCache(String userId) async {
+    await _storage.remove('username_$userId');
+  }
+
+
 
   Future<void> saveSession(String token, Map<String, dynamic> user) async {
     await _box.write(_tokenKey, token);

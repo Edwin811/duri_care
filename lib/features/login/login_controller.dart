@@ -26,7 +26,7 @@ class LoginController extends GetxController {
   void onInit() {
     super.onInit();
     if (SessionService.to.token != null) {
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
     }
   }
 

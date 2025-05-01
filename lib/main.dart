@@ -15,9 +15,6 @@ Future<void> main() async {
   await GetStorage.init();
   await Get.putAsync(() => SessionService().init());
   await dotenv.load(fileName: ".env");
-
-  final networkController = Get.put(NetworkController());
-
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -26,9 +23,9 @@ Future<void> main() async {
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['ANON_KEY']!,
-    realtimeClientOptions: RealtimeClientOptions(
-      timeout: Duration(seconds: 20),
-    ),
+    // realtimeClientOptions: RealtimeClientOptions(
+    //   timeout: Duration(seconds: 5),
+    // ),
   );
 
   runApp(const DuriCare());

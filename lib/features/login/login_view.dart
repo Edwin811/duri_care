@@ -56,7 +56,7 @@ class LoginScreen extends GetView<LoginController> {
                               AppSpacing.sm,
                               AppTextFormField(
                                 controller: controller.emailController,
-                                hintText: 'Enter your email',
+                                hintText: 'Masukkan email',
                                 obscureText: false,
                                 prefixIcon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
@@ -74,7 +74,7 @@ class LoginScreen extends GetView<LoginController> {
                                   controller: controller.passwordController,
                                   obscureText:
                                       controller.isPasswordVisible.value,
-                                  hintText: 'Enter your password',
+                                  hintText: 'Masukkan password',
                                   prefixIcon: Icons.lock_outline,
                                   suffixIcon: IconButton(
                                     icon:
