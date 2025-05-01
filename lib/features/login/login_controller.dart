@@ -49,35 +49,31 @@ class LoginController extends GetxController {
       isLoading.value = true;
       await _auth.login(email, password);
 
-      Future.microtask(() {
-        final userData = SessionService.to.getUserData();
-        if (userData != null) {
-          Get.offAllNamed('/main');
-          DialogHelper.showSuccessDialog(
-            title: 'Berhasil Masuk',
-            message: 'Selamat datang, ${userData['fullname']}',
-          );
-        }
-      });
+      final userData = SessionService.to.getUserData();
+      if (userData != null) {
+        Get.offAllNamed('/main');
+        DialogHelper.showSuccessDialog(
+          title: 'Berhasil Masuk',
+          message: 'Selamat datang, ${userData['fullname']}',
+        );
+      }
     } catch (e) {
-      Future.microtask(() {
-        if (e.toString().contains('invalid_credentials')) {
-          DialogHelper.showErrorDialog(
-            title: 'Gagal Masuk',
-            message: 'Email atau password salah',
-          );
-        } else if (e.toString().contains('user_not_found')) {
-          DialogHelper.showErrorDialog(
-            title: 'Gagal Masuk',
-            message: 'Akun tidak ditemukan',
-          );
-        } else {
-          DialogHelper.showErrorDialog(
-            title: 'Gagal Masuk',
-            message: 'Terjadi kesalahan, silakan coba lagi',
-          );
-        }
-      });
+      if (e.toString().contains('invalid_credentials')) {
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Masuk',
+          message: 'Email atau password salah',
+        );
+      } else if (e.toString().contains('user_not_found')) {
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Masuk',
+          message: 'Akun tidak ditemukan',
+        );
+      } else {
+        DialogHelper.showErrorDialog(
+          title: 'Gagal Masuk',
+          message: 'Terjadi kesalahan, silakan coba lagi',
+        );
+      }
     } finally {
       isLoading.value = false;
     }

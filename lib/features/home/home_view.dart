@@ -37,7 +37,7 @@ class HomeView extends GetView<HomeController> {
                                 final profilePic =
                                     controller.profilePicture.value;
                                 final isUrl = profilePic.startsWith('http');
-      
+
                                 return CircleAvatar(
                                   radius: 25,
                                   backgroundColor: AppColor.greenPrimary
@@ -86,7 +86,10 @@ class HomeView extends GetView<HomeController> {
                                     controller.username.value,
                                     style: Theme.of(
                                       context,
-                                    ).textTheme.bodyLarge?.copyWith(fontSize: 14),
+                                    ).textTheme.bodyLarge?.copyWith(
+                                      fontSize: 14,
+                                      color: AppColor.greenPrimary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -217,7 +220,8 @@ class HomeView extends GetView<HomeController> {
                             Expanded(
                               flex: 2,
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Expanded(
                                     child: DeviceInfo(
@@ -274,7 +278,8 @@ class HomeView extends GetView<HomeController> {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
