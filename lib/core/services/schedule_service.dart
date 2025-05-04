@@ -8,7 +8,6 @@ class ScheduleService extends GetxService {
 
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
     try {
-      final now = DateTime.now().toUtc().toIso8601String();
 
       final data =
           await _supabase
@@ -30,8 +29,7 @@ class ScheduleService extends GetxService {
       final zoneName = data['zone_name'] ?? 'Tanpa Nama';
 
       return Upcomingschedule(schedule: schedule, zoneName: zoneName);
-    } catch (e, stack) {
-      print('ERROR getUpcomingScheduleWithZone: $e');
+    } catch (e) {
       return null;
     }
   }
