@@ -41,6 +41,7 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
       final schedule = await scheduleService.getUpcomingScheduleWithZone();
+      print('schedule: $schedule');
       if (schedule != null) {
         upcomingSchedule.value = schedule;
       } else {

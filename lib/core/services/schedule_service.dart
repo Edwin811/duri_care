@@ -8,31 +8,30 @@ class ScheduleService extends GetxService {
 
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
     try {
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
 
       final data =
           await _supabase
-              .from('zone_schedules')
-              .select(
-                'schedule:schedule_id(id, scheduled_at, duration, executed, status_id), zone:zone_id(name)',
-              )
-              .gte('schedule.scheduled_at', now)
-              .order('schedule.scheduled_at', ascending: true)
+              .from('upcoming_zone_schedules')
+              .select()
               .limit(1)
               .maybeSingle();
 
       if (data == null) return null;
 
-      final scheduleData = data['schedule'];
-      final zoneData = data['zone'];
+      final schedule = IrrigationScheduleModel(
+        id: data['schedule_id'],
+        scheduledAt: DateTime.parse(data['scheduled_at']),
+        duration: data['duration'],
+        executed: data['executed'],
+        statusId: data['status_id'],
+      );
 
-      if (scheduleData == null || zoneData == null) return null;
-
-      final schedule = IrrigationScheduleModel.fromMap(scheduleData);
-      final zoneName = zoneData['name'] ?? 'Tanpa Nama';
+      final zoneName = data['zone_name'] ?? 'Tanpa Nama';
 
       return Upcomingschedule(schedule: schedule, zoneName: zoneName);
-    } catch (e) {
+    } catch (e, stack) {
+      print('ERROR getUpcomingScheduleWithZone: $e');
       return null;
     }
   }
@@ -79,6 +78,6 @@ class ScheduleService extends GetxService {
     final datePart = '${start.day} ${_monthName(start.month)} ${start.year}';
     final timePart = '${_formatTime(start)} - ${_formatTime(end)} WIB';
 
-    return '$dayName, $datePart | $timePart [${info.zoneName}]';
+    return '$dayName, $datePart | $timePart \n[${info.zoneName}]';
   }
 }
