@@ -288,8 +288,7 @@ class ZoneController extends GetxController {
 
       await supabase.from('zone_users').insert({
         'zone_id': zoneId,
-        'user_id': userId,
-        'assigned_at': DateTime.now().toIso8601String(),
+        'user_id': userId
       });
 
       if (selectedDeviceIds.isNotEmpty) {
@@ -354,8 +353,7 @@ class ZoneController extends GetxController {
       // Show confirmation dialog before proceeding with deletion
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Zona',
-        message:
-            'Apakah Anda yakin ingin menghapus ${selectedZone['name']}?',
+        message: 'Apakah Anda yakin ingin menghapus ${selectedZone['name']}?',
         onConfirm: () async {
           await supabase
               .from('zones')
@@ -792,8 +790,8 @@ class ZoneController extends GetxController {
       // Load schedules for ALL zones, not just the selected one
       final data = await supabase
           .from('irrigation_schedules')
-          .select('*, zone:zones(*)')
-          .order('scheduled_at', ascending: true);
+          .select('*, schedule:zone_schedules(*, zone:zones(*))')
+          .order('schedule_at', ascending: true);
 
       final now = DateTime.now();
       for (var schedule in data) {

@@ -23,14 +23,14 @@ class ProfileView extends GetView<ProfileController> {
               children: [
                 Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 25),
-                  padding: const EdgeInsets.symmetric(vertical: 30),
+                  margin: const EdgeInsets.only(bottom: 25, top: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 50),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(70),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                         spreadRadius: 1,
@@ -50,7 +50,7 @@ class ProfileView extends GetView<ProfileController> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppColor.greenPrimary.withOpacity(0.2),
+                                  color: AppColor.greenPrimary.withAlpha(100),
                                   width: 4,
                                 ),
                               ),
@@ -86,7 +86,7 @@ class ProfileView extends GetView<ProfileController> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColor.greenPrimary.withOpacity(0.3),
+                                      color: AppColor.greenPrimary.withAlpha(50),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -172,7 +172,7 @@ class ProfileView extends GetView<ProfileController> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withAlpha(70),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),

@@ -39,12 +39,12 @@ class ProfileController extends GetxController {
     _initializeProfileData();
   }
 
-  @override
-  void onClose() {
-    usernameController.dispose();
-    emailController.dispose();
-    super.onClose();
-  }
+  // @override
+  // void onClose() {
+  //   usernameController.dispose();
+  //   emailController.dispose();
+  //   super.onClose();
+  // }
 
   void toggleNotification() {
     isNotificationEnabled.value = !isNotificationEnabled.value;
