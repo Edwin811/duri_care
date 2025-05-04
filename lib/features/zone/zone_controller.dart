@@ -71,6 +71,13 @@ class ZoneController extends GetxController {
     loadDevices();
   }
 
+  @override
+  void onClose() {
+    _zoneTimers.forEach((_, timer) => timer?.cancel());
+    clearForm();
+    super.onClose();
+  }
+
   void _setupZoneTimers() {
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
@@ -452,7 +459,6 @@ class ZoneController extends GetxController {
           zoneTimers[zoneId]?.value = '$hours:$minutes:$seconds';
         }
 
-        // Save timer to storage
         storage.write('timer_$zoneId', totalSeconds);
       } else {
         stopTimer(zoneId);
@@ -545,12 +551,15 @@ class ZoneController extends GetxController {
         zoneId: zoneId,
       );
 
-      loadAllZoneSchedules();
+      loadSchedules();
       clearForm();
 
       DialogHelper.showSuccessDialog(
         title: 'Jadwal Berhasil Disimpan',
         message: 'Jadwal irigasi otomatis Anda berhasil disimpan.',
+        onConfirm: () {
+          clearForm();
+        },
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -560,32 +569,45 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> deleteSchedule(int scheduleId) async {
+  Future<void> deleteSchedule(int scheduleId, int zoneId) async {
     try {
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Jadwal',
-        message: 'Apakah anda yakin ingin menghapus jadwal penyiraman ini?',
+        message: 'Apakah Anda yakin ingin menghapus jadwal ini?',
         onConfirm: () async {
           Get.back();
-          await _zoneService.deleteSchedule(scheduleId);
 
-          schedules.removeWhere(
-            (schedule) => schedule.schedule.id == scheduleId,
-          );
-          loadAllZoneSchedules();
+          isLoadingSchedules.value = true;
 
-          await DialogHelper.showSuccessDialog(
-            title: 'Berhasil',
-            message: 'Jadwal berhasil dihapus',
+          final isDeleted = await _zoneService.deleteSchedule(
+            scheduleId,
+            zoneId,
           );
+
+          if (isDeleted) {
+            schedules.removeWhere((s) => s.schedule.id == scheduleId);
+            await loadSchedules();
+            DialogHelper.showSuccessDialog(
+              title: 'Berhasil',
+              message: 'Jadwal berhasil dihapus.',
+            );
+          } else {
+            DialogHelper.showErrorDialog(
+              title: 'Gagal Menghapus Jadwal',
+              message: 'Jadwal ini masih digunakan oleh zona lain.',
+            );
+          }
+
+          isLoadingSchedules.value = false;
         },
-        onCancel: () => Get.back(),
+        onCancel: Get.back,
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Menghapus Jadwal',
         message: e.toString(),
       );
+      isLoadingSchedules.value = false;
     }
   }
 
@@ -639,40 +661,26 @@ class ZoneController extends GetxController {
 
   Future<void> loadAllZoneSchedules() async {
     try {
+      // Cancel and clear all existing timers
       _scheduleTimers.forEach((id, timer) {
         timer.cancel();
       });
       _scheduleTimers.clear();
 
-      final data = await _zoneService.loadAllZoneSchedules();
+      // Fetch all schedules from the service
+      final scheduleList = await _zoneService.loadAllZoneSchedules();
       final now = DateTime.now();
 
-      for (var item in data) {
+      // Clear any stale data from storage
+      storage.remove('schedules');
+
+      // Process and set up timers for the fetched schedules
+      for (var item in scheduleList) {
         try {
-          final scheduleData = item['schedule'];
-          if (scheduleData == null || scheduleData is! Map) {
-            debugPrint('Invalid schedule data found');
-            continue;
-          }
-
-          final scheduledId = scheduleData['id'];
-          final scheduledAtStr = scheduleData['schedule_at'];
-          if (scheduledAtStr == null) {
-            debugPrint('Invalid schedule_at value for schedule ID: $scheduledId');
-            continue;
-          }
-          final scheduledAt = DateTime.parse(scheduledAtStr);
-          final duration = scheduleData['duration'] ?? 5;
-
-          final zoneData = item['zone'];
-          if (zoneData == null ||
-              zoneData is! Map ||
-              !zoneData.containsKey('id')) {
-            debugPrint('Invalid zone data for schedule ID: $scheduledId');
-            continue;
-          }
-
-          final zoneId = zoneData['id'].toString();
+          final scheduledId = item.schedule.id;
+          final scheduledAt = item.schedule.scheduledAt;
+          final duration = item.schedule.duration;
+          final zoneId = item.zoneId.toString();
 
           if (scheduledAt.isAfter(now)) {
             final timeUntilSchedule = scheduledAt.difference(now);
@@ -686,7 +694,6 @@ class ZoneController extends GetxController {
             title: 'Failed to Process Schedule',
             message: 'Error: $e',
           );
-          // Error: type 'Null' is not a subtype of type 'String'
         }
       }
     } catch (e) {
@@ -747,12 +754,5 @@ class ZoneController extends GetxController {
     selectedDate.value = DateTime.now();
     selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
     duration.value = 5;
-  }
-
-  @override
-  void onClose() {
-    _zoneTimers.forEach((_, timer) => timer?.cancel());
-    clearForm();
-    super.onClose();
   }
 }

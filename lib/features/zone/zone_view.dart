@@ -310,7 +310,7 @@ class ZoneView extends GetView<ZoneController> {
                       size: 32,
                     ),
                     onPressed: () {
-                      controller.deleteSchedule(schedule.id);
+                      controller.deleteSchedule(schedule.id, schedule.zoneId);
                     },
                   ),
                 ),

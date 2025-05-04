@@ -95,7 +95,11 @@ abstract class DialogHelper {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(message, style: const TextStyle(fontSize: 14)),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

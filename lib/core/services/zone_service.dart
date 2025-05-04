@@ -1,3 +1,4 @@
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/iot_device_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
@@ -85,10 +86,11 @@ class ZoneService extends GetxService {
             .from('zones')
             .select('id')
             .eq('name', name)
+            .filter('deleted_at', 'is', null)
             .maybeSingle();
 
     if (existing != null) {
-      throw Exception('Zone with name "$name" already exists');
+      throw Exception('Zona dengan nama "$name" sudah ada');
     }
 
     final newZone =
@@ -165,10 +167,11 @@ class ZoneService extends GetxService {
             .select('id')
             .eq('name', newName.trim())
             .neq('id', zoneId)
+            .filter('deleted_at', 'is', null)
             .maybeSingle();
 
     if (existing != null) {
-      throw Exception('Zone with name "$newName" already exists');
+      throw Exception('Zona dengan nama "$newName" sudah ada');
     }
 
     final updated =
@@ -222,29 +225,92 @@ class ZoneService extends GetxService {
     required int duration,
     required String zoneId,
   }) async {
-    final insertedSchedule =
+    final existingSchedule =
         await _supabase
             .from('irrigation_schedules')
-            .insert({
-              'duration': duration,
-              'status_id': 1,
-              'scheduled_at': scheduledDateTime.toIso8601String(),
-              'executed': false,
-            })
             .select()
-            .single();
+            .eq('scheduled_at', scheduledDateTime.toIso8601String())
+            .eq('duration', duration)
+            .maybeSingle();
 
-    await _supabase.from('zone_schedules').insert({
-      'zone_id': int.parse(zoneId),
-      'schedule_id': insertedSchedule['id'],
-    });
+    dynamic scheduleId;
+    Map<String, dynamic> scheduleData;
 
-    return insertedSchedule;
+    if (existingSchedule != null) {
+      scheduleId = existingSchedule['id'];
+      scheduleData = existingSchedule;
+    } else {
+      final insertedSchedule =
+          await _supabase
+              .from('irrigation_schedules')
+              .insert({
+                'duration': duration,
+                'status_id': 1,
+                'scheduled_at': scheduledDateTime.toIso8601String(),
+                'executed': false,
+              })
+              .select()
+              .single();
+      scheduleId = insertedSchedule['id'];
+      scheduleData = insertedSchedule;
+    }
+
+    final existingZoneSchedule =
+        await _supabase
+            .from('zone_schedules')
+            .select()
+            .eq('zone_id', int.parse(zoneId))
+            .eq('schedule_id', scheduleId)
+            .maybeSingle();
+
+    if (existingZoneSchedule == null) {
+      await _supabase.from('zone_schedules').insert({
+        'zone_id': int.parse(zoneId),
+        'schedule_id': scheduleId,
+      });
+    }
+
+    return scheduleData;
   }
 
-  /// Deletes a schedule
-  Future<void> deleteSchedule(int scheduleId) async {
-    await _supabase.from('irrigation_schedules').delete().eq('id', scheduleId);
+  Future<bool> deleteSchedule(int scheduleId, int zoneId) async {
+    try {
+      final zoneSchedules = await _supabase
+          .from('zone_schedules')
+          .select()
+          .eq('zone_id', zoneId);
+
+      final int zoneScheduleCount = zoneSchedules.length;
+
+      final otherUsages = await _supabase
+          .from('zone_schedules')
+          .select()
+          .eq('schedule_id', scheduleId)
+          .neq('zone_id', zoneId);
+
+      final int otherZoneCount = otherUsages.length;
+
+      await _supabase
+          .from('zone_schedules')
+          .delete()
+          .eq('zone_id', zoneId)
+          .eq('schedule_id', scheduleId);
+
+      if (otherZoneCount == 0) {
+        await _supabase
+            .from('irrigation_schedules')
+            .delete()
+            .eq('id', scheduleId);
+      }
+
+      return true;
+    } on PostgrestException catch (e) {
+      print('PostgrestException: ${e.message}');
+      throw Exception('Gagal menghapus jadwal: ${e.message}');
+    } catch (e) {
+      print('Unexpected error: $e');
+      throw Exception('Terjadi kesalahan: $e');
+    }
   }
 
   /// Loads all schedules for a specific zone
@@ -252,7 +318,7 @@ class ZoneService extends GetxService {
     final data = await _supabase
         .from('zone_schedules')
         .select(
-          '*, schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
+          'id, zone_id, schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
         )
         .eq('zone_id', zoneId);
 
@@ -267,22 +333,21 @@ class ZoneService extends GetxService {
   }
 
   /// Loads all zone schedules across all zones
-  Future<List<dynamic>> loadAllZoneSchedules() async {
+  Future<List<ZoneScheduleModel>> loadAllZoneSchedules() async {
     final data = await _supabase
         .from('zone_schedules')
         .select(
-          '*, zone:zones(*), schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
+          'id, zone_id, schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
         );
 
-    data.sort((a, b) {
-      final scheduleA = a['schedule'] as Map<String, dynamic>;
-      final scheduleB = b['schedule'] as Map<String, dynamic>;
-      final dateA = DateTime.parse(scheduleA['scheduled_at'].toString());
-      final dateB = DateTime.parse(scheduleB['scheduled_at'].toString());
-      return dateA.compareTo(dateB);
-    });
+    final scheduleList =
+        (data as List).map((item) => ZoneScheduleModel.fromMap(item)).toList();
 
-    return data;
+    scheduleList.sort(
+      (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
+    );
+
+    return scheduleList;
   }
 
   /// Sets up a Supabase stream to listen for zone changes
