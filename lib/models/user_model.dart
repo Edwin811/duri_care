@@ -6,7 +6,7 @@ class UserModel {
   final String? fullname;
   final String? profileUrl;
   final DateTime? createdAt;
-  final DateTime? lastLogin;
+  final DateTime? lastSignInAt;
 
   UserModel({
     this.id,
@@ -14,7 +14,7 @@ class UserModel {
     this.fullname,
     this.profileUrl,
     this.createdAt,
-    this.lastLogin,
+    this.lastSignInAt,
   });
 
   factory UserModel.fromSupabaseUser(User user) {
@@ -22,7 +22,7 @@ class UserModel {
       id: user.id,
       email: user.email,
       fullname: user.userMetadata?['fullname'],
-      profileUrl: user.userMetadata?['profile_url'],
+      profileUrl: user.userMetadata?['profile_image'],
     );
   }
 
@@ -31,12 +31,12 @@ class UserModel {
       id: data['id'],
       email: data['email'],
       fullname: data['fullname'],
-      profileUrl: data['profile_url'],
+      profileUrl: data['profile_image'],
       createdAt:
           data['created_at'] != null
               ? DateTime.parse(data['created_at'])
               : null,
-      lastLogin:
+      lastSignInAt:
           data['last_login'] != null
               ? DateTime.parse(data['last_login'])
               : null,
@@ -48,29 +48,27 @@ class UserModel {
       'id': id,
       'email': email,
       'fullname': fullname,
-      'profile_url': profileUrl,
+      'profile_image': profileUrl,
       'created_at': createdAt?.toIso8601String(),
-      'last_login': lastLogin?.toIso8601String(),
+      'last_login': lastSignInAt?.toIso8601String(),
     };
   }
 
   UserModel copyWith({
     String? id,
     String? email,
-    String? displayName,
-    String? photoUrl,
-    String? phoneNumber,
-    Map<String, dynamic>? additionalInfo,
+    String? fullname,
+    String? profileUrl,
     DateTime? createdAt,
-    DateTime? lastLogin,
+    DateTime? lastSignInAt,
   }) {
     return UserModel(
       id: id ?? this.id,
       email: email ?? this.email,
-      fullname: displayName ?? fullname,
-      profileUrl: photoUrl ?? profileUrl,
+      fullname: fullname ?? this.fullname,
+      profileUrl: profileUrl ?? this.profileUrl,
       createdAt: createdAt ?? this.createdAt,
-      lastLogin: lastLogin ?? this.lastLogin,
+      lastSignInAt: lastSignInAt ?? this.lastSignInAt,
     );
   }
 }

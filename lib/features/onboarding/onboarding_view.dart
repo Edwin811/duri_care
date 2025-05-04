@@ -1,5 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/models/onboarding/data.dart';
+import 'package:duri_care/models/onboarding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';

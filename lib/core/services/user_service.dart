@@ -1,6 +1,6 @@
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
-import 'package:duri_care/models/user/user_model.dart';
+import 'package:duri_care/models/user_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,25 +23,52 @@ class UserService extends GetxService {
   }
 
   Future<UserModel?> getCurrentUser() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return null;
+    final authUser = _supabase.auth.currentUser;
+    if (authUser == null) return null;
 
     try {
       final response =
           await _supabase
               .from('users')
-              .select()
-              .eq('id', user.id)
+              .select('fullname, profile_image')
+              .eq('id', authUser.id)
               .maybeSingle();
 
       if (response != null) {
-        final userModel = UserModel.fromSupabaseData(response);
+        final userModel = UserModel(
+          id: authUser.id,
+          email: authUser.email ?? '',
+          createdAt: DateTime.parse(authUser.createdAt),
+          lastSignInAt:
+              authUser.lastSignInAt != null
+                  ? DateTime.parse(authUser.lastSignInAt!)
+                  : null,
+          fullname: response['fullname'] ?? '',
+          profileUrl: response['profile_image'],
+        );
+
+        currentUser.value = userModel;
+        return userModel;
+      } else {
+        // Jika user belum ada di tabel 'users', buat default kosong
+        final userModel = UserModel(
+          id: authUser.id,
+          email: authUser.email ?? '',
+          createdAt: DateTime.parse(authUser.createdAt),
+          lastSignInAt:
+              authUser.lastSignInAt != null
+                  ? DateTime.parse(authUser.lastSignInAt!)
+                  : null,
+          fullname: '',
+          profileUrl: null,
+        );
+
         currentUser.value = userModel;
         return userModel;
       }
-      return currentUser.value;
     } catch (e) {
       DialogHelper.showErrorDialog(message: 'Gagal mendapatkan data user: $e');
+      return null;
     }
   }
 }

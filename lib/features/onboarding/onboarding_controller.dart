@@ -1,5 +1,5 @@
 import 'package:duri_care/features/auth/auth_controller.dart';
-import 'package:duri_care/models/onboarding/data.dart';
+import 'package:duri_care/models/onboarding.dart';
 import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
 

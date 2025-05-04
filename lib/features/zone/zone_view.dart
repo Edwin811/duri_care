@@ -27,9 +27,7 @@ class ZoneView extends GetView<ZoneController> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColor.greenPrimary,
-          leading: AppBackButton(
-            iconColor: AppColor.white,
-          ),
+          leading: AppBackButton(iconColor: AppColor.white),
           title: Obx(
             () => Text(
               controller.selectedZone.isNotEmpty
@@ -42,7 +40,7 @@ class ZoneView extends GetView<ZoneController> {
           actions: [
             // Edit button
             IconButton(
-              icon: const Icon(Icons.edit_rounded, color: AppColor.white,),
+              icon: const Icon(Icons.edit_rounded, color: AppColor.white),
               tooltip: 'Edit Zone',
               onPressed: () {
                 if (zoneId != null) {
@@ -74,7 +72,6 @@ class ZoneView extends GetView<ZoneController> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // _buildStatusCard(context),
                           // const SizedBox(height: 24),
                           // _buildIoTDevicesSection(context),
                           // const SizedBox(height: 24),
@@ -89,310 +86,28 @@ class ZoneView extends GetView<ZoneController> {
     );
   }
 
-  Widget _buildStatusCard(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColor.greenSecondary.withAlpha(100),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.grass, color: AppColor.greenPrimary),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Zone Status',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const Spacer(),
-                Obx(
-                  () => Switch(
-                    value: controller.isActive.value,
-                    onChanged: (value) {
-                      final zoneId = controller.selectedZone['id']?.toString();
-                      if (zoneId != null && zoneId.isNotEmpty) {
-                        controller.toggleActive(zoneId);
-                      }
-                    },
-                    activeTrackColor: AppColor.greenPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Obx(
-                  () => _buildInfoItem(
-                    context,
-                    'Soil Moisture',
-                    controller.moisture.value,
-                    Icons.water_drop_outlined,
-                  ),
-                ),
-                Obx(
-                  () => _buildInfoItem(
-                    context,
-                    'Temperature',
-                    controller.temperature.value,
-                    Icons.thermostat,
-                  ),
-                ),
-                Obx(
-                  () => _buildInfoItem(
-                    context,
-                    'Humidity',
-                    controller.humidity.value,
-                    Icons.cloud,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-  ) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.secondary),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          Text(title, style: Theme.of(context).textTheme.bodySmall),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIoTDevicesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Perangkat IoT Terhubung',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 12),
-        Obx(() {
-          if (controller.isLoadingDevices.value) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 30),
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          if (controller.devices.isEmpty) {
-            return Card(
-              elevation: 0,
-              color: Colors.grey[100],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey[500]!),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(34),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.devices_other,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Tidak ada perangkat IoT terhubung',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tambahkan perangkat IoT untuk memonitor zona ini',
-                      style: TextStyle(color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.devices.length,
-            itemBuilder: (context, index) {
-              final device = controller.devices[index];
-
-              IconData deviceIcon = Icons.sensors;
-              if (device.type == 'moisture_sensor') {
-                deviceIcon = Icons.water_drop;
-              } else if (device.type == 'valve_controller') {
-                deviceIcon = Icons.device_hub_outlined;
-              } else if (device.type == 'weather_station') {
-                deviceIcon = Icons.cloud;
-              }
-
-              Color statusColor = Colors.grey;
-              if (device.status == 'online') {
-                statusColor = Colors.green;
-              } else if (device.status == 'offline') {
-                statusColor = Colors.red;
-              } else if (device.status == 'warning') {
-                statusColor = Colors.orange;
-              }
-
-              final batteryLevel = 60 + (index * 10) % 40;
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColor.greenSecondary.withAlpha(50),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              deviceIcon,
-                              color: AppColor.greenPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  device.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: statusColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      device.status.capitalize!,
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.battery_full,
-                                    color:
-                                        batteryLevel > 20
-                                            ? AppColor.greenPrimary
-                                            : Colors.red,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$batteryLevel%',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                width: 100,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: batteryLevel.toDouble(),
-                                      height: 5,
-                                      decoration: BoxDecoration(
-                                        color:
-                                            batteryLevel > 20
-                                                ? AppColor.greenPrimary
-                                                : Colors.red,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if (index < controller.devices.length - 1)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8),
-                          child: Divider(height: 1),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        }),
-      ],
-    );
-  }
+  // Widget _buildInfoItem(
+  //   BuildContext context,
+  //   String title,
+  //   String value,
+  //   IconData icon,
+  // ) {
+  //   return Expanded(
+  //     child: Column(
+  //       children: [
+  //         Icon(icon, color: Theme.of(context).colorScheme.secondary),
+  //         const SizedBox(height: 4),
+  //         Text(
+  //           value,
+  //           style: Theme.of(
+  //             context,
+  //           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+  //         ),
+  //         Text(title, style: Theme.of(context).textTheme.bodySmall),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildSchedulingSection(BuildContext context) {
     return Column(
@@ -421,9 +136,9 @@ class ZoneView extends GetView<ZoneController> {
                       const SizedBox(width: 8),
                       Text(
                         controller.selectedDate.value != null
-                            ? DateFormat('dd MMMM yyyy').format(
-                              controller.selectedDate.value ?? DateTime.now(),
-                            )
+                            ? DateFormat(
+                              'dd MMMM yyyy',
+                            ).format(controller.selectedDate.value!)
                             : 'Select date',
                       ),
                       const Spacer(),
@@ -549,8 +264,10 @@ class ZoneView extends GetView<ZoneController> {
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final schedule = controller.schedules[index];
-              final scheduledAt = DateTime.parse(schedule['scheduled_at']);
-              final duration = schedule['duration'];
+              final scheduledAt = DateTime.parse(
+                schedule.schedule.scheduledAt.toString(),
+              );
+              final duration = schedule.schedule.duration ?? 0;
 
               return Card(
                 elevation: 0,
@@ -593,7 +310,7 @@ class ZoneView extends GetView<ZoneController> {
                       size: 32,
                     ),
                     onPressed: () {
-                      controller.deleteSchedule(schedule['id']);
+                      controller.deleteSchedule(schedule.id);
                     },
                   ),
                 ),

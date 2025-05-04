@@ -16,12 +16,15 @@ class NetworkController extends GetxController {
   void onInit() {
     super.onInit();
     _checkConnection();
-    _subscription = _connectivity.onConnectivityChanged.listen((_) => _checkConnection());
+    _subscription = _connectivity.onConnectivityChanged.listen(
+      (_) => _checkConnection(),
+    );
   }
 
   Future<void> _checkConnection() async {
     final connectivity = await _connectivity.checkConnectivity();
-    final hasConnection = connectivity != ConnectivityResult.none && await _hasInternet();
+    final hasConnection =
+        connectivity != ConnectivityResult.none && await _hasInternet();
     _updateStatus(hasConnection);
   }
 

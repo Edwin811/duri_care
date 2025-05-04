@@ -1,14 +1,14 @@
 import 'dart:io';
+import 'package:duri_care/core/services/profile_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
-  final supabase = Supabase.instance.client;
+  final ProfileService _profileService = Get.find<ProfileService>();
 
   final RxString username = ''.obs;
   final RxString email = ''.obs;
@@ -38,13 +38,6 @@ class ProfileController extends GetxController {
     confirmPasswordController = TextEditingController();
     _initializeProfileData();
   }
-
-  // @override
-  // void onClose() {
-  //   usernameController.dispose();
-  //   emailController.dispose();
-  //   super.onClose();
-  // }
 
   void toggleNotification() {
     isNotificationEnabled.value = !isNotificationEnabled.value;
@@ -88,35 +81,8 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<String?> _uploadImage(File file) async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
-
-    try {
-      final filePath =
-          'avatars/${user.id}_${DateTime.now().millisecondsSinceEpoch}.png';
-
-      final storageResponse = await supabase.storage
-          .from('duricare')
-          .upload(filePath, file, fileOptions: const FileOptions(upsert: true));
-
-      if (storageResponse.isEmpty) {
-        throw Exception('Upload ke storage gagal');
-      }
-
-      return supabase.storage.from('duricare').getPublicUrl(filePath);
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message: 'Gagal mengunggah gambar: ${e.toString()}',
-      );
-      return null;
-    }
-  }
-
   Future<void> updateProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
+    if (_profileService.getCurrentUser() == null) return;
 
     if (!formKey.currentState!.validate()) {
       DialogHelper.showErrorDialog(
@@ -141,35 +107,22 @@ class ProfileController extends GetxController {
     try {
       String? uploadedImageUrl;
       if (imageFile.value != null) {
-        uploadedImageUrl = await _uploadImage(imageFile.value!);
+        uploadedImageUrl = await _profileService.uploadProfileImage(
+          imageFile.value!,
+        );
         if (uploadedImageUrl != null) {
           profilePicture.value = uploadedImageUrl;
         }
       }
 
-      final updates = <String, dynamic>{};
-      if (emailController.text != email.value) {
-        updates['email'] = emailController.text;
-      }
-      if (passwordController.text.isNotEmpty) {
-        updates['password'] = passwordController.text;
-      }
-
-      if (updates.isNotEmpty) {
-        await supabase.auth.updateUser(
-          UserAttributes(
-            email: updates['email'],
-            password: updates['password'],
-          ),
-        );
-      }
-
-      final updateData = {
-        'fullname': usernameController.text,
-        if (uploadedImageUrl != null) 'profile_image': uploadedImageUrl,
-      };
-
-      await supabase.from('users').update(updateData).eq('id', user.id);
+      await _profileService.updateUserProfile(
+        email:
+            emailController.text != email.value ? emailController.text : null,
+        password:
+            passwordController.text.isNotEmpty ? passwordController.text : null,
+        fullname: usernameController.text,
+        profileImageUrl: uploadedImageUrl,
+      );
 
       username.value = usernameController.text;
       email.value = emailController.text;
@@ -225,7 +178,8 @@ class ProfileController extends GetxController {
       DialogHelper.showConfirmationDialog(
         title: 'Keluar Aplikasi?',
         message: 'Apakah anda yakin ingin keluar dari aplikasi ini?',
-        onConfirm: () {
+        onConfirm: () async {
+          await _profileService.signOut();
           authController.logout();
           Get.offAllNamed('/login');
           DialogHelper.showSuccessDialog(
