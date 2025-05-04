@@ -3,7 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class SyncButton extends StatefulWidget {
-  const SyncButton({super.key});
+  const SyncButton({super.key, required this.onRefresh});
+  final Future<void> Function() onRefresh;
 
   @override
   State<SyncButton> createState() => _SyncButtonState();
@@ -34,6 +35,7 @@ class _SyncButtonState extends State<SyncButton> with TickerProviderStateMixin {
   }
 
   void _rotate() async {
+    await widget.onRefresh();
     if (_controller.isAnimating) {
       _controller.stop();
     } else {

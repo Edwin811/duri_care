@@ -274,7 +274,7 @@ class HomeView extends GetView<HomeController> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SyncButton(),
+                                SyncButton(onRefresh: controller.scheduleService.getUpcomingScheduleWithZone,),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Column(
@@ -293,7 +293,15 @@ class HomeView extends GetView<HomeController> {
                                       ),
                                       Flexible(
                                         child: Text(
-                                          'Senin, 28 April 2025 | 09:00 - 10:00 WIB',
+                                          controller.upcomingSchedule.value !=
+                                                  null
+                                              ? controller.scheduleService
+                                                  .formatScheduleWithZone(
+                                                    controller
+                                                        .upcomingSchedule
+                                                        .value!,
+                                                  )
+                                              : 'Tidak ada jadwal mendatang',
                                           style: Theme.of(
                                             context,
                                           ).textTheme.bodyLarge?.copyWith(

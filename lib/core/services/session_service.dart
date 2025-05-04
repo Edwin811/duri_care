@@ -85,4 +85,9 @@ class SessionService extends GetxService {
     await _box.write(_userDataKey, user);
     userData.value = user;
   }
+
+  /// Gets the current session data including user information
+  Future<Map<String, dynamic>?> getSession() async {
+    return _box.read(_userDataKey);
+  }
 }
