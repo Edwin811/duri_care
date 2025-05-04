@@ -30,6 +30,7 @@ class HomeController extends GetxController {
     super.onInit();
     _loadGreeting();
     loadUserData();
+    loadUpcomingSchedule();
   }
 
   void _loadGreeting() {

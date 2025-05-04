@@ -19,7 +19,7 @@ class _SyncButtonState extends State<SyncButton> with TickerProviderStateMixin {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 2),
     );
 
     _rotationAnimation = Tween<double>(

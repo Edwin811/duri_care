@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScheduleService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
+
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
     try {
       final now = DateTime.now().toIso8601String();
@@ -13,15 +14,17 @@ class ScheduleService extends GetxService {
           await _supabase
               .from('zone_schedules')
               .select(
-                'schedule:schedule_id(id, scheduled_at, duration, executed, status_id), zone:zones(name)',
+                'schedule:schedule_id(id, scheduled_at, duration, executed, status_id), zone:zone_id(name)',
               )
               .gte('schedule.scheduled_at', now)
               .order('schedule.scheduled_at', ascending: true)
               .limit(1)
               .maybeSingle();
 
-      final scheduleData = data?['schedule'];
-      final zoneData = data?['zone'];
+      if (data == null) return null;
+
+      final scheduleData = data['schedule'];
+      final zoneData = data['zone'];
 
       if (scheduleData == null || zoneData == null) return null;
 
@@ -32,28 +35,6 @@ class ScheduleService extends GetxService {
     } catch (e) {
       return null;
     }
-  }
-
-  String formatScheduleText(IrrigationScheduleModel schedule) {
-    final start = schedule.scheduledAt;
-    final end = start.add(Duration(minutes: schedule.duration));
-
-    final days = [
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu',
-    ];
-
-    final dayName = days[start.weekday - 1];
-
-    final datePart = '${start.day} ${_monthName(start.month)} ${start.year}';
-    final timePart = '${_formatTime(start)} - ${_formatTime(end)} WIB';
-
-    return '$dayName, $datePart | $timePart';
   }
 
   String _monthName(int month) {

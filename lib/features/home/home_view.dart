@@ -274,7 +274,9 @@ class HomeView extends GetView<HomeController> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SyncButton(onRefresh: controller.scheduleService.getUpcomingScheduleWithZone,),
+                                SyncButton(
+                                  onRefresh: controller.loadUpcomingSchedule,
+                                ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Column(
@@ -292,22 +294,24 @@ class HomeView extends GetView<HomeController> {
                                         ),
                                       ),
                                       Flexible(
-                                        child: Text(
-                                          controller.upcomingSchedule.value !=
-                                                  null
-                                              ? controller.scheduleService
-                                                  .formatScheduleWithZone(
-                                                    controller
-                                                        .upcomingSchedule
-                                                        .value!,
-                                                  )
-                                              : 'Tidak ada jadwal mendatang',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                            color: AppColor.greenSecondary,
+                                        child: Obx(
+                                          () => Text(
+                                            controller.upcomingSchedule.value !=
+                                                    null
+                                                ? controller.scheduleService
+                                                    .formatScheduleWithZone(
+                                                      controller
+                                                          .upcomingSchedule
+                                                          .value!,
+                                                    )
+                                                : 'Tidak ada jadwal mendatang',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge?.copyWith(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColor.greenSecondary,
+                                            ),
                                           ),
                                         ),
                                       ),
