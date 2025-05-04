@@ -1,4 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/features/profile/edit_profile_view.dart';
 import 'package:duri_care/features/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -30,12 +31,16 @@ class ProfileView extends GetView<ProfileController> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withAlpha(70),
+                        color: Colors.black.withAlpha(20),
                         blurRadius: 15,
-                        offset: const Offset(0, 5),
+                        offset: const Offset(0, 3),
                         spreadRadius: 1,
                       ),
                     ],
+                    border: Border.all(
+                      color: AppColor.greenPrimary.withAlpha(50),
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -56,18 +61,23 @@ class ProfileView extends GetView<ProfileController> {
                               ),
                               child: CircleAvatar(
                                 radius: 55,
-                                backgroundColor: AppColor.greenPrimary.withAlpha(100),
-                                backgroundImage: isUrl ? NetworkImage(profilePic) : null,
-                                child: !isUrl
-                                    ? Text(
-                                        profilePic.isNotEmpty ? profilePic : '?',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : null,
+                                backgroundColor: AppColor.greenPrimary
+                                    .withAlpha(100),
+                                backgroundImage:
+                                    isUrl ? NetworkImage(profilePic) : null,
+                                child:
+                                    !isUrl
+                                        ? Text(
+                                          profilePic.isNotEmpty
+                                              ? profilePic
+                                              : '?',
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : null,
                               ),
                             );
                           }),
@@ -86,14 +96,16 @@ class ProfileView extends GetView<ProfileController> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColor.greenPrimary.withAlpha(50),
+                                      color: AppColor.greenPrimary.withAlpha(
+                                        50,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
                                 child: const Icon(
-                                  CupertinoIcons.pencil,
+                                  Icons.edit_rounded,
                                   color: Colors.white,
                                   size: 18,
                                 ),
@@ -162,7 +174,7 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                   ),
                 ),
-                
+
                 // iOS-style settings list
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -187,7 +199,8 @@ class ProfileView extends GetView<ProfileController> {
                           trailing: Obx(
                             () => Switch(
                               value: controller.isNotificationEnabled.value,
-                              onChanged: (value) => controller.toggleNotification(),
+                              onChanged:
+                                  (value) => controller.toggleNotification(),
                               activeTrackColor: AppColor.greenPrimary,
                             ),
                           ),
@@ -221,36 +234,15 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 30),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
+                AppFilledButton(
                   onPressed: () {
                     controller.logout();
                   },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(CupertinoIcons.square_arrow_right, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'Keluar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  text: 'Keluar',
+                  icon: Icons.logout_rounded,
+                  color: AppColor.redOff,
                 ),
                 const SizedBox(height: 32),
               ],
@@ -275,9 +267,12 @@ class ProfileView extends GetView<ProfileController> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          border: showBorder 
-              ? Border(bottom: BorderSide(color: Colors.grey.shade200, width: 0.5)) 
-              : null,
+          border:
+              showBorder
+                  ? Border(
+                    bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+                  )
+                  : null,
         ),
         child: Row(
           children: [
@@ -299,7 +294,12 @@ class ProfileView extends GetView<ProfileController> {
                 ),
               ),
             ),
-            trailing ?? const Icon(CupertinoIcons.chevron_right, size: 16, color: Colors.grey),
+            trailing ??
+                const Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 16,
+                  color: Colors.grey,
+                ),
           ],
         ),
       ),

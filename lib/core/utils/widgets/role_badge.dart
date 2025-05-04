@@ -7,7 +7,19 @@ class RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOwner = role.toLowerCase() == 'owner';
+    final lowerRole = role.toLowerCase();
+    String displayText;
+    Color badgeColor;
+    if (lowerRole == 'owner') {
+      displayText = 'Owner';
+      badgeColor = AppColor.greenSecondary;
+    } else if (lowerRole == 'user') {
+      displayText = 'User';
+      badgeColor = AppColor.yellowPrimary;
+    } else {
+      displayText = role;
+      badgeColor = Colors.grey;
+    }
 
     return Container(
       margin: const EdgeInsets.only(left: 6),
@@ -15,11 +27,11 @@ class RoleBadge extends StatelessWidget {
       height: 16,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: isOwner ? AppColor.greenSecondary : AppColor.yellowPrimary,
+        color: badgeColor,
       ),
       alignment: Alignment.center,
       child: Text(
-        isOwner ? 'Owner' : 'Staff',
+        displayText,
         style: Theme.of(context).textTheme.labelMedium!.copyWith(
           color: Colors.white,
           fontSize: 12,

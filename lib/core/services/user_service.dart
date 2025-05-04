@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class UserService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final Rx<UserModel> currentUser = Rx<UserModel>(UserModel());
+  final RxString roleName = ''.obs;
 
   static UserService get to => Get.find<UserService>();
 
@@ -50,7 +51,6 @@ class UserService extends GetxService {
         currentUser.value = userModel;
         return userModel;
       } else {
-        // Jika user belum ada di tabel 'users', buat default kosong
         final userModel = UserModel(
           id: authUser.id,
           email: authUser.email ?? '',

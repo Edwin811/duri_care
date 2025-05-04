@@ -275,13 +275,6 @@ class ZoneService extends GetxService {
 
   Future<bool> deleteSchedule(int scheduleId, int zoneId) async {
     try {
-      final zoneSchedules = await _supabase
-          .from('zone_schedules')
-          .select()
-          .eq('zone_id', zoneId);
-
-      final int zoneScheduleCount = zoneSchedules.length;
-
       final otherUsages = await _supabase
           .from('zone_schedules')
           .select()
@@ -305,10 +298,8 @@ class ZoneService extends GetxService {
 
       return true;
     } on PostgrestException catch (e) {
-      print('PostgrestException: ${e.message}');
       throw Exception('Gagal menghapus jadwal: ${e.message}');
     } catch (e) {
-      print('Unexpected error: $e');
       throw Exception('Terjadi kesalahan: $e');
     }
   }

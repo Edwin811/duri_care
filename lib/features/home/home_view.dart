@@ -78,7 +78,7 @@ class HomeView extends GetView<HomeController> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        RoleBadge(role: 'owner'),
+                                        RoleBadge(role: controller.role.value),
                                       ],
                                     ),
                                   ),
@@ -88,7 +88,7 @@ class HomeView extends GetView<HomeController> {
                                       context,
                                     ).textTheme.bodyLarge?.copyWith(
                                       fontSize: 14,
-                                      color: AppColor.greenPrimary,
+                                      color: AppColor.textPrimary,
                                     ),
                                   ),
                                 ],

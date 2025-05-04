@@ -2,6 +2,7 @@ import 'package:duri_care/core/services/session_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:duri_care/core/services/user_service.dart';
 import 'auth_state.dart' as state;
 
 class AuthController extends GetxController {
@@ -92,33 +93,19 @@ class AuthController extends GetxController {
   }
 
   Future<String> getUsername() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return 'User';
-
-    final cached = await SessionService.to.getCachedUsername(user.id);
-    if (cached != null && cached.isNotEmpty) return cached;
-
-    try {
-      final res =
-          await _supabase
-              .from('users')
-              .select('fullname')
-              .eq('id', user.id)
-              .limit(1)
-              .single();
-
-      final fullname = res['fullname']?.toString().trim();
-
-      final nameToUse =
-          (fullname != null && fullname.isNotEmpty)
-              ? fullname
-              : (user.email?.split('@').first ?? 'User');
-
-      await SessionService.to.cacheUsername(user.id, nameToUse);
-      return nameToUse;
-    } catch (e) {
-      return user.email?.split('@').first ?? 'User';
+    final userModel = await UserService.to.getCurrentUser();
+    if (userModel != null) {
+      final fullname = userModel.fullname;
+      if (fullname != null && fullname.trim().isNotEmpty) {
+        return fullname;
+      } else {
+        final email = userModel.email;
+        if (email != null && email.trim().isNotEmpty) {
+          return email.split('@').first;
+        }
+      }
     }
+    return 'User';
   }
 
   Future<String?> getEmail() async {

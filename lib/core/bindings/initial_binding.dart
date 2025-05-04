@@ -1,5 +1,6 @@
 import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/profile_service.dart';
+import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/services/zone_service.dart';
@@ -18,6 +19,7 @@ class InitialBinding implements Bindings {
     Get.put(ZoneService(), permanent: true);
     Get.put(UserService(), permanent: true);
     Get.put(HomeService(), permanent: true);
+    Get.put(RoleService(), permanent: true);
 
     // Register Controllers
     Get.put(AuthController(), permanent: true);
