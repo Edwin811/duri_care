@@ -27,7 +27,7 @@ class UserManagementView extends GetView<UserManagementController> {
           iconColor: AppColor.white,
         ),
         title: Text(
-          'Managemen Akun Pegawai',
+          'Manajemen Akun Pegawai',
           style: Theme.of(
             context,
           ).textTheme.titleLarge!.copyWith(color: AppColor.white),

@@ -66,7 +66,7 @@ class UserListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Role: ${user.roleName == 'employee' ? 'pegawai' : user.roleName}',
+                  'Role: ${user.roleName == 'employee' ? 'Pegawai' : user.roleName}',
                   style: Theme.of(
                   context,
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),

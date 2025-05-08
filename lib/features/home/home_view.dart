@@ -98,7 +98,9 @@ class HomeView extends GetView<HomeController> {
                             ],
                           ),
                           IconButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Get.toNamed('/notification');
+                            },
                             icon: Icon(
                               Icons.notifications_none_outlined,
                               size: 32,
@@ -245,8 +247,8 @@ class HomeView extends GetView<HomeController> {
                                   Expanded(
                                     child: DeviceInfo(
                                       name: 'Pegawai Terdaftar',
-                                      total: 3.obs,
-                                      icon: Icons.person_rounded,
+                                      total: controller.staffCount,
+                                      icon: Icons.people_alt_outlined,
                                     ),
                                   ),
                                 ],

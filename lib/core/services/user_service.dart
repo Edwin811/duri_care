@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/user_model.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,14 +12,6 @@ class UserService extends GetxService {
   final RxString roleName = ''.obs;
 
   static UserService get to => Get.find<UserService>();
-
-  // Future<UserService> init() async {
-  //   final userData = SessionService.to.getUserData();
-  //   if (userData != null) {
-  //     loadUserFromMap(userData);
-  //   }
-  //   return this;
-  // }
 
   void loadUserFromMap(Map<String, dynamic> data) {
     if (data.containsKey('auth') && data.containsKey('user')) {
@@ -57,9 +51,10 @@ class UserService extends GetxService {
         final userModel = UserModel(
           id: authUser.id,
           email: authUser.email ?? '',
-          lastSignInAt: authUser.lastSignInAt != null
-              ? DateTime.tryParse(authUser.lastSignInAt!)
-              : null,
+          lastSignInAt:
+              authUser.lastSignInAt != null
+                  ? DateTime.tryParse(authUser.lastSignInAt!)
+                  : null,
           fullname: response['fullname'] ?? '',
           profileUrl: response['profile_image'],
         );
@@ -80,6 +75,22 @@ class UserService extends GetxService {
     } catch (e) {
       DialogHelper.showErrorDialog(message: 'Gagal mendapatkan data user: $e');
       return null;
+    }
+  }
+
+  Future<int> countStaff() async {
+    try {
+      final response = await _supabase
+          .from('extended_users')
+          .select()
+          .neq('role_name', 'owner');
+
+      debugPrint('Response count staff: ${response.runtimeType}');
+
+      return response.length;
+    } catch (e) {
+      debugPrint('Error counting staff: $e');
+      return 0;
     }
   }
 }

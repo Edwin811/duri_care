@@ -1,6 +1,7 @@
 import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
+import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
@@ -17,10 +18,10 @@ class HomeController extends GetxController {
   final Rx<Upcomingschedule?> upcomingSchedule = Rx<Upcomingschedule?>(null);
   final zoneController = Get.put(ZoneController());
   final supabase = Supabase.instance.client;
-  // ZoneController get zoneController => Get.find<ZoneController>();
 
   final RxString username = ''.obs;
   final RxString role = ''.obs;
+  final RxInt staffCount = 0.obs;
 
   RxString ucapan = ''.obs;
 
@@ -36,6 +37,7 @@ class HomeController extends GetxController {
     getUsername();
     getProfilePicture();
     getRoleName();
+    getStaffCount();
   }
 
   @override
@@ -96,6 +98,10 @@ class HomeController extends GetxController {
     } catch (e) {
       return role.value;
     }
+  }
+
+  Future<void> getStaffCount() async {
+    staffCount.value = await UserService.to.countStaff();
   }
 
   Future<void> refreshUser() async {

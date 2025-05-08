@@ -1,5 +1,6 @@
 import 'package:duri_care/core/services/auth_service.dart';
 import 'package:duri_care/core/services/home_service.dart';
+import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/services/profile_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
@@ -26,6 +27,7 @@ class InitialBinding implements Bindings {
     Get.put(AuthService(), permanent: true); // Likely needed throughout the app
     Get.put(ScheduleService());
     Get.put(UserManagementService());
+    Get.put(NotificationService());
 
     // Register Controllers
     Get.put(AuthController(), permanent: true); // Likely needed throughout the app

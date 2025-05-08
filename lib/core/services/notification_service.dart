@@ -7,7 +7,6 @@ class NotificationService extends GetxService {
 
   final supabase = Supabase.instance.client;
 
-  /// Ambil semua notifikasi berdasarkan user ID
   Future<List<NotificationModel>> getUserNotifications(String userId) async {
     final response = await supabase
         .from('notifications')
@@ -20,7 +19,6 @@ class NotificationService extends GetxService {
         .toList();
   }
 
-  /// Tambahkan notifikasi untuk satu user
   Future<void> sendNotificationToUser({
     required String userId,
     required String message,
@@ -33,7 +31,6 @@ class NotificationService extends GetxService {
     });
   }
 
-  /// Kirim notifikasi ke semua user dalam zona tertentu
   Future<void> notifyUsersInZone({
     required int zoneId,
     required String message,
@@ -50,7 +47,6 @@ class NotificationService extends GetxService {
     }
   }
 
-  /// Mark notification as read
   Future<void> markNotificationAsRead(int notificationId) async {
     await supabase
         .from('notifications')
@@ -58,7 +54,6 @@ class NotificationService extends GetxService {
         .eq('id', notificationId);
   }
 
-  /// Mark all notifications as read for a user
   Future<void> markAllNotificationsAsRead(String userId) async {
     await supabase
         .from('notifications')
