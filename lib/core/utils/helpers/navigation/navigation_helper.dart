@@ -1,4 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
+import 'package:duri_care/features/home/home_controller.dart';
 import 'package:duri_care/features/home/home_view.dart';
 import 'package:duri_care/features/profile/profile_view.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +17,16 @@ class NavigationHelper extends GetxController {
     super.onClose();
     currentIndex.value = 0;
   }
+
+  void resetIndex() {
+    currentIndex.value = 0;
+  }
 }
 
-class MainNavigationView extends StatelessWidget {
+class MainNavigationView extends GetView<NavigationHelper> {
   MainNavigationView({super.key});
   final navigationHelper = Get.find<NavigationHelper>();
+  final homeController = Get.find<HomeController>();
   static const String route = '/main';
 
   final List<Widget> pages = [HomeView(), ProfileView()];
@@ -30,26 +36,35 @@ class MainNavigationView extends StatelessWidget {
     return Scaffold(
       body: Obx(
         () => IndexedStack(
-          index: navigationHelper.currentIndex.value,
+          index: controller.currentIndex.value,
           children: pages,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.toNamed('/add-zone');
+      floatingActionButton: FutureBuilder<String>(
+        future: homeController.getRoleName(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink();
+          }
+          final userRole = snapshot.data ?? '';
+          final isOwner = userRole == 'owner';
+          return isOwner
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Get.toNamed('/add-zone');
+                  },
+                  backgroundColor: AppColor.greenPrimary,
+                  child: const Icon(Icons.add, color: AppColor.white),
+                )
+              : const SizedBox.shrink();
         },
-        backgroundColor: AppColor.greenPrimary,
-        child: const Icon(Icons.add, color: AppColor.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Obx(
         () => Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(
-                color: Colors.grey.shade300,
-                width: 1,
-              ),
+              top: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
           ),
           child: BottomNavigationBar(

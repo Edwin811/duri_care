@@ -1,5 +1,5 @@
 class PermissionModel {
-  final int id;
+  final String id;
   final String name;
   final String description;
 
@@ -11,9 +11,13 @@ class PermissionModel {
 
   factory PermissionModel.fromMap(Map<String, dynamic> map) {
     return PermissionModel(
-      id: map['id'],
-      name: map['name'],
-      description: map['description'],
+      id: map['id'].toString(),
+      name: map['name'] ?? '',
+      description: map['description'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {'id': id, 'name': name, 'description': description};
   }
 }

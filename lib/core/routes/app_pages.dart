@@ -2,6 +2,8 @@ import 'package:duri_care/core/utils/helpers/navigation/navigation_route.dart';
 import 'package:duri_care/features/error/error_route.dart';
 import 'package:duri_care/features/home/home_route.dart';
 import 'package:duri_care/features/login/login_route.dart';
+import 'package:duri_care/features/management_user/user_management_route.dart';
+import 'package:duri_care/features/notification/notification_route.dart';
 import 'package:duri_care/features/onboarding/onboarding_route.dart';
 import 'package:duri_care/features/profile/profile_route.dart';
 import 'package:duri_care/features/splashscreen/splashscreen_route.dart';
@@ -24,5 +26,7 @@ abstract class AppPages {
     ...profileRoute,
     ...editProfileRoute,
     ...editZone,
+    ...notificationRoute,
+    ...userManagementRoute
   ];
 }

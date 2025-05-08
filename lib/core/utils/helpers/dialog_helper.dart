@@ -3,6 +3,20 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 abstract class DialogHelper {
+  static void showErrorDialogSafely({
+    required String message,
+    String? title,
+    VoidCallback? onConfirm,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showErrorDialog(
+        message: message,
+        title: title,
+        onConfirm: onConfirm,
+      );
+    });
+  }
+  
   static Future<void> showErrorDialog({
     required String message,
     String? title,

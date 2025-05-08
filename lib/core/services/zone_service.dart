@@ -1,7 +1,7 @@
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/iot_device_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -98,7 +98,7 @@ class ZoneService extends GetxService {
             .from('zones')
             .insert({
               'name': name,
-              'isActive': false,
+              'is_active': false,
               'zone_code': zoneCode,
               'created_at': DateTime.now().toIso8601String(),
             })
@@ -190,21 +190,21 @@ class ZoneService extends GetxService {
     final zone =
         await _supabase
             .from('zones')
-            .select('isActive')
+            .select('id, is_active')
             .eq('id', zoneId)
             .single();
 
-    final currentState = zone['isActive'] ?? false;
-    final newActiveState = !currentState;
+    final currentState = zone['is_active'];
+    final newState = !currentState;
 
     final updatedZone =
         await _supabase
             .from('zones')
-            .update({'isActive': newActiveState})
+            .update({'is_active': newState})
             .eq('id', zoneId)
             .select()
             .single();
-
+    debugPrint('Updated zone service: $updatedZone');
     return ZoneModel.fromMap(updatedZone);
   }
 
@@ -213,7 +213,7 @@ class ZoneService extends GetxService {
     final response = await _supabase
         .from('zones')
         .select('id')
-        .eq('isActive', true)
+        .eq('is_active', true)
         .filter('deleted_at', 'is', null);
 
     return response.length;

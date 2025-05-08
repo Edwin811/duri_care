@@ -1,3 +1,4 @@
+import 'package:duri_care/core/services/auth_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
@@ -6,7 +7,7 @@ import 'package:get/get.dart';
 
 class LoginController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  // final GlobalKey<FormState> loginKey = GlobalKey<FormState>();
   final isPasswordVisible = true.obs;
   final isLoading = false.obs;
 
@@ -25,8 +26,10 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (SessionService.to.token != null) {
-      Get.offAllNamed('/main');
+    if (SessionService.to.isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed('/main');
+      });
     }
   }
 
@@ -49,12 +52,14 @@ class LoginController extends GetxController {
       isLoading.value = true;
       await _auth.login(email, password);
 
-      final userData = SessionService.to.getUserData();
+      final userData = AuthService.to.currentUser;
       if (userData != null) {
+        final profile = await AuthService.to.getUserProfile(userData.id);
+        final fullname = profile?['fullname'] ?? '';
         Get.offAllNamed('/main');
         DialogHelper.showSuccessDialog(
           title: 'Berhasil Masuk',
-          message: 'Selamat datang, ${userData['fullname']}',
+          message: 'Selamat datang, $fullname',
         );
       }
     } catch (e) {
@@ -71,7 +76,7 @@ class LoginController extends GetxController {
       } else {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
-          message: 'Terjadi kesalahan, silakan coba lagi',
+          message: e.toString(),
         );
       }
     } finally {
@@ -109,12 +114,12 @@ class LoginController extends GetxController {
     }
   }
 
-  String? validateEmail(String email) {
+  String? validateEmail(String? email) {
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
 
-    if (email.isEmpty) {
+    if (email == null || email.isEmpty) {
       return 'Email tidak boleh kosong';
     } else if (!emailRegex.hasMatch(email)) {
       return 'Format email tidak valid';
@@ -122,8 +127,8 @@ class LoginController extends GetxController {
     return null;
   }
 
-  String? validatePassword(String password) {
-    if (password.isEmpty) {
+  String? validatePassword(String? password) {
+    if (password == null || password.isEmpty) {
       return 'Password tidak boleh kosong';
     }
     return null;

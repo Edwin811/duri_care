@@ -8,17 +8,25 @@ class AppFilledButton extends StatelessWidget {
     required this.text,
     this.icon,
     this.color,
+    this.width,
+    this.height,
+    this.isLoading = false,
+    this.textSize,
   });
   final VoidCallback? onPressed;
   final String text;
   final IconData? icon;
   final Color? color;
+  final double? width;
+  final double? height;
+  final bool isLoading;
+  final int? textSize;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity,
-      height: 52,
+      width: width ?? double.infinity,
+      height: height ?? 52,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -36,7 +44,7 @@ class AppFilledButton extends StatelessWidget {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: textSize?.toDouble() ?? 20,
                 fontWeight: FontWeight.bold,
               ),
             ),

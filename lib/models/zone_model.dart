@@ -1,28 +1,46 @@
 class ZoneModel {
   final int id;
-  final int zoneCode;
   final String name;
   final bool isActive;
-  final DateTime createdAt;
-  final int? deletedAt;
+  final int zoneCode;
+  final DateTime? createdAt;
+  final DateTime? deletedAt;
 
   ZoneModel({
     required this.id,
-    required this.zoneCode,
     required this.name,
     required this.isActive,
-    required this.createdAt,
+    required this.zoneCode,
+    this.createdAt,
     this.deletedAt,
   });
+
+  factory ZoneModel.fromJson(Map<String, dynamic> json) {
+    return ZoneModel(
+      id: json['id'],
+      name: json['name'],
+      isActive: json['is_active'],
+      zoneCode: json['zone_code'],
+    );
+  }
 
   factory ZoneModel.fromMap(Map<String, dynamic> map) {
     return ZoneModel(
       id: map['id'],
-      zoneCode: map['zone_code'],
-      name: map['name'],
-      isActive: map['isActive'],
-      createdAt: DateTime.parse(map['created_at']),
-      deletedAt: map['deleted_at'],
+      name: map['name'] ?? 'Unknown Zone',
+      isActive: map['is_active'] ?? false,
+      zoneCode: map['zone_code'] ?? 0,
+      createdAt:
+          map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+      deletedAt:
+          map['deleted_at'] != null ? DateTime.parse(map['deleted_at']) : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'is_active': isActive,
+    'zone_code': zoneCode,
+  };
 }

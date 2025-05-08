@@ -18,29 +18,27 @@ class Zone extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
+    final zoneIdStr = zoneData['id']?.toString() ?? '';
+
     return Obx(() {
-      // Find the current zone data in the controller's zones list
+      // Find the current zone in the controller's zones list to get the latest data
       final zoneIndex = controller.zones.indexWhere(
-        (z) => z['id'].toString() == zoneData['id'].toString(),
+        (z) => z['id'].toString() == zoneIdStr,
       );
       final currentZoneData =
           zoneIndex != -1 ? controller.zones[zoneIndex] : zoneData;
-      final bool isActiveStatus = currentZoneData['isActive'] ?? false;
-      final zoneIdStr = zoneData['id']?.toString() ?? '';
+      final bool isStatus = currentZoneData['is_active'] ?? false;
 
       return InkWell(
         onTap: () {
           onSelectZone?.call();
-          Get.toNamed(
-            '/zone',
-            parameters: {'zoneId': zoneData['id'].toString()},
-          );
+          Get.toNamed('/zone', parameters: {'zoneId': zoneIdStr});
         },
         child: Container(
           width: 170,
           height: 170,
           decoration: BoxDecoration(
-            color: isActiveStatus ? AppColor.greenPrimary : AppColor.white,
+            color: isStatus ? AppColor.greenPrimary : AppColor.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300, width: 2),
           ),
@@ -56,6 +54,7 @@ class Zone extends GetView<ZoneController> {
                     IconButton(
                       onPressed: () {
                         if (zoneIdStr.isNotEmpty) {
+                          // Call toggleActive directly and ignore onPowerButtonPressed
                           controller.toggleActive(zoneIdStr);
                         }
                       },
@@ -64,7 +63,7 @@ class Zone extends GetView<ZoneController> {
                         width: 40,
                         height: 40,
                         colorFilter: ColorFilter.mode(
-                          isActiveStatus ? AppColor.greenOn : AppColor.redOff,
+                          isStatus ? AppColor.greenOn : AppColor.redOff,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -77,7 +76,7 @@ class Zone extends GetView<ZoneController> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
                         color:
-                            isActiveStatus
+                            isStatus
                                 ? AppColor.greenSecondary
                                 : AppColor.greenPrimary,
                       ),
@@ -102,10 +101,10 @@ class Zone extends GetView<ZoneController> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    zoneData['name'] ?? 'Unnamed Zone',
+                    zoneData['name'],
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color:
-                          isActiveStatus
+                          isStatus
                               ? AppColor.white
                               : AppColor.greenPrimary,
                       fontSize: 24,
@@ -124,7 +123,7 @@ class Zone extends GetView<ZoneController> {
                           Icon(
                             Icons.water_drop_outlined,
                             color:
-                                isActiveStatus
+                                isStatus
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -140,7 +139,7 @@ class Zone extends GetView<ZoneController> {
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          isActiveStatus
+                                          isStatus
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -154,7 +153,7 @@ class Zone extends GetView<ZoneController> {
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
                                       color:
-                                          isActiveStatus
+                                          isStatus
                                               ? AppColor.greenSecondary
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -174,7 +173,7 @@ class Zone extends GetView<ZoneController> {
                           Icon(
                             Icons.cloud_done_outlined,
                             color:
-                                isActiveStatus
+                                isStatus
                                     ? AppColor.yellowPrimary
                                     : AppColor.greenPrimary,
                             size: 20,
@@ -190,7 +189,7 @@ class Zone extends GetView<ZoneController> {
                                       context,
                                     ).textTheme.bodyLarge?.copyWith(
                                       color:
-                                          isActiveStatus
+                                          isStatus
                                               ? AppColor.white
                                               : AppColor.greenPrimary,
                                       fontSize: 12,
@@ -201,11 +200,11 @@ class Zone extends GetView<ZoneController> {
                                   const WidgetSpan(child: SizedBox(width: 4)),
                                   WidgetSpan(
                                     child: Icon(
-                                      isActiveStatus
+                                      isStatus
                                           ? Icons.check_circle_outline
                                           : Icons.cancel_outlined,
                                       color:
-                                          isActiveStatus
+                                          isStatus
                                               ? AppColor.greenTertiary
                                               : Colors.red,
                                       size: 20,

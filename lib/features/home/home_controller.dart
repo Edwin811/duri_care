@@ -4,8 +4,10 @@ import 'package:duri_care/core/services/schedule_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
@@ -15,6 +17,7 @@ class HomeController extends GetxController {
   final Rx<Upcomingschedule?> upcomingSchedule = Rx<Upcomingschedule?>(null);
   final zoneController = Get.put(ZoneController());
   final supabase = Supabase.instance.client;
+  // ZoneController get zoneController => Get.find<ZoneController>();
 
   final RxString username = ''.obs;
   final RxString role = ''.obs;
@@ -29,8 +32,17 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadGreeting();
-    loadUserData();
     loadUpcomingSchedule();
+    getUsername();
+    getProfilePicture();
+    getRoleName();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    getUsername();
+    getProfilePicture();
   }
 
   void _loadGreeting() {
@@ -41,7 +53,6 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
       final schedule = await scheduleService.getUpcomingScheduleWithZone();
-      print('schedule: $schedule');
       if (schedule != null) {
         upcomingSchedule.value = schedule;
       } else {
@@ -54,20 +65,12 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> loadUserData() async {
+  Future<void> getUsername() async {
     try {
-      isLoading.value = true;
-      final results = await Future.wait([
-        authController.getUsername(),
-        authController.getProfilePicture(),
-        getRoleName(),
-      ]);
-      username.value = results[0];
-      profilePicture.value = results[1];
-      role.value = results[2];
-      isLoading.value = false;
+      final fullname = await authController.getUsername();
+      username.value = fullname;
     } catch (e) {
-      isLoading.value = false;
+      profilePicture.value = '';
     }
   }
 
@@ -92,6 +95,16 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       return role.value;
+    }
+  }
+
+  Future<void> refreshUser() async {
+    try {
+      await getUsername();
+      await getProfilePicture();
+      await getRoleName();
+    } catch (e) {
+      debugPrint('Gagal refresh user: $e');
     }
   }
 }

@@ -13,7 +13,6 @@ import 'package:duri_care/core/services/session_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
-  await Get.putAsync(() => SessionService().init());
   await dotenv.load(fileName: ".env");
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -23,11 +22,9 @@ Future<void> main() async {
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['ANON_KEY']!,
-    // realtimeClientOptions: RealtimeClientOptions(
-    //   timeout: Duration(seconds: 5),
-    // ),
   );
 
+  await Get.putAsync(() => SessionService().init());
   runApp(const DuriCare());
 }
 

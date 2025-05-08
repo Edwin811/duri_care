@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:duri_care/core/services/profile_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
+import 'package:duri_care/features/home/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 class ProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
   final ProfileService _profileService = Get.find<ProfileService>();
+  final NavigationHelper navigationHelper = Get.find<NavigationHelper>();
 
   final RxString username = ''.obs;
   final RxString email = ''.obs;
@@ -25,7 +28,7 @@ class ProfileController extends GetxController {
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
 
-  final formKey = GlobalKey<FormState>();
+  final profileKey = GlobalKey<FormState>();
   final Rx<File?> imageFile = Rx<File?>(null);
   final ImagePicker _picker = ImagePicker();
 
@@ -53,9 +56,9 @@ class ProfileController extends GetxController {
 
   Future<void> _initializeProfileData() async {
     username.value = await authController.getUsername();
-    email.value = await authController.getEmail() ?? '';
     profilePicture.value = await authController.getProfilePicture();
     role.value = await authController.getRole() ?? 'Employee';
+    email.value = await authController.getEmail();
 
     usernameController.text = username.value;
     emailController.text = email.value;
@@ -84,7 +87,7 @@ class ProfileController extends GetxController {
   Future<void> updateProfile() async {
     if (_profileService.getCurrentUser() == null) return;
 
-    if (!formKey.currentState!.validate()) {
+    if (!profileKey.currentState!.validate()) {
       DialogHelper.showErrorDialog(
         title: 'Error',
         message:
@@ -127,6 +130,11 @@ class ProfileController extends GetxController {
       username.value = usernameController.text;
       email.value = emailController.text;
 
+      if(Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        await homeController.refreshUser();
+      }
+
       Get.back();
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
@@ -136,6 +144,7 @@ class ProfileController extends GetxController {
       DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'Gagal memperbarui profil: ${e.toString()}',
+        // new row violates row-level security policy, status code: 403, error: unauthorized
       );
     }
   }
@@ -155,7 +164,7 @@ class ProfileController extends GetxController {
 
   String? validatePassword(String password) {
     if (password.isEmpty) {
-      return null; // Allow empty password (no change)
+      return null;
     } else if (password.length < 6) {
       return 'Password minimal 6 karakter';
     }
@@ -164,7 +173,7 @@ class ProfileController extends GetxController {
 
   String? validateConfirmPassword(String password) {
     if (passwordController.text.isEmpty && password.isEmpty) {
-      return null; // Both fields empty is valid (no change)
+      return null;
     } else if (passwordController.text.isNotEmpty && password.isEmpty) {
       return 'Konfirmasi password tidak boleh kosong';
     } else if (passwordController.text != password) {
@@ -181,6 +190,7 @@ class ProfileController extends GetxController {
         onConfirm: () async {
           await _profileService.signOut();
           authController.logout();
+          navigationHelper.resetIndex();
           Get.offAllNamed('/login');
           DialogHelper.showSuccessDialog(
             title: 'Berhasil',

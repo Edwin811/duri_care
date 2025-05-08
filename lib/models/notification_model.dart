@@ -3,7 +3,7 @@ class NotificationModel {
   final String userId;
   final String message;
   final bool isRead;
-  final DateTime createdAt;
+  final String createdAt;
 
   NotificationModel({
     required this.id,
@@ -18,8 +18,34 @@ class NotificationModel {
       id: map['id'],
       userId: map['user_id'],
       message: map['message'],
-      isRead: map['is_read'],
-      createdAt: DateTime.parse(map['created_at']),
+      isRead: map['is_read'] ?? false,
+      createdAt: map['created_at'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'message': message,
+      'is_read': isRead,
+      'created_at': createdAt,
+    };
+  }
+
+  NotificationModel copyWith({
+    int? id,
+    String? userId,
+    String? message,
+    bool? isRead,
+    String? createdAt,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      message: message ?? this.message,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

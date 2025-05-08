@@ -211,6 +211,9 @@ class ProfileView extends GetView<ProfileController> {
                           title: 'Manajemen Akun Pegawai',
                           icon: CupertinoIcons.person_2,
                           showBorder: true,
+                          onTap: () {
+                            Get.toNamed('/user-management');
+                          },
                         ),
                         _buildIOSSettingsItem(
                           context,

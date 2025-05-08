@@ -105,7 +105,7 @@ class EditProfileView extends GetView<ProfileController> {
                 const SizedBox(height: 32),
                 // Form
                 Form(
-                  key: controller.formKey,
+                  key: controller.profileKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -191,7 +191,7 @@ class EditProfileView extends GetView<ProfileController> {
                 const SizedBox(height: 16),
                 AppFilledButton(
                   onPressed: () {
-                    if (controller.formKey.currentState!.validate()) {
+                    if (controller.profileKey.currentState!.validate()) {
                       controller.updateProfile();
                     }
                   },

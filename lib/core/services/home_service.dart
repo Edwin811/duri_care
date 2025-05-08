@@ -30,14 +30,4 @@ class HomeService extends GetxService {
     }
   }
 
-  /// Retrieves the cached username for the user
-  Future<String> getCachedUsername(String userId) async {
-    return await _sessionService.getCachedUsername(userId) ?? 'User';
-  }
-
-  /// Retrieves the cached profile picture for the user
-  Future<String> getCachedProfilePicture(String userId) async {
-    final profilePic = _storage.read('profile_image_$userId');
-    return profilePic ?? '';
-  }
 }

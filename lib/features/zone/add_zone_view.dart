@@ -17,15 +17,19 @@ class AddZoneView extends GetView<ZoneController> {
       },
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: AppColor.greenPrimary,
           leading: AppBackButton(
             onPressed: () {
               controller.clearForm();
               Get.back();
             },
+            iconColor: AppColor.white,
           ),
           title: Text(
             'Tambah Zona Baru',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+              color: AppColor.white,
+            ),
           ),
           centerTitle: true,
           elevation: 0,

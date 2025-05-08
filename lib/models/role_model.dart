@@ -1,16 +1,19 @@
 class RoleModel {
-  final int id;
+  final String id;
   final String name;
+  final String? description;
 
-  const RoleModel({
-    required this.id,
-    required this.name,
-  });
+  RoleModel({required this.id, required this.name, this.description});
 
-  factory RoleModel.fromMap(Map<String, dynamic> map) {
+  factory RoleModel.fromJson(Map<String, dynamic> json) {
     return RoleModel(
-      id: map['id'],
-      name: map['name'],
+      id: json['id'].toString(),
+      name: json['role_name'] ?? '',
+      description: json['description'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'role_name': name, 'description': description};
   }
 }

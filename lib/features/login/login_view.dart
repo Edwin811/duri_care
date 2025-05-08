@@ -13,6 +13,7 @@ class LoginScreen extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
+    final loginKey = GlobalKey<FormState>();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       backgroundColor: Colors.white,
@@ -49,7 +50,7 @@ class LoginScreen extends GetView<LoginController> {
                         ),
                         AppSpacing.xl,
                         Form(
-                          key: controller.formKey,
+                          key: loginKey,
                           child: Column(
                             children: [
                               AppLabelText(text: 'Email'),
@@ -60,10 +61,7 @@ class LoginScreen extends GetView<LoginController> {
                                 obscureText: false,
                                 prefixIcon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
-                                validator:
-                                    (value) =>
-                                        controller.validateEmail(value ?? ''),
-                                autovalidateMode: AutovalidateMode.disabled,
+                                validator: controller.validateEmail,
                               ),
 
                               AppSpacing.md,
@@ -86,10 +84,8 @@ class LoginScreen extends GetView<LoginController> {
                                             controller
                                                 .togglePasswordVisibility(),
                                   ),
-                                  validator:
-                                      (value) => controller.validatePassword(
-                                        value ?? '',
-                                      ),
+                                  validator: controller.validatePassword,
+                                  keyboardType: TextInputType.visiblePassword,
                                 ),
                               ),
                               AppSpacing.xl,

@@ -82,13 +82,15 @@ class HomeView extends GetView<HomeController> {
                                       ],
                                     ),
                                   ),
-                                  Text(
-                                    controller.username.value,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14,
-                                      color: AppColor.textPrimary,
+                                  Obx(
+                                    () => Text(
+                                      controller.username.value,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
