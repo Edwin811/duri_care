@@ -1,6 +1,7 @@
 import 'package:duri_care/models/permission_model.dart';
 import 'package:duri_care/models/role_model.dart';
 import 'package:duri_care/models/user_model.dart';
+import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserManagementService {
@@ -9,6 +10,7 @@ class UserManagementService {
   Future<List<UserModel>> fetchAllUsers() async {
     try {
       final dbUsers = await _supabase.from('extended_users').select();
+      debugPrint('DB Users FROM USER MANAGEMENT: $dbUsers');
 
       return dbUsers.map<UserModel>((u) => UserModel.fromJson(u)).toList();
     } catch (e) {

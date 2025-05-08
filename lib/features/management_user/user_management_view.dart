@@ -1,12 +1,11 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/utils/widgets/app_label.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/core/utils/widgets/button.dart';
+import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/management_user/user_management_controller.dart';
 import 'package:duri_care/features/management_user/user_list_item.dart';
 import 'package:flutter/material.dart';
-import 'package:duri_care/core/themes/app_themes.dart';
 import 'package:get/get.dart';
 
 class UserManagementView extends GetView<UserManagementController> {
@@ -136,6 +135,7 @@ class UserManagementView extends GetView<UserManagementController> {
                 child: Form(
                   key: controller.formKey,
                   child: Column(
+                    spacing: 8,
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -149,109 +149,63 @@ class UserManagementView extends GetView<UserManagementController> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-
-                      AppLabelText(text: 'Nama Lengkap'),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      AppLabelText(text: 'Nama Lengkap'),
+                      AppTextFormField(
                         controller: controller.fullnameController,
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan nama lengkap',
-                          prefixIcon: const Icon(Icons.person_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          filled: true,
-                        ),
+                        hintText: 'Masukkan nama lengkap',
+                        obscureText: false,
+                        prefixIcon: Icons.person_outline,
                         validator: controller.validateName,
                       ),
-                      const SizedBox(height: 16),
-
                       AppLabelText(text: 'Email'),
-                      const SizedBox(height: 8),
-                      TextFormField(
+                      AppTextFormField(
                         controller: controller.emailController,
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan email',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          filled: true,
-                        ),
+                        hintText: 'Masukkan email',
+                        obscureText: false,
+                        prefixIcon: Icons.email_outlined,
                         validator: controller.validateEmail,
-                        keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 16),
-
                       AppLabelText(text: 'Password'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: controller.passwordController,
-                        decoration: InputDecoration(
+                      Obx(
+                        () => AppTextFormField(
+                          controller: controller.passwordController,
                           hintText: 'Masukkan password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          obscureText: controller.passwordVisible.value,
+                          prefixIcon: Icons.lock_outline,
+                          validator: controller.validatePassword,
+                          suffixIcon: IconButton(
+                            icon:
+                                controller.passwordVisible.value
+                                    ? const Icon(Icons.visibility)
+                                    : const Icon(Icons.visibility_off),
+                            onPressed:
+                                () => controller.togglePasswordVisibility(),
                           ),
-                          filled: true,
                         ),
-                        validator: controller.validatePassword,
-                        obscureText: true,
                       ),
-                      const SizedBox(height: 16),
 
                       AppLabelText(text: 'Konfirmasi Password'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: controller.confirmPasswordController,
-                        decoration: InputDecoration(
-                          hintText: 'Konfirmasi password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      Obx(
+                        () => AppTextFormField(
+                          controller: controller.confirmPasswordController,
+                          hintText: 'Masukkan konfirmasi password',
+                          obscureText: controller.confirmPasswordVisible.value,
+                          prefixIcon: Icons.lock_outline,
+                          validator: controller.validateConfirmPassword,
+                          suffixIcon: IconButton(
+                            icon:
+                                controller.confirmPasswordVisible.value
+                                    ? const Icon(Icons.visibility)
+                                    : const Icon(Icons.visibility_off),
+                            onPressed:
+                                () =>
+                                    controller
+                                        .toggleConfirmPasswordVisibility(),
                           ),
-                          filled: true,
                         ),
-                        validator: controller.validateConfirmPassword,
-                        obscureText: true,
                       ),
-                      const SizedBox(height: 16),
-
-                      // AppLabelText(text: 'Role'),
-                      // const SizedBox(height: 8),
-                      // Obx(() {
-                      //   if (controller.roles.isEmpty) {
-                      //     return const Text('No roles available');
-                      //   }
-
-                      //   return DropdownButtonFormField<String>(
-                      //     value: controller.selectedRoleId.value,
-                      //     decoration: InputDecoration(
-                      //       border: OutlineInputBorder(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //       ),
-                      //       filled: true,
-                      //       prefixIcon: const Icon(
-                      //         Icons.assignment_ind_outlined,
-                      //       ),
-                      //     ),
-                      //     items:
-                      //         controller.roles.map((role) {
-                      //           return DropdownMenuItem<String>(
-                      //             value: role.id,
-                      //             child: Text(role.name),
-                      //           );
-                      //         }).toList(),
-                      //     onChanged: (value) {
-                      //       if (value != null) {
-                      //         controller.setSelectedRole(value);
-                      //       }
-                      //     },
-                      //   );
-                      // }),
-                      const SizedBox(height: 24),
-
+                      const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -274,7 +228,11 @@ class UserManagementView extends GetView<UserManagementController> {
                               onPressed:
                                   controller.isCreating.value
                                       ? null
-                                      : controller.createUser,
+                                      : () async {
+                                        controller.isCreating.value = true;
+                                        await controller.createUser();
+                                        controller.isCreating.value = false;
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColor.greenPrimary,
                                 padding: const EdgeInsets.symmetric(
@@ -295,15 +253,9 @@ class UserManagementView extends GetView<UserManagementController> {
                                               ),
                                         ),
                                       )
-                                      : Text(
+                                      : const Text(
                                         'Buat Akun',
-                                        style: AppThemes.textTheme(
-                                          context,
-                                          ColorScheme.dark(),
-                                        ).titleMedium!.copyWith(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                        style: TextStyle(color: AppColor.white),
                                       ),
                             ),
                           ),

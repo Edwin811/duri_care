@@ -13,6 +13,8 @@ class UserManagementController extends GetxController {
   final RxList<RoleModel> roles = <RoleModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isCreating = false.obs;
+  final RxBool passwordVisible = true.obs;
+  final RxBool confirmPasswordVisible = true.obs;
 
   // Form controllers
   late TextEditingController emailController;
@@ -42,6 +44,14 @@ class UserManagementController extends GetxController {
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.onClose();
+  }
+
+  void togglePasswordVisibility() {
+    passwordVisible.value = !passwordVisible.value;
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    confirmPasswordVisible.value = !confirmPasswordVisible.value;
   }
 
   Future<void> fetchUsers() async {
@@ -107,16 +117,9 @@ class UserManagementController extends GetxController {
       return;
     }
 
-    if (selectedRoleId.value == null) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message: 'Please select a role',
-      );
-      return;
-    }
-
     try {
       isCreating.value = true;
+
       await _userManagementService.createUser(
         email: emailController.text,
         password: passwordController.text,
@@ -124,43 +127,24 @@ class UserManagementController extends GetxController {
         roleId: selectedRoleId.value!,
       );
 
-      await fetchUsers();
-      resetForm();
       Get.back();
 
+      resetForm();
+
       DialogHelper.showSuccessDialog(
-        title: 'Success',
-        message: 'User created successfully',
+        title: 'Berhasil',
+        message: 'Akun pegawai berhasil dibuat',
       );
+      await fetchUsers();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Failed to create user: ${e.toString()}',
+        message: 'Gagal membuat akun pegawai: ${e.toString()}',
       );
     } finally {
       isCreating.value = false;
     }
   }
-
-  // Future<void> updateUserRole(String userId, String roleId) async {
-  //   try {
-  //     isLoading.value = true;
-  //     await _userManagementService.updateUserRole(userId, roleId);
-  //     await fetchUsers();
-
-  //     DialogHelper.showSuccessDialog(
-  //       title: 'Success',
-  //       message: 'User role updated successfully',
-  //     );
-  //   } catch (e) {
-  //     DialogHelper.showErrorDialog(
-  //       title: 'Error',
-  //       message: 'Failed to update user role: ${e.toString()}',
-  //     );
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
 
   Future<void> deleteUser(String userId) async {
     try {
@@ -213,7 +197,7 @@ class UserManagementController extends GetxController {
     }
 
     if (value.length < 3) {
-      return 'Name must be at least 3 characters';
+      return 'Nama harus lebih dari 3 karakter';
     }
 
     return null;
@@ -221,11 +205,11 @@ class UserManagementController extends GetxController {
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Password is required';
+      return 'Password harus diisi';
     }
 
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'Password harus lebih dari 6 karakter';
     }
 
     return null;
@@ -233,11 +217,11 @@ class UserManagementController extends GetxController {
 
   String? validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please insert confirm password';
+      return 'Konfirmasi password harus diisi';
     }
 
     if (value != passwordController.text) {
-      return 'Passwords do not match';
+      return 'Konfirmasi password tidak sesuai';
     }
 
     return null;

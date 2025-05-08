@@ -40,17 +40,19 @@ class UserModel {
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    final userRoles = json['user_roles'] as List<dynamic>?;
+    String? roleName = json['role_name'];
+    String? roleId = json['role_id']?.toString();
 
-    Map<String, dynamic>? roleMap;
-    String? roleId;
-    String? roleName;
+    // If not found, try to extract from nested structure
+    if (roleName == null) {
+      final userRoles = json['user_roles'] as List<dynamic>?;
 
-    if (userRoles != null && userRoles.isNotEmpty) {
-      final roleItem = userRoles.first;
-      roleId = roleItem['role_id']?.toString();
-      roleMap = roleItem['roles'];
-      roleName = roleMap?['role_name'];
+      if (userRoles != null && userRoles.isNotEmpty) {
+        final roleItem = userRoles.first;
+        roleId = roleItem['role_id']?.toString();
+        final roleMap = roleItem['roles'];
+        roleName = roleMap?['role_name'];
+      }
     }
 
     return UserModel(

@@ -34,7 +34,7 @@ class AppTextFormField extends StatelessWidget {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
       validator: validator,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autovalidateMode: AutovalidateMode.disabled,
     );
   }
 }

@@ -1,7 +1,9 @@
+import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/services/auth_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
@@ -50,25 +52,40 @@ class LoginController extends GetxController {
 
     try {
       isLoading.value = true;
+
+      Get.dialog(
+        const Center(child: CircularProgressIndicator(color: AppColor.white)),
+        barrierDismissible: false,
+      );
+
       await _auth.login(email, password);
+      Get.back();
 
       final userData = AuthService.to.currentUser;
-      if (userData != null) {
-        final profile = await AuthService.to.getUserProfile(userData.id);
-        final fullname = profile?['fullname'] ?? '';
-        Get.offAllNamed('/main');
+      if (userData == null) {
+        throw Exception('Login berhasil, tapi userData null');
+      }
+
+      final profile = await AuthService.to.getUserProfile(userData.id);
+      final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
+
+      Get.offAllNamed('/main');
+      Future.delayed(Duration(milliseconds: 300), () {
         DialogHelper.showSuccessDialog(
           title: 'Berhasil Masuk',
           message: 'Selamat datang, $fullname',
         );
-      }
+      });
     } catch (e) {
-      if (e.toString().contains('invalid_credentials')) {
+      debugPrint('Login error: $e');
+
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('invalid_credentials')) {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
           message: 'Email atau password salah',
         );
-      } else if (e.toString().contains('user_not_found')) {
+      } else if (errorStr.contains('user_not_found')) {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
           message: 'Akun tidak ditemukan',
@@ -76,7 +93,7 @@ class LoginController extends GetxController {
       } else {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
-          message: e.toString(),
+          message: 'Terjadi kesalahan: ${e.toString()}',
         );
       }
     } finally {
@@ -132,12 +149,5 @@ class LoginController extends GetxController {
       return 'Password tidak boleh kosong';
     }
     return null;
-  }
-
-  @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.onClose();
   }
 }

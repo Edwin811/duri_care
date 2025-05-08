@@ -99,11 +99,17 @@ class AuthController extends GetxController {
   }
 
   Future<void> _refreshUserData() async {
-    await _refreshUserData();
-    await getProfilePicture();
-    await getUsername();
-    await getEmail();
-    await getRole();
+    // await _refreshUserData();
+    // await getProfilePicture();
+    // await getUsername();
+    // await getEmail();
+    // await getRole();
+    await Future.wait([
+      getProfilePicture(),
+      getUsername(),
+      getEmail(),
+      getRole(),
+    ]);
   }
 
   Future<String> getUsername() async {
@@ -140,7 +146,6 @@ class AuthController extends GetxController {
     final publicUrl = Supabase.instance.client.storage
         .from('duricare')
         .getPublicUrl(user.profileUrl!);
-    debugPrint('Profile picture: $publicUrl');
 
     return publicUrl;
   }
@@ -152,6 +157,7 @@ class AuthController extends GetxController {
     final user = AuthService.to.currentUser;
     if (user == null) return null;
     final role = await AuthService.to.getUserRole(user.id);
+    debugPrint('Role AUTH: $role');
     _cachedRole.value = role;
     return role;
   }

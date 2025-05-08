@@ -57,7 +57,7 @@ class ProfileController extends GetxController {
   Future<void> _initializeProfileData() async {
     username.value = await authController.getUsername();
     profilePicture.value = await authController.getProfilePicture();
-    role.value = await authController.getRole() ?? 'Employee';
+    role.value = await authController.getRole() ?? 'Pegawai';
     email.value = await authController.getEmail();
 
     usernameController.text = username.value;

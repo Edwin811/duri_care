@@ -206,20 +206,29 @@ class ProfileView extends GetView<ProfileController> {
                           ),
                           showBorder: true,
                         ),
-                        _buildIOSSettingsItem(
-                          context,
-                          title: 'Manajemen Akun Pegawai',
-                          icon: CupertinoIcons.person_2,
-                          showBorder: true,
-                          onTap: () {
-                            Get.toNamed('/user-management');
-                          },
-                        ),
-                        _buildIOSSettingsItem(
-                          context,
-                          title: 'Bayar Tagihan VPS Duri Care',
-                          icon: CupertinoIcons.creditcard,
-                          showBorder: true,
+                        Obx(
+                          () =>
+                              controller.role.value.toLowerCase() == 'owner'
+                                  ? Column(
+                                    children: [
+                                      _buildIOSSettingsItem(
+                                        context,
+                                        title: 'Manajemen Akun Pegawai',
+                                        icon: CupertinoIcons.person_2,
+                                        showBorder: true,
+                                        onTap: () {
+                                          Get.toNamed('/user-management');
+                                        },
+                                      ),
+                                      _buildIOSSettingsItem(
+                                        context,
+                                        title: 'Bayar Tagihan VPS Duri Care',
+                                        icon: CupertinoIcons.creditcard,
+                                        showBorder: true,
+                                      ),
+                                    ],
+                                  )
+                                  : const SizedBox.shrink(),
                         ),
                         _buildIOSSettingsItem(
                           context,
