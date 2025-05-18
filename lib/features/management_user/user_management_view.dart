@@ -5,6 +5,8 @@ import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/management_user/user_management_controller.dart';
 import 'package:duri_care/features/management_user/user_list_item.dart';
+import 'package:duri_care/features/management_user/permission_management_view.dart';
+import 'package:duri_care/features/management_user/permission_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -68,39 +70,39 @@ class UserManagementView extends GetView<UserManagementController> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-                if (controller.users.isEmpty) {
+              if (controller.users.isEmpty) {
                 return Center(
                   child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                    Icons.people_outline,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    child: Column(
-                      children: [
-                      Text(
-                        'Belum ada pegawai yang ditambahkan',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Silahkan tambahkan pegawai baru dengan menekan tombol di atas',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const SizedBox(height: 16),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 300),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Belum ada pegawai yang ditambahkan',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Silahkan tambahkan pegawai baru dengan menekan tombol di atas',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
                       ),
-                      ],
-                    ),
-                    ),
-                  ],
+                    ],
                   ),
                 );
-                }
+              }
 
               return RefreshIndicator(
                 onRefresh: controller.fetchUsers,
@@ -115,6 +117,75 @@ class UserManagementView extends GetView<UserManagementController> {
                       roles: controller.roles,
                       onDelete: () {
                         controller.deleteUser(user.id);
+                      },
+                      onTap: () async {
+                        final permissionController = Get.put(
+                          PermissionManagementController(),
+                        );
+                        permissionController.user.value = user;
+
+                        // Load zone and permission data before navigating
+                        await permissionController.fetchAllZones();
+                        await permissionController.fetchUserPermissions();
+
+                        final userZones =
+                            permissionController.userZoneIds
+                                .map((id) {
+                                  final zone = permissionController.allZones
+                                      .firstWhereOrNull((z) => z.id == id);
+                                  return zone?.name ?? '';
+                                })
+                                .where((name) => name.isNotEmpty)
+                                .toList();
+
+                        final userPermissions =
+                            permissionController.userPermissionIds
+                                .map((id) {
+                                  final perm = permissionController
+                                      .allPermissions
+                                      .firstWhereOrNull((p) => p.id == id);
+                                  return perm?.name ?? '';
+                                })
+                                .where((name) => name.isNotEmpty)
+                                .toList();
+
+                        await Get.to(
+                          () => PermissionManagementView(
+                            user: user,
+                            roles: controller.roles,
+                            allZones:
+                                permissionController.allZones
+                                    .map((z) => z.name)
+                                    .toList(),
+                            allPermissions:
+                                permissionController.allPermissions
+                                    .map((p) => p.name)
+                                    .toList(),
+                            userZones: userZones,
+                            userPermissions: userPermissions,
+                            onZonePermissionChanged: (zoneName, add) async {
+                              final zone = permissionController.allZones
+                                  .firstWhereOrNull((z) => z.name == zoneName);
+                              if (zone != null) {
+                                await permissionController.updateZonePermission(
+                                  zone.id,
+                                  add,
+                                );
+                              }
+                            },
+                            onPermissionChanged: (permName, add) async {
+                              final perm = permissionController.allPermissions
+                                  .firstWhereOrNull((p) => p.name == permName);
+                              if (perm != null) {
+                                await permissionController.updatePermission(
+                                  perm.id,
+                                  add,
+                                );
+                              }
+                            },
+                          ),
+                        );
+                        Get.delete<PermissionManagementController>();
                       },
                     );
                   },

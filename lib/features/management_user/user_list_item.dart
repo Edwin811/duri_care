@@ -9,72 +9,75 @@ class UserListItem extends StatelessWidget {
   final UserModel user;
   final List<RoleModel> roles;
   final VoidCallback onDelete;
+  final VoidCallback onTap;
 
   const UserListItem({
     super.key,
     required this.user,
     required this.roles,
     required this.onDelete,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: AppColor.greenPrimary.withAlpha(10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: AppColor.greenPrimary.withAlpha(20)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _buildAvatar(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.fullname ?? 'No Name',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Card(
+        elevation: 1,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: AppColor.greenPrimary.withAlpha(30)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              _buildAvatar(),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.fullname ?? 'No Name',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email ?? 'No Email',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user.email ?? 'No Email',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assignment_ind_outlined,
+                          size: 18,
+                          color: AppColor.greenPrimary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Role: ${user.roleName == 'employee' ? 'Pegawai' : user.roleName}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                _buildMoreMenu(context),
-              ],
-            ),
-            const Divider(height: 24),
-            Row(
-              children: [
-                Icon(
-                  Icons.assignment_ind_outlined,
-                  size: 20,
-                  color: AppColor.greenPrimary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Role: ${user.roleName == 'employee' ? 'Pegawai' : user.roleName}',
-                  style: Theme.of(
-                  context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                tooltip: 'Hapus User',
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -112,29 +115,5 @@ class UserListItem extends StatelessWidget {
     }
 
     return user.fullname![0].toUpperCase();
-  }
-
-  Widget _buildMoreMenu(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      onSelected: (value) {
-        if (value == 'delete') {
-          onDelete();
-        }
-      },
-      itemBuilder:
-          (context) => [
-            const PopupMenuItem<String>(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete User'),
-                ],
-              ),
-            ),
-          ],
-    );
   }
 }

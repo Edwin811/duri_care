@@ -87,7 +87,6 @@ class UserManagementController extends GetxController {
         title: 'Error',
         message: 'Failed to load roles: ${e.toString()}',
       );
-      print('Error fetching roles: $e');
     }
   }
 
@@ -138,9 +137,17 @@ class UserManagementController extends GetxController {
       );
       await fetchUsers();
     } catch (e) {
+      String errorMessage = 'Gagal membuat akun pegawai';
+      
+      if (e.toString().contains('user_already_exist')) {
+        errorMessage = 'Email sudah terdaftar, silakan gunakan email lain';
+      } else {
+        errorMessage = '$errorMessage: ${e.toString()}';
+      }
+      
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Gagal membuat akun pegawai: ${e.toString()}',
+        message: errorMessage,
       );
     } finally {
       isCreating.value = false;

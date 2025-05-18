@@ -176,37 +176,77 @@ class UserService extends GetxService {
   }
 
   Future<void> assignUserToZone(String userId, int zoneId) async {
-    await _supabase.from('zone_users').insert({
-      'user_id': userId,
-      'zone_id': zoneId,
-    });
+    try {
+      // Check if assignment already exists
+      final existing =
+          await _supabase
+              .from('zone_users')
+              .select()
+              .eq('user_id', userId)
+              .eq('zone_id', zoneId)
+              .maybeSingle();
+
+      if (existing == null) {
+        // Only insert if it doesn't already exist
+        await _supabase.from('zone_users').insert({
+          'user_id': userId,
+          'zone_id': zoneId,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to assign user to zone: $e');
+    }
   }
 
   Future<void> removeUserFromZone(String userId, int zoneId) async {
-    await _supabase.from('zone_users').delete().match({
-      'user_id': userId,
-      'zone_id': zoneId,
-    });
+    try {
+      await _supabase.from('zone_users').delete().match({
+        'user_id': userId,
+        'zone_id': zoneId,
+      });
+    } catch (e) {
+      throw Exception('Failed to remove user from zone: $e');
+    }
   }
 
   Future<void> assignPermissionToUser(
     String userId,
     String permissionId,
   ) async {
-    await _supabase.from('user_permissions').insert({
-      'user_id': userId,
-      'permission_id': permissionId,
-    });
+    try {
+      // Check if permission already exists
+      final existing =
+          await _supabase
+              .from('user_permissions')
+              .select()
+              .eq('user_id', userId)
+              .eq('permission_id', permissionId)
+              .maybeSingle();
+
+      if (existing == null) {
+        // Only insert if it doesn't already exist
+        await _supabase.from('user_permissions').insert({
+          'user_id': userId,
+          'permission_id': permissionId,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to assign permission to user: $e');
+    }
   }
 
   Future<void> removePermissionFromUser(
     String userId,
     String permissionId,
   ) async {
-    await _supabase.from('user_permissions').delete().match({
-      'user_id': userId,
-      'permission_id': permissionId,
-    });
+    try {
+      await _supabase.from('user_permissions').delete().match({
+        'user_id': userId,
+        'permission_id': permissionId,
+      });
+    } catch (e) {
+      throw Exception('Failed to remove permission from user: $e');
+    }
   }
 
   void loadUserFromMap(Map<String, dynamic> data) {
@@ -288,5 +328,40 @@ class UserService extends GetxService {
       params: {'email_to_check': email},
     );
     return response as bool;
+  }
+
+  Future<void> updateZonePermission(
+    String userId,
+    int zoneId,
+    String permissionKey,
+    bool value,
+  ) async {
+    try {
+      final existing =
+          await _supabase
+              .from('zone_users')
+              .select()
+              .eq('user_id', userId)
+              .eq('zone_id', zoneId)
+              .maybeSingle();
+
+      if (existing != null) {
+        // Update existing zone_users record with new permission value
+        await _supabase
+            .from('zone_users')
+            .update({permissionKey: value})
+            .eq('user_id', userId)
+            .eq('zone_id', zoneId);
+      } else {
+        // If no record exists, create one with the permission
+        await _supabase.from('zone_users').insert({
+          'user_id': userId,
+          'zone_id': zoneId,
+          permissionKey: value,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to update zone permission: $e');
+    }
   }
 }

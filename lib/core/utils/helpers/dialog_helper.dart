@@ -10,11 +10,7 @@ abstract class DialogHelper {
     VoidCallback? onConfirm,
   }) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showErrorDialog(
-        message: message,
-        title: title,
-        onConfirm: onConfirm,
-      );
+      showErrorDialog(message: message, title: title, onConfirm: onConfirm);
     });
   }
 
@@ -239,7 +235,10 @@ abstract class DialogHelper {
                       ),
                       minimumSize: const Size(120, 50),
                     ),
-                    child: Text(confirmText, style: const TextStyle(fontSize: 16)),
+                    child: Text(
+                      confirmText,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
                 ],
               ),
@@ -254,5 +253,32 @@ abstract class DialogHelper {
     if (Get.isDialogOpen ?? false) {
       Get.back();
     }
+  }
+
+  static void showSnackBar({
+    required String message,
+    String? title,
+    bool isError = false,
+    Duration duration = const Duration(seconds: 3),
+    SnackPosition position = SnackPosition.BOTTOM,
+  }) {
+    if (Get.context == null) return;
+
+    Get.snackbar(
+      title ?? (isError ? 'Error' : 'Info'),
+      message,
+      snackPosition: position,
+      backgroundColor: isError ? Colors.red.shade50 : Colors.green.shade50,
+      colorText: isError ? Colors.red.shade800 : Colors.green.shade800,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+      duration: duration,
+      icon: Icon(
+        isError ? Icons.error_outline : Icons.check_circle_outline,
+        color: isError ? Colors.red : Colors.green,
+      ),
+      dismissDirection: DismissDirection.horizontal,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
   }
 }
