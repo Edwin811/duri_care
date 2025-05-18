@@ -55,7 +55,7 @@ class ZoneGrid extends GetView<ZoneController> {
                 maxWidth: MediaQuery.of(context).size.width * 0.8,
               ),
               child: Text(
-                'Silahkan tambahkan zona baru dengan menekan tombol "Tambah" di bawah',
+                'Silahkan tambahkan zona baru dengan menekan button plus di bawah',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 16,

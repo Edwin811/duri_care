@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 
 class LoginController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
-  // final GlobalKey<FormState> loginKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> loginKey = GlobalKey<FormState>();
   final isPasswordVisible = true.obs;
   final isLoading = false.obs;
 
@@ -36,19 +36,12 @@ class LoginController extends GetxController {
   }
 
   Future<void> loginWithEmail() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
-    final emailError = validateEmail(email);
-    final passwordError = validatePassword(password);
-
-    if (emailError != null || passwordError != null) {
-      DialogHelper.showErrorDialog(
-        title: 'Gagal Masuk',
-        message: 'Email atau password tidak valid',
-      );
+    if (!(loginKey.currentState?.validate() ?? false)) {
       return;
     }
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
     try {
       isLoading.value = true;
@@ -59,16 +52,16 @@ class LoginController extends GetxController {
       );
 
       await _auth.login(email, password);
-      Get.back();
 
       final userData = AuthService.to.currentUser;
       if (userData == null) {
-        throw Exception('Login berhasil, tapi userData null');
+        throw Exception('userData null');
       }
 
       final profile = await AuthService.to.getUserProfile(userData.id);
       final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
 
+      Get.back();
       Get.offAllNamed('/main');
       Future.delayed(Duration(milliseconds: 300), () {
         DialogHelper.showSuccessDialog(
@@ -78,22 +71,32 @@ class LoginController extends GetxController {
       });
     } catch (e) {
       debugPrint('Login error: $e');
+      Get.back();
 
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('invalid_credentials')) {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
           message: 'Email atau password salah',
+          onConfirm: () {
+            isLoading.value = false;
+          },
         );
       } else if (errorStr.contains('user_not_found')) {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
           message: 'Akun tidak ditemukan',
+          onConfirm: () {
+            isLoading.value = false;
+          },
         );
       } else {
         DialogHelper.showErrorDialog(
           title: 'Gagal Masuk',
           message: 'Terjadi kesalahan: ${e.toString()}',
+          onConfirm: () {
+            isLoading.value = false;
+          },
         );
       }
     } finally {

@@ -68,30 +68,39 @@ class UserManagementView extends GetView<UserManagementController> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (controller.users.isEmpty) {
+                if (controller.users.isEmpty) {
                 return Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                    Icons.people_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Column(
+                      children: [
                       Text(
-                        'No users found',
+                        'Belum ada pegawai yang ditambahkan',
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Add a new user to get started',
+                        'Silahkan tambahkan pegawai baru dengan menekan tombol di atas',
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                    ],
+                      ],
+                    ),
+                    ),
+                  ],
                   ),
                 );
-              }
+                }
 
               return RefreshIndicator(
                 onRefresh: controller.fetchUsers,

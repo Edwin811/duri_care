@@ -13,7 +13,7 @@ class LoginScreen extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
-    final loginKey = GlobalKey<FormState>();
+    final loginKey = controller.loginKey;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,7 +61,8 @@ class LoginScreen extends GetView<LoginController> {
                                 obscureText: false,
                                 prefixIcon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
-                                validator: controller.validateEmail,
+                                validator:
+                                    (value) => controller.validateEmail(value),
                               ),
 
                               AppSpacing.md,

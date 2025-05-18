@@ -1,5 +1,6 @@
 import 'package:duri_care/models/irrigation_schedule.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,14 +9,13 @@ class ScheduleService extends GetxService {
 
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
     try {
-
       final data =
           await _supabase
               .from('upcoming_zone_schedules')
               .select()
+              .gt('scheduled_at', DateTime.now().toIso8601String())
               .limit(1)
               .maybeSingle();
-
       if (data == null) return null;
 
       final schedule = IrrigationScheduleModel(
@@ -26,7 +26,7 @@ class ScheduleService extends GetxService {
         statusId: data['status_id'],
       );
 
-      final zoneName = data['zone_name'] ?? 'Tanpa Nama';
+      final zoneName = data['zone_name'];
 
       return Upcomingschedule(schedule: schedule, zoneName: zoneName);
     } catch (e) {

@@ -69,17 +69,25 @@ class HomeController extends GetxController {
 
   Future<void> getUsername() async {
     try {
-      final fullname = await authController.getUsername();
-      username.value = fullname;
+      final user = await UserService.to.getCurrentUser();
+      username.value = user?.fullname ?? 'Guest';
     } catch (e) {
-      profilePicture.value = '';
+      username.value = 'Guest';
     }
   }
 
   Future<void> getProfilePicture() async {
     try {
-      final picture = await authController.getProfilePicture();
-      profilePicture.value = picture;
+      final user = await UserService.to.getCurrentUser();
+      if (user?.profileUrl == null) {
+        profilePicture.value = '';
+      } else if (user!.profileUrl!.startsWith('http')) {
+        profilePicture.value = user.profileUrl!;
+      } else {
+        profilePicture.value = Supabase.instance.client.storage
+            .from('image')
+            .getPublicUrl(user.profileUrl!);
+      }
     } catch (e) {
       profilePicture.value = '';
     }

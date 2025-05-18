@@ -31,7 +31,7 @@ class ZoneController extends GetxController {
 
   final selectedDate = Rx<DateTime?>(DateTime.now());
   final selectedTime = Rx<TimeOfDay?>(const TimeOfDay(hour: 6, minute: 0));
-  final duration = 5.obs;
+  final durationIrg = 5.obs;
   final schedules = <ZoneScheduleModel>[].obs;
 
   final TextEditingController zoneNameController = TextEditingController();
@@ -58,15 +58,18 @@ class ZoneController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // isActive.value = storage.read('isActive') ?? false;
-
+    // Pastikan status isActive diambil dari database, bukan dari storage lokal
     loadZones().then((_) {
       _setupZoneTimers();
       listenToZoneChanges();
       countActive();
       loadAllZoneSchedules();
+      // Ambil status aktif zone dari database untuk selectedZone jika ada
+      if (zones.isNotEmpty) {
+        final firstZone = zones.first;
+        isActive.value = firstZone['is_active'] ?? false;
+      }
     });
-
     loadSchedules();
     loadDevices();
   }
@@ -85,12 +88,12 @@ class ZoneController extends GetxController {
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
         if (zone['is_active'] == true) {
-          startTimer(zoneId, duration.value);
+          startTimer(zoneId, durationIrg.value);
         }
 
         final remainingTime = storage.read('timer_$zoneId');
         if (remainingTime != null && remainingTime > 0) {
-          startTimer(zoneId, duration.value);
+          startTimer(zoneId, durationIrg.value);
         }
       }
     }
@@ -140,16 +143,14 @@ class ZoneController extends GetxController {
 
       selectedZone.value = zoneMap;
       loadSchedules();
-
+      // Ambil status aktif dari database, bukan storage
       isActive.value = zoneModel.isActive;
-      storage.write('is_active', isActive.value);
-
       getSoilMoisture(zoneId);
       loadDevicesForZone(zoneId);
     } catch (e) {
       DialogHelper.showErrorDialogSafely(
         title: 'Failed to Load Zone',
-        message: 'Error: ${e.toString()}',
+        message: 'Error: ${e.toString()}',
       );
     } finally {
       isLoading.value = false;
@@ -382,7 +383,7 @@ class ZoneController extends GetxController {
 
       if (newActiveState) {
         activeCount.value += 1;
-        startTimer(zoneIdStr, duration.value);
+        startTimer(zoneIdStr, durationIrg.value);
       } else {
         activeCount.value = activeCount.value > 0 ? activeCount.value - 1 : 0;
         stopTimer(zoneIdStr);
@@ -421,7 +422,7 @@ class ZoneController extends GetxController {
           };
 
           if (updatedIsActive && _zoneTimers[updatedZoneId] == null) {
-            startTimer(updatedZoneId, duration.value);
+            startTimer(updatedZoneId, durationIrg.value);
           } else if (!updatedIsActive && _zoneTimers[updatedZoneId] != null) {
             stopTimer(updatedZoneId);
           }
@@ -508,7 +509,9 @@ class ZoneController extends GetxController {
 
       final isZoneActive = zones[zoneIndex]['is_active'] ?? false;
       if (!isZoneActive) {
-        this.duration.value = duration;
+        durationIrg.value = duration;
+        storage.write('zone_${zoneId}_duration', duration);
+        debugPrint('Setting duration for zone $zoneId: $duration minutes');
 
         storage.remove('timer_$zoneId');
         await toggleActive(zoneId);
@@ -566,7 +569,7 @@ class ZoneController extends GetxController {
 
       await _zoneService.createSchedule(
         scheduledDateTime: combinedDateTime,
-        duration: duration.value,
+        duration: durationIrg.value,
         zoneId: zoneId,
       );
 
@@ -642,12 +645,28 @@ class ZoneController extends GetxController {
     try {
       schedules.value = await _zoneService.loadZoneSchedules(zoneId);
 
+      final storedDuration = storage.read('zone_${zoneId}_duration');
+      if (storedDuration != null) {
+        durationIrg.value = storedDuration;
+        debugPrint(
+          'Loaded stored duration for zone $zoneId: $storedDuration minutes',
+        );
+      } else if (schedules.isNotEmpty) {
+        // durationIrg.value = schedules.first.schedule.duration;
+        // storage.write('zone_${zoneId}_duration', durationIrg.value);
+        debugPrint(
+          'Using first schedule duration for zone $zoneId: ${durationIrg.value} minutes',
+        );
+      }
+
       final now = DateTime.now();
       for (var item in schedules) {
         try {
           final scheduledAt = item.schedule.scheduledAt;
           final duration = item.schedule.duration;
           final scheduledId = item.schedule.id;
+
+          storage.write('schedule_${scheduledId}_duration', duration);
 
           if (scheduledAt.isAfter(now)) {
             final timeUntilSchedule = scheduledAt.difference(now);
@@ -772,6 +791,6 @@ class ZoneController extends GetxController {
     zoneNameController.clear();
     selectedDate.value = DateTime.now();
     selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
-    duration.value = 5;
+    durationIrg.value = 5;
   }
 }

@@ -1,4 +1,4 @@
-import 'package:duri_care/core/services/user_management_service.dart';
+import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/role_model.dart';
 import 'package:duri_care/models/user_model.dart';
@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class UserManagementController extends GetxController {
-  final UserManagementService _userManagementService =
-      Get.find<UserManagementService>();
+  final UserService _userService = Get.find<UserService>();
 
   final RxList<UserModel> users = <UserModel>[].obs;
   final RxList<RoleModel> roles = <RoleModel>[].obs;
@@ -57,7 +56,8 @@ class UserManagementController extends GetxController {
   Future<void> fetchUsers() async {
     try {
       isLoading.value = true;
-      users.value = await _userManagementService.fetchAllUsers();
+      users.value = await _userService.fetchAllUsers();
+      UserService.to.countStaff();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error',
@@ -70,13 +70,13 @@ class UserManagementController extends GetxController {
 
   Future<void> fetchRoles() async {
     try {
-      final rolesList = await _userManagementService.getAllRoles();
+      final rolesList = await _userService.getAllRoles();
 
       final filteredRoles =
           rolesList
               .where((role) => role.name.toLowerCase() != 'owner')
+              .cast<RoleModel>()
               .toList();
-
       roles.assignAll(filteredRoles);
 
       if (roles.isNotEmpty && selectedRoleId.value == null) {
@@ -87,6 +87,7 @@ class UserManagementController extends GetxController {
         title: 'Error',
         message: 'Failed to load roles: ${e.toString()}',
       );
+      print('Error fetching roles: $e');
     }
   }
 
@@ -120,7 +121,7 @@ class UserManagementController extends GetxController {
     try {
       isCreating.value = true;
 
-      await _userManagementService.createUser(
+      await _userService.createUser(
         email: emailController.text,
         password: passwordController.text,
         fullname: fullnameController.text,
@@ -154,7 +155,7 @@ class UserManagementController extends GetxController {
         title: 'Hapus Akun Pegawai',
         message: 'Apakah Anda yakin ingin menghapus akun pegawai?',
         onConfirm: () async {
-          await _userManagementService.deleteUser(userId);
+          await _userService.deleteUser(userId);
           Get.back();
           DialogHelper.showSuccessDialog(
             title: 'Berhasil',

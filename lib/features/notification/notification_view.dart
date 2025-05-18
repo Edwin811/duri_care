@@ -1,5 +1,6 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/themes/app_themes.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/models/notification_model.dart';
@@ -24,9 +25,34 @@ class NotificationView extends GetView<NotificationController> {
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all, color: AppColor.white),
-            tooltip: 'Mark all as read',
+            tooltip: 'Tandai semua sebagai dibaca',
             onPressed: () {
-              _showMarkAllAsReadConfirmation(context);
+              // _showMarkAllAsReadConfirmation(context);
+              DialogHelper.showConfirmationDialog(
+                title: 'Tandai Semua Dibaca',
+                message:
+                    'Apakah anda yakin menandai semua notifikasi sebagai dibaca?',
+                onConfirm: () {
+                  final userId =
+                      controller
+                          .notificationService
+                          .supabase
+                          .auth
+                          .currentUser
+                          ?.id;
+                  if (userId != null) {
+                    controller.markAllAsRead();
+                    controller.loadNotifications();
+                  } else {
+                    DialogHelper.showErrorDialog(
+                      message: 'Gagal menandai semua notifikasi sebagai dibaca',
+                    );
+                  }
+                },
+                onCancel: () {
+                  Get.back();
+                },
+              );
             },
           ),
         ],
@@ -164,7 +190,7 @@ class NotificationView extends GetView<NotificationController> {
               if (!isRead)
                 IconButton(
                   icon: const Icon(
-                    Icons.check_circle_outline,
+                    Icons.check_circle_outline_rounded,
                     color: AppColor.greenPrimary,
                   ),
                   onPressed: () => controller.markAsRead(notification.id),

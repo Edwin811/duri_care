@@ -1,10 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:duri_care/core/services/session_service.dart';
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
-import 'package:duri_care/models/user_model.dart';
-import 'package:flutter/widgets.dart';
+import 'dart:io';
+import 'package:duri_care/models/role_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:duri_care/models/user_model.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 
 class UserService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -12,6 +11,203 @@ class UserService extends GetxService {
   final RxString roleName = ''.obs;
 
   static UserService get to => Get.find<UserService>();
+
+  // ================= PROFILE =================
+  Future<UserService> init() async {
+    return this;
+  }
+
+  User? getCurrentUserRaw() {
+    return _supabase.auth.currentUser;
+  }
+
+  Future<void> updateUserProfile({
+    String? email,
+    String? password,
+    required String fullname,
+    String? profileImageUrl,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    final updates = <String, dynamic>{};
+    if (email != null) {
+      updates['email'] = email;
+    }
+    if (password != null) {
+      updates['password'] = password;
+    }
+
+    if (updates.isNotEmpty) {
+      await _supabase.auth.updateUser(
+        UserAttributes(email: updates['email'], password: updates['password']),
+      );
+    }
+
+    final updateData = {
+      'fullname': fullname,
+      if (profileImageUrl != null) 'profile_image': profileImageUrl,
+    };
+
+    await _supabase.from('users').update(updateData).eq('id', user.id);
+  }
+
+  Future<String?> uploadProfileImage(File file) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+
+    final filePath =
+        'avatars/${user.id}_${DateTime.now().millisecondsSinceEpoch}.png';
+
+    final storageResponse = await _supabase.storage
+        .from('image')
+        .upload(filePath, file, fileOptions: const FileOptions(upsert: true));
+
+    if (storageResponse.isEmpty) {
+      throw Exception('Upload to storage failed');
+    }
+
+    return filePath;
+  }
+
+  Future<void> signOut() async {
+    await _supabase.auth.signOut();
+  }
+
+  // ================= USER MANAGEMENT =================
+  Future<List<UserModel>> fetchAllUsers() async {
+    try {
+      final dbUsers = await _supabase.from('extended_users').select();
+      return dbUsers.map<UserModel>((u) => UserModel.fromJson(u)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch users: $e');
+    }
+  }
+
+  Future<void> createUser({
+    required String email,
+    required String password,
+    required String fullname,
+    required String roleId,
+    String? profileImage,
+  }) async {
+    try {
+      final currentSession = _supabase.auth.currentSession;
+      final authResponse = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      final user = authResponse.user;
+      if (user == null) throw Exception('Gagal membuat user');
+      await _supabase.from('users').insert({
+        'id': user.id,
+        'fullname': fullname,
+        'profile_image': profileImage,
+      });
+      await _supabase.from('user_roles').insert({
+        'user_id': user.id,
+        'role_id': roleId,
+      });
+      await signOut();
+      if (currentSession != null && currentSession.refreshToken != null) {
+        await _supabase.auth.setSession(currentSession.refreshToken!);
+      }
+    } catch (e) {
+      throw Exception('Failed to create user: $e');
+    }
+  }
+
+  Future<void> updateUser({
+    required String userId,
+    String? fullname,
+    String? profileImage,
+    String? roleId,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (fullname != null) updates['fullname'] = fullname;
+    if (profileImage != null) updates['profile_image'] = profileImage;
+    if (roleId != null) updates['role_id'] = roleId;
+    if (updates.isNotEmpty) {
+      await _supabase.from('users').update(updates).eq('id', userId);
+    }
+  }
+
+  Future<void> updateUserRole(String userId, String roleId) async {
+    try {
+      final existingRoles = await _supabase
+          .from('user_roles')
+          .select()
+          .eq('user_id', userId);
+      if (existingRoles.isNotEmpty) {
+        await _supabase
+            .from('user_roles')
+            .update({'role_id': roleId})
+            .eq('user_id', userId);
+      } else {
+        await _supabase.from('user_roles').insert({
+          'user_id': userId,
+          'role_id': roleId,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to update user role: $e');
+    }
+  }
+
+  Future<void> deleteUser(String userId) async {
+    try {
+      await _supabase.from('zone_users').delete().eq('user_id', userId);
+      await _supabase.from('user_permissions').delete().eq('user_id', userId);
+      await _supabase.from('user_roles').delete().eq('user_id', userId);
+      await _supabase.from('users').delete().eq('id', userId);
+    } catch (e) {
+      throw Exception('Failed to delete user: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAllRoles() async {
+    final data = await _supabase.from('roles').select('*');
+    return data.map<RoleModel>((role) => RoleModel.fromJson(role)).toList();
+  }
+
+  Future<List<dynamic>> getAllPermissions() async {
+    final data = await _supabase.from('permissions').select('*');
+    return data;
+  }
+
+  Future<void> assignUserToZone(String userId, int zoneId) async {
+    await _supabase.from('zone_users').insert({
+      'user_id': userId,
+      'zone_id': zoneId,
+    });
+  }
+
+  Future<void> removeUserFromZone(String userId, int zoneId) async {
+    await _supabase.from('zone_users').delete().match({
+      'user_id': userId,
+      'zone_id': zoneId,
+    });
+  }
+
+  Future<void> assignPermissionToUser(
+    String userId,
+    String permissionId,
+  ) async {
+    await _supabase.from('user_permissions').insert({
+      'user_id': userId,
+      'permission_id': permissionId,
+    });
+  }
+
+  Future<void> removePermissionFromUser(
+    String userId,
+    String permissionId,
+  ) async {
+    await _supabase.from('user_permissions').delete().match({
+      'user_id': userId,
+      'permission_id': permissionId,
+    });
+  }
 
   void loadUserFromMap(Map<String, dynamic> data) {
     if (data.containsKey('auth') && data.containsKey('user')) {
@@ -38,7 +234,6 @@ class UserService extends GetxService {
   Future<UserModel?> getCurrentUser() async {
     final authUser = _supabase.auth.currentUser;
     if (authUser == null) return null;
-
     try {
       final response =
           await _supabase
@@ -46,7 +241,6 @@ class UserService extends GetxService {
               .select('fullname, profile_image')
               .eq('id', authUser.id)
               .maybeSingle();
-
       if (response != null) {
         final userModel = UserModel(
           id: authUser.id,
@@ -58,7 +252,6 @@ class UserService extends GetxService {
           fullname: response['fullname'] ?? '',
           profileUrl: response['profile_image'],
         );
-
         currentUser.value = userModel;
         return userModel;
       } else {
@@ -68,7 +261,6 @@ class UserService extends GetxService {
           fullname: '',
           profileUrl: null,
         );
-
         currentUser.value = userModel;
         return userModel;
       }
@@ -84,13 +276,17 @@ class UserService extends GetxService {
           .from('extended_users')
           .select()
           .neq('role_name', 'owner');
-
-      debugPrint('Response count staff: ${response.runtimeType}');
-
       return response.length;
     } catch (e) {
-      debugPrint('Error counting staff: $e');
       return 0;
     }
+  }
+
+  Future<bool> isEmailAlreadyExists(String email) async {
+    final response = await _supabase.rpc(
+      'is_email_exists',
+      params: {'email_to_check': email},
+    );
+    return response as bool;
   }
 }

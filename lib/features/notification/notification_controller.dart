@@ -3,7 +3,6 @@ import 'package:duri_care/models/notification_model.dart';
 import 'package:get/get.dart';
 
 class NotificationController extends GetxController {
-  // Changed to public access so the view can access it
   final NotificationService notificationService = NotificationService.to;
 
   final RxBool isLoading = true.obs;

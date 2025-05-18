@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -16,13 +17,20 @@ abstract class DialogHelper {
       );
     });
   }
-  
+
   static Future<void> showErrorDialog({
     required String message,
     String? title,
     VoidCallback? onConfirm,
   }) async {
     if (Get.context == null) return;
+
+    Timer? autoCloseTimer;
+    autoCloseTimer = Timer(const Duration(seconds: 10), () {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    });
 
     return Get.dialog(
       Dialog(
@@ -59,7 +67,10 @@ abstract class DialogHelper {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: onConfirm ?? () => Get.back(),
+                  onPressed: () {
+                    onConfirm?.call();
+                    Get.back();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
@@ -76,7 +87,7 @@ abstract class DialogHelper {
         ),
       ),
       barrierDismissible: false,
-    );
+    ).then((_) => autoCloseTimer?.cancel());
   }
 
   static Future<void> showSuccessDialog({
@@ -85,6 +96,13 @@ abstract class DialogHelper {
     VoidCallback? onConfirm,
   }) async {
     if (Get.context == null) return;
+
+    Timer? autoCloseTimer;
+    autoCloseTimer = Timer(const Duration(seconds: 10), () {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    });
 
     return Get.dialog(
       Dialog(
@@ -119,6 +137,7 @@ abstract class DialogHelper {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    autoCloseTimer?.cancel();
                     Get.back();
                     onConfirm?.call();
                   },
@@ -137,7 +156,7 @@ abstract class DialogHelper {
           ),
         ),
       ),
-    );
+    ).then((_) => autoCloseTimer?.cancel());
   }
 
   static Future<void> showConfirmationDialog({
@@ -147,8 +166,16 @@ abstract class DialogHelper {
     required VoidCallback onCancel,
     String confirmText = 'OK',
     String cancelText = 'Cancel',
+    int autoCloseTime = 10,
   }) async {
     if (Get.context == null) return;
+
+    Timer? autoCloseTimer;
+    autoCloseTimer = Timer(Duration(seconds: autoCloseTime), () {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    });
 
     return Get.dialog(
       Dialog(
@@ -180,34 +207,39 @@ abstract class DialogHelper {
               ),
               const SizedBox(height: 16),
               Row(
-                spacing: 20,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   OutlinedButton(
-                    onPressed: onCancel,
+                    onPressed: () {
+                      autoCloseTimer?.cancel();
+                      onCancel();
+                    },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.red),
+                      side: const BorderSide(color: Colors.red),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      minimumSize: Size(120, 50),
+                      minimumSize: const Size(120, 50),
                     ),
                     child: Text(
                       cancelText,
-                      style: TextStyle(color: Colors.red, fontSize: 16),
+                      style: const TextStyle(color: Colors.red, fontSize: 16),
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: onConfirm,
+                    onPressed: () {
+                      autoCloseTimer?.cancel();
+                      onConfirm();
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      minimumSize: Size(120, 50),
+                      minimumSize: const Size(120, 50),
                     ),
-                    child: Text(confirmText, style: TextStyle(fontSize: 16)),
+                    child: Text(confirmText, style: const TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
@@ -215,7 +247,7 @@ abstract class DialogHelper {
           ),
         ),
       ),
-    );
+    ).then((_) => autoCloseTimer?.cancel());
   }
 
   static void closeDialog() {

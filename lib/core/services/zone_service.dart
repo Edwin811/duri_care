@@ -88,7 +88,7 @@ class ZoneService extends GetxService {
             .eq('name', name)
             .filter('deleted_at', 'is', null)
             .maybeSingle();
-
+    debugPrint('ZONA DUPLIKAT: $existing');
     if (existing != null) {
       throw Exception('Zona dengan nama "$name" sudah ada');
     }

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:duri_care/core/services/profile_service.dart';
+import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
@@ -7,10 +7,11 @@ import 'package:duri_care/features/home/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
-  final ProfileService _profileService = Get.find<ProfileService>();
+  final UserService _userService = Get.find<UserService>();
   final NavigationHelper navigationHelper = Get.find<NavigationHelper>();
 
   final RxString username = ''.obs;
@@ -56,7 +57,19 @@ class ProfileController extends GetxController {
 
   Future<void> _initializeProfileData() async {
     username.value = await authController.getUsername();
-    profilePicture.value = await authController.getProfilePicture();
+    final user = await _userService.getCurrentUser();
+    if (user?.profileUrl != null && user!.profileUrl!.isNotEmpty) {
+      if (user.profileUrl!.startsWith('http')) {
+        profilePicture.value = user.profileUrl!;
+      } else {
+        final publicUrl = Supabase.instance.client.storage
+            .from('image')
+            .getPublicUrl(user.profileUrl!);
+        profilePicture.value = publicUrl.isNotEmpty ? publicUrl : '';
+      }
+    } else {
+      profilePicture.value = '';
+    }
     role.value = await authController.getRole() ?? 'Pegawai';
     email.value = await authController.getEmail();
 
@@ -85,7 +98,7 @@ class ProfileController extends GetxController {
   }
 
   Future<void> updateProfile() async {
-    if (_profileService.getCurrentUser() == null) return;
+    if (_userService.getCurrentUserRaw() == null) return;
 
     if (!profileKey.currentState!.validate()) {
       DialogHelper.showErrorDialog(
@@ -107,10 +120,31 @@ class ProfileController extends GetxController {
       }
     }
 
+    if (emailController.text != email.value) {
+      try {
+        bool isEmailExists = await _userService.isEmailAlreadyExists(
+          emailController.text,
+        );
+        if (isEmailExists) {
+          DialogHelper.showErrorDialog(
+            title: 'Error',
+            message: 'Gunakan Email lain yang belum terdaftar.',
+          );
+          return;
+        }
+      } catch (e) {
+        DialogHelper.showErrorDialog(
+          title: 'Error',
+          message: 'Gagal memeriksa email: ${e.toString()}',
+        );
+        return;
+      }
+    }
+
     try {
       String? uploadedImageUrl;
       if (imageFile.value != null) {
-        uploadedImageUrl = await _profileService.uploadProfileImage(
+        uploadedImageUrl = await _userService.uploadProfileImage(
           imageFile.value!,
         );
         if (uploadedImageUrl != null) {
@@ -118,7 +152,7 @@ class ProfileController extends GetxController {
         }
       }
 
-      await _profileService.updateUserProfile(
+      await _userService.updateUserProfile(
         email:
             emailController.text != email.value ? emailController.text : null,
         password:
@@ -130,7 +164,7 @@ class ProfileController extends GetxController {
       username.value = usernameController.text;
       email.value = emailController.text;
 
-      if(Get.isRegistered<HomeController>()) {
+      if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.refreshUser();
       }
@@ -140,12 +174,13 @@ class ProfileController extends GetxController {
         title: 'Berhasil',
         message: 'Profil berhasil diperbarui',
       );
+      _initializeProfileData();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'Gagal memperbarui profil: ${e.toString()}',
-        // new row violates row-level security policy, status code: 403, error: unauthorized
       );
+      print('$e');
     }
   }
 
@@ -188,7 +223,7 @@ class ProfileController extends GetxController {
         title: 'Keluar Aplikasi?',
         message: 'Apakah anda yakin ingin keluar dari aplikasi ini?',
         onConfirm: () async {
-          await _profileService.signOut();
+          await _userService.signOut();
           authController.logout();
           navigationHelper.resetIndex();
           Get.offAllNamed('/login');

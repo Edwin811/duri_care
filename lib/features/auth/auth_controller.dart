@@ -23,7 +23,6 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getProfilePicture();
     AuthService.to.authStateChanges.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.signedIn) {
@@ -99,12 +98,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> _refreshUserData() async {
-    await Future.wait([
-      getProfilePicture(),
-      getUsername(),
-      getEmail(),
-      getRole(),
-    ]);
+    await Future.wait([getUsername(), getEmail(), getRole()]);
   }
 
   Future<String> getUsername() async {
@@ -134,17 +128,6 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<String> getProfilePicture() async {
-    final user = await UserService.to.getCurrentUser();
-    if (user == null || user.profileUrl == null) return '';
-
-    final publicUrl = Supabase.instance.client.storage
-        .from('duricare')
-        .getPublicUrl(user.profileUrl!);
-
-    return publicUrl;
-  }
-
   Future<String?> getRole() async {
     if (_cachedRole.value != null) {
       return _cachedRole.value;
@@ -161,7 +144,6 @@ class AuthController extends GetxController {
     if (_lastUsernameFetch == null ||
         currentTime.difference(_lastUsernameFetch!).inMinutes >
             _usernameRefreshInterval.inMinutes) {
-      // Fetch username logic
       _lastUsernameFetch = currentTime;
     }
   }

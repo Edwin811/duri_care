@@ -61,4 +61,8 @@ class NotificationService extends GetxService {
         .eq('user_id', userId)
         .eq('is_read', false);
   }
+
+  Future<void> deleteNotification(int notificationId) async {
+    await supabase.from('notifications').delete().eq('id', notificationId);
+  }
 }

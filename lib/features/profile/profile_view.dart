@@ -174,8 +174,6 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                   ),
                 ),
-
-                // iOS-style settings list
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
@@ -192,20 +190,20 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                     child: Column(
                       children: [
-                        _buildIOSSettingsItem(
-                          context,
-                          title: 'Notifikasi',
-                          icon: CupertinoIcons.bell,
-                          trailing: Obx(
-                            () => Switch(
-                              value: controller.isNotificationEnabled.value,
-                              onChanged:
-                                  (value) => controller.toggleNotification(),
-                              activeTrackColor: AppColor.greenPrimary,
-                            ),
-                          ),
-                          showBorder: true,
-                        ),
+                        // _buildIOSSettingsItem(
+                        //   context,
+                        //   title: 'Notifikasi',
+                        //   icon: CupertinoIcons.bell,
+                        //   trailing: Obx(
+                        //     () => Switch(
+                        //       value: controller.isNotificationEnabled.value,
+                        //       onChanged:
+                        //           (value) => controller.toggleNotification(),
+                        //       activeTrackColor: AppColor.greenPrimary,
+                        //     ),
+                        //   ),
+                        //   showBorder: true,
+                        // ),
                         Obx(
                           () =>
                               controller.role.value.toLowerCase() == 'owner'
@@ -220,28 +218,28 @@ class ProfileView extends GetView<ProfileController> {
                                           Get.toNamed('/user-management');
                                         },
                                       ),
-                                      _buildIOSSettingsItem(
-                                        context,
-                                        title: 'Bayar Tagihan VPS Duri Care',
-                                        icon: CupertinoIcons.creditcard,
-                                        showBorder: true,
-                                      ),
+                                      // _buildIOSSettingsItem(
+                                      //   context,
+                                      //   title: 'Bayar Tagihan VPS Duri Care',
+                                      //   icon: CupertinoIcons.creditcard,
+                                      //   showBorder: true,
+                                      // ),
                                     ],
                                   )
                                   : const SizedBox.shrink(),
                         ),
-                        _buildIOSSettingsItem(
-                          context,
-                          title: 'Bantuan',
-                          icon: CupertinoIcons.question_circle,
-                          showBorder: true,
-                        ),
-                        _buildIOSSettingsItem(
-                          context,
-                          title: 'Tentang Aplikasi',
-                          icon: CupertinoIcons.info_circle,
-                          showBorder: false,
-                        ),
+                        // _buildIOSSettingsItem(
+                        //   context,
+                        //   title: 'Bantuan',
+                        //   icon: CupertinoIcons.question_circle,
+                        //   showBorder: true,
+                        // ),
+                        // _buildIOSSettingsItem(
+                        //   context,
+                        //   title: 'Tentang Aplikasi',
+                        //   icon: CupertinoIcons.info_circle,
+                        //   showBorder: false,
+                        // ),
                       ],
                     ),
                   ),

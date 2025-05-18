@@ -98,13 +98,13 @@ class SchedulingSectionWidget extends StatelessWidget {
                         ),
                         child: Obx(
                           () => Slider(
-                            value: controller.duration.value.toDouble(),
+                            value: controller.durationIrg.value.toDouble(),
                             min: 5,
                             max: 60,
                             divisions: 11,
-                            label: '${controller.duration.value} menit',
+                            label: '${controller.durationIrg.value} menit',
                             onChanged: (value) {
-                              controller.duration.value = value.toInt();
+                              controller.durationIrg.value = value.toInt();
                             },
                             activeColor: AppColor.greenPrimary,
                             inactiveColor: AppColor.greenPrimary.withAlpha(100),
@@ -112,7 +112,7 @@ class SchedulingSectionWidget extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Obx(() => Text('${controller.duration.value} menit')),
+                    Obx(() => Text('${controller.durationIrg.value} menit')),
                   ],
                 ),
                 const SizedBox(height: 16),
