@@ -138,9 +138,44 @@ class SchedulingSectionWidget extends StatelessWidget {
   Widget _buildSchedulesList() {
     return Obx(() {
       if (controller.isLoadingSchedules.value) {
-        return const Padding(
-          padding: EdgeInsets.all(20),
-          child: Center(child: CircularProgressIndicator()),
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: AppColor.greenPrimary.withAlpha(120)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.hourglass_empty,
+                  color: AppColor.greenPrimary.withOpacity(0.6),
+                  size: 24,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Memuat jadwal...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Mohon tunggu sebentar',
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       }
 
@@ -218,7 +253,10 @@ class SchedulingSectionWidget extends StatelessWidget {
                   size: 32,
                 ),
                 onPressed: () {
-                  controller.deleteSchedule(schedule.id, schedule.zoneId);
+                  controller.deleteSchedule(
+                    schedule.schedule.id,
+                    schedule.zoneId,
+                  );
                 },
               ),
             ),

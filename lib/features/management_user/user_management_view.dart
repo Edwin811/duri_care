@@ -1,12 +1,10 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/app_label.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
-import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/textform.dart';
 import 'package:duri_care/features/management_user/user_management_controller.dart';
 import 'package:duri_care/features/management_user/user_list_item.dart';
 import 'package:duri_care/features/management_user/permission_management_view.dart';
-import 'package:duri_care/features/management_user/permission_management_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -46,19 +44,51 @@ class UserManagementView extends GetView<UserManagementController> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 20, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daftar Pegawai',
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Obx(
+                      () => Text(
+                        '${controller.users.length} pegawai terdaftar',
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: AppColor.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(
-                  width: 180,
-                  child: AppFilledButton(
+                  height: 46,
+                  child: ElevatedButton.icon(
                     onPressed: () {
                       _showAddUserDialog(context);
                     },
-                    text: 'Tambah Akun',
-                    textSize: 16,
-                    icon: Icons.add,
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Tambah Akun'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.greenPrimary,
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: AppColor.greenPrimary.withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -103,13 +133,14 @@ class UserManagementView extends GetView<UserManagementController> {
                   ),
                 );
               }
-
               return RefreshIndicator(
                 onRefresh: controller.fetchUsers,
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: controller.users.length,
-                  separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
                     final user = controller.users[index];
                     return UserListItem(
@@ -119,73 +150,10 @@ class UserManagementView extends GetView<UserManagementController> {
                         controller.deleteUser(user.id);
                       },
                       onTap: () async {
-                        final permissionController = Get.put(
-                          PermissionManagementController(),
-                        );
-                        permissionController.user.value = user;
-
-                        // Load zone and permission data before navigating
-                        await permissionController.fetchAllZones();
-                        await permissionController.fetchUserPermissions();
-
-                        final userZones =
-                            permissionController.userZoneIds
-                                .map((id) {
-                                  final zone = permissionController.allZones
-                                      .firstWhereOrNull((z) => z.id == id);
-                                  return zone?.name ?? '';
-                                })
-                                .where((name) => name.isNotEmpty)
-                                .toList();
-
-                        final userPermissions =
-                            permissionController.userPermissionIds
-                                .map((id) {
-                                  final perm = permissionController
-                                      .allPermissions
-                                      .firstWhereOrNull((p) => p.id == id);
-                                  return perm?.name ?? '';
-                                })
-                                .where((name) => name.isNotEmpty)
-                                .toList();
-
-                        await Get.to(
-                          () => PermissionManagementView(
-                            user: user,
-                            roles: controller.roles,
-                            allZones:
-                                permissionController.allZones
-                                    .map((z) => z.name)
-                                    .toList(),
-                            allPermissions:
-                                permissionController.allPermissions
-                                    .map((p) => p.name)
-                                    .toList(),
-                            userZones: userZones,
-                            userPermissions: userPermissions,
-                            onZonePermissionChanged: (zoneName, add) async {
-                              final zone = permissionController.allZones
-                                  .firstWhereOrNull((z) => z.name == zoneName);
-                              if (zone != null) {
-                                await permissionController.updateZonePermission(
-                                  zone.id,
-                                  add,
-                                );
-                              }
-                            },
-                            onPermissionChanged: (permName, add) async {
-                              final perm = permissionController.allPermissions
-                                  .firstWhereOrNull((p) => p.name == permName);
-                              if (perm != null) {
-                                await permissionController.updatePermission(
-                                  perm.id,
-                                  add,
-                                );
-                              }
-                            },
-                          ),
-                        );
-                        Get.delete<PermissionManagementController>();
+                        controller.selectedUser.value = user;
+                        await controller.fetchAllZones();
+                        await controller.fetchUserPermissions();
+                        await Get.toNamed(PermissionManagementView.route);
                       },
                     );
                   },
@@ -211,25 +179,61 @@ class UserManagementView extends GetView<UserManagementController> {
             child: Container(
               padding: const EdgeInsets.all(24),
               constraints: const BoxConstraints(maxWidth: 500),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: SingleChildScrollView(
                 child: Form(
                   key: controller.formKey,
                   child: Column(
-                    spacing: 8,
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.person_add, color: AppColor.greenPrimary),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Tambah Akun Pegawai',
-                            style: Theme.of(context).textTheme.titleLarge,
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: AppColor.greenPrimary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.person_add_alt_1_rounded,
+                              color: AppColor.greenPrimary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Tambah Akun Pegawai',
+                                  style: Theme.of(context).textTheme.titleLarge!
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Lengkapi data di bawah untuk membuat akun baru',
+                                  style: Theme.of(context).textTheme.bodySmall!
+                                      .copyWith(color: AppColor.textSecondary),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 24),
                       AppLabelText(text: 'Nama Lengkap'),
                       AppTextFormField(
                         controller: controller.fullnameController,
@@ -238,6 +242,7 @@ class UserManagementView extends GetView<UserManagementController> {
                         prefixIcon: Icons.person_outline,
                         validator: controller.validateName,
                       ),
+                      const SizedBox(height: 8),
                       AppLabelText(text: 'Email'),
                       AppTextFormField(
                         controller: controller.emailController,
@@ -246,6 +251,7 @@ class UserManagementView extends GetView<UserManagementController> {
                         prefixIcon: Icons.email_outlined,
                         validator: controller.validateEmail,
                       ),
+                      const SizedBox(height: 8),
                       AppLabelText(text: 'Password'),
                       Obx(
                         () => AppTextFormField(
@@ -264,7 +270,7 @@ class UserManagementView extends GetView<UserManagementController> {
                           ),
                         ),
                       ),
-
+                      const SizedBox(height: 8),
                       AppLabelText(text: 'Konfirmasi Password'),
                       Obx(
                         () => AppTextFormField(
@@ -285,7 +291,7 @@ class UserManagementView extends GetView<UserManagementController> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -293,13 +299,23 @@ class UserManagementView extends GetView<UserManagementController> {
                             onPressed: () => Get.back(),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              side: BorderSide(
+                                color: AppColor.greenPrimary.withOpacity(0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: const Text(
                               'Batal',
-                              style: TextStyle(color: AppColor.greenPrimary),
+                              style: TextStyle(
+                                color: AppColor.greenPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -315,16 +331,24 @@ class UserManagementView extends GetView<UserManagementController> {
                                       },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColor.greenPrimary,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                elevation: 2,
+                                shadowColor: AppColor.greenPrimary.withOpacity(
+                                  0.4,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                               child:
                                   controller.isCreating.value
                                       ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
+                                        width: 24,
+                                        height: 24,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor:
@@ -333,9 +357,23 @@ class UserManagementView extends GetView<UserManagementController> {
                                               ),
                                         ),
                                       )
-                                      : const Text(
-                                        'Buat Akun',
-                                        style: TextStyle(color: AppColor.white),
+                                      : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(
+                                            Icons.check_circle_outline,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Buat Akun',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                             ),
                           ),

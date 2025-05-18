@@ -42,8 +42,8 @@ class ZoneController extends GetxController {
   final selectedDeviceIds = <int>[].obs;
 
   final isLoading = false.obs;
+  final RxInt manualDuration = 5.obs;
 
-  // Helper method to convert ZoneModel to Map<String, dynamic>
   Map<String, dynamic> _zoneModelToMap(ZoneModel model) {
     return {
       'id': model.id,
@@ -58,13 +58,11 @@ class ZoneController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Pastikan status isActive diambil dari database, bukan dari storage lokal
     loadZones().then((_) {
       _setupZoneTimers();
       listenToZoneChanges();
       countActive();
       loadAllZoneSchedules();
-      // Ambil status aktif zone dari database untuk selectedZone jika ada
       if (zones.isNotEmpty) {
         final firstZone = zones.first;
         isActive.value = firstZone['is_active'] ?? false;
@@ -121,7 +119,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  /// Loads a specific zone by ID
   Future<void> loadZoneById(String zoneId) async {
     if (zoneId.isEmpty) return;
 
@@ -250,7 +247,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  /// Perform actual zone deletion in the database
   Future<void> deleteZone(int zoneId) async {
     try {
       isLoading.value = true;
@@ -287,7 +283,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  /// Update an existing zone with new information
   Future<void> updateZone(String zoneId, {required String newName}) async {
     if (newName.trim().isEmpty) {
       DialogHelper.showErrorDialogSafely(
@@ -593,42 +588,61 @@ class ZoneController extends GetxController {
 
   Future<void> deleteSchedule(int scheduleId, int zoneId) async {
     try {
+      isLoadingSchedules.value = true;
+
+      bool confirmed = false;
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Jadwal',
         message: 'Apakah Anda yakin ingin menghapus jadwal ini?',
-        onConfirm: () async {
+        onConfirm: () {
+          confirmed = true;
+          Get.back(); // Close confirmation dialog
+        },
+        onCancel: () {
           Get.back();
-
-          isLoadingSchedules.value = true;
-
-          final isDeleted = await _zoneService.deleteSchedule(
-            scheduleId,
-            zoneId,
-          );
-
-          if (isDeleted) {
-            schedules.removeWhere((s) => s.schedule.id == scheduleId);
-            await loadSchedules();
-            DialogHelper.showSuccessDialog(
-              title: 'Berhasil',
-              message: 'Jadwal berhasil dihapus.',
-            );
-          } else {
-            DialogHelper.showErrorDialogSafely(
-              title: 'Gagal Menghapus Jadwal',
-              message: 'Jadwal ini masih digunakan oleh zona lain.',
-            );
-          }
-
           isLoadingSchedules.value = false;
         },
-        onCancel: Get.back,
       );
+
+      // Only proceed if the user confirmed
+      if (confirmed) {
+        try {
+          debugPrint(
+            'Attempting to delete schedule $scheduleId from zone $zoneId',
+          );
+          final result = await _zoneService.deleteSchedule(scheduleId, zoneId);
+
+          if (result['success']) {
+            debugPrint('Schedule deleted successfully, reloading schedules');
+            // Reload the schedules to ensure the UI is updated correctly
+            await loadSchedules();
+
+            String message = result['message'];
+            if (result['wasCompletelyDeleted']) {
+              message = 'Jadwal berhasil dihapus sepenuhnya.';
+            } else {
+              final remainingZones = result['remainingZones'] ?? 0;
+              message =
+                  'Jadwal berhasil dihapus dari zona ini. Jadwal masih digunakan oleh $remainingZones zona lainnya.';
+            }
+
+            DialogHelper.showSuccessDialog(title: 'Berhasil', message: message);
+          }
+        } catch (e) {
+          debugPrint('Error deleting schedule: $e');
+          DialogHelper.showErrorDialogSafely(
+            title: 'Gagal Menghapus Jadwal',
+            message: e.toString(),
+          );
+        }
+      }
     } catch (e) {
+      debugPrint('Outer error in deleteSchedule: $e');
       DialogHelper.showErrorDialogSafely(
         title: 'Gagal Menghapus Jadwal',
         message: e.toString(),
       );
+    } finally {
       isLoadingSchedules.value = false;
     }
   }

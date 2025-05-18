@@ -273,33 +273,60 @@ class ZoneService extends GetxService {
     return scheduleData;
   }
 
-  Future<bool> deleteSchedule(int scheduleId, int zoneId) async {
+  /// Deletes a schedule for a specific zone or completely if no other zone uses it
+  Future<Map<String, dynamic>> deleteSchedule(
+    int scheduleId,
+    int zoneId,
+  ) async {
     try {
+      // First, delete the zone_schedule entry for this specific zone
+      final zoneScheduleResult =
+          await _supabase
+              .from('zone_schedules')
+              .delete()
+              .eq('zone_id', zoneId)
+              .eq('schedule_id', scheduleId)
+              .select();
+
+      // Log for debugging
+      debugPrint('Deleted zone_schedule: $zoneScheduleResult');
+
+      // Now check if this schedule is still used by other zones
       final otherUsages = await _supabase
           .from('zone_schedules')
-          .select()
-          .eq('schedule_id', scheduleId)
-          .neq('zone_id', zoneId);
-
-      final int otherZoneCount = otherUsages.length;
-
-      await _supabase
-          .from('zone_schedules')
-          .delete()
-          .eq('zone_id', zoneId)
+          .select('id, zone_id')
           .eq('schedule_id', scheduleId);
 
-      if (otherZoneCount == 0) {
-        await _supabase
-            .from('irrigation_schedules')
-            .delete()
-            .eq('id', scheduleId);
+      debugPrint('Other usages of schedule: ${otherUsages.length}');
+
+      // If no other zones use this schedule, delete it from irrigation_schedules
+      if (otherUsages.isEmpty) {
+        final scheduleResult =
+            await _supabase
+                .from('irrigation_schedules')
+                .delete()
+                .eq('id', scheduleId)
+                .select();
+
+        debugPrint('Deleted schedule: $scheduleResult');
+        return {
+          'success': true,
+          'message': 'Jadwal berhasil dihapus sepenuhnya',
+          'wasCompletelyDeleted': true,
+        };
       }
 
-      return true;
+      return {
+        'success': true,
+        'message': 'Jadwal berhasil dihapus dari zona ini',
+        'wasCompletelyDeleted': false,
+        'remainingZones': otherUsages.length,
+      };
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException in deleteSchedule: ${e.message}');
       throw Exception('Gagal menghapus jadwal: ${e.message}');
     } catch (e) {
+      debugPrint('Error in deleteSchedule: $e');
       throw Exception('Terjadi kesalahan: $e');
     }
   }
