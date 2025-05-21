@@ -279,7 +279,6 @@ class ZoneService extends GetxService {
     int zoneId,
   ) async {
     try {
-      // First, delete the zone_schedule entry for this specific zone
       final zoneScheduleResult =
           await _supabase
               .from('zone_schedules')
@@ -288,10 +287,8 @@ class ZoneService extends GetxService {
               .eq('schedule_id', scheduleId)
               .select();
 
-      // Log for debugging
       debugPrint('Deleted zone_schedule: $zoneScheduleResult');
 
-      // Now check if this schedule is still used by other zones
       final otherUsages = await _supabase
           .from('zone_schedules')
           .select('id, zone_id')
@@ -299,7 +296,6 @@ class ZoneService extends GetxService {
 
       debugPrint('Other usages of schedule: ${otherUsages.length}');
 
-      // If no other zones use this schedule, delete it from irrigation_schedules
       if (otherUsages.isEmpty) {
         final scheduleResult =
             await _supabase

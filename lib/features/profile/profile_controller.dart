@@ -23,13 +23,12 @@ class ProfileController extends GetxController {
   final RxBool isNotificationEnabled = true.obs;
   final isPasswrodVisible = true.obs;
   final isConfirmPasswordVisible = true.obs;
-
   late TextEditingController usernameController;
   late TextEditingController emailController;
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
 
-  final profileKey = GlobalKey<FormState>();
+  final profileKey = GlobalKey<FormState>(debugLabel: 'profileFormKey');
   final Rx<File?> imageFile = Rx<File?>(null);
   final ImagePicker _picker = ImagePicker();
 
@@ -223,14 +222,10 @@ class ProfileController extends GetxController {
         title: 'Keluar Aplikasi?',
         message: 'Apakah anda yakin ingin keluar dari aplikasi ini?',
         onConfirm: () async {
+          disposeControllerResources();
           await _userService.signOut();
-          authController.logout();
           navigationHelper.resetIndex();
-          Get.offAllNamed('/login');
-          DialogHelper.showSuccessDialog(
-            title: 'Berhasil',
-            message: 'Anda telah keluar dari aplikasi',
-          );
+          authController.logout();
         },
         onCancel: () {
           Get.back();
@@ -242,5 +237,25 @@ class ProfileController extends GetxController {
         message: 'Gagal keluar: ${e.toString()}',
       );
     }
+  }
+
+  void disposeControllerResources() {
+    try {
+      usernameController.clear();
+      emailController.clear();
+      passwordController.clear();
+      confirmPasswordController.clear();
+    } catch (e) {
+      debugPrint('Error disposing profile controller resources: $e');
+    }
+  }
+
+  @override
+  void onClose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.onClose();
   }
 }

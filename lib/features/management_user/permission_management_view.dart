@@ -405,7 +405,9 @@ class PermissionManagementView extends GetView<UserManagementController> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        user.roleName ?? 'No Role',
+                        (user.roleName != null && (user.roleName.toLowerCase() == 'employee'))
+                          ? 'Pegawai'
+                          : (user.roleName ?? 'No Role'),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,

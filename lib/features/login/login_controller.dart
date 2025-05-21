@@ -9,7 +9,10 @@ import 'package:get/get.dart';
 
 class LoginController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
-  final GlobalKey<FormState> loginKey = GlobalKey<FormState>();
+  // Use a unique debug label to help identify the key in error messages
+  final GlobalKey<FormState> loginKey = GlobalKey<FormState>(
+    debugLabel: 'loginFormKey',
+  );
   final isPasswordVisible = true.obs;
   final isLoading = false.obs;
 
@@ -33,6 +36,13 @@ class LoginController extends GetxController {
         Get.offAllNamed('/main');
       });
     }
+  }
+
+  @override
+  void onClose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.onClose();
   }
 
   Future<void> loginWithEmail() async {
@@ -110,28 +120,14 @@ class LoginController extends GetxController {
       message: 'Apakah Anda yakin ingin keluar?',
       onConfirm: () async {
         await _auth.logout();
-        Get.offAllNamed('/login');
         DialogHelper.showSuccessDialog(
           title: 'Berhasil Keluar',
           message: 'Anda telah keluar dari akun Anda',
         );
+        Get.offAllNamed('/login');
       },
       onCancel: () => Get.back(),
     );
-  }
-
-  Future<void> resetPassword(String email) async {
-    try {
-      DialogHelper.showSuccessDialog(
-        title: 'txt_reset_password'.tr,
-        message: 'Reset password link has been sent to your email',
-      );
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message: 'Failed to send reset password link',
-      );
-    }
   }
 
   String? validateEmail(String? email) {

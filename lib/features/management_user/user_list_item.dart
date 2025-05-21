@@ -1,9 +1,7 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/features/management_user/user_management_controller.dart';
 import 'package:duri_care/models/role_model.dart';
 import 'package:duri_care/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class UserListItem extends StatelessWidget {
   final UserModel user;
@@ -26,7 +24,7 @@ class UserListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(10),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -86,8 +84,8 @@ class UserListItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColor.greenPrimary.withOpacity(0.03),
-                      AppColor.greenSecondary.withOpacity(0.08),
+                      AppColor.greenPrimary.withAlpha(8),
+                      AppColor.greenSecondary.withAlpha(20),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -101,10 +99,10 @@ class UserListItem extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColor.greenPrimary.withOpacity(0.1),
+                        color: AppColor.greenPrimary.withAlpha(3),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColor.greenPrimary.withOpacity(0.2),
+                          color: AppColor.greenPrimary.withAlpha(5),
                         ),
                       ),
                       child: Row(
@@ -169,12 +167,12 @@ class UserListItem extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: AppColor.greenPrimary.withOpacity(0.2),
+            color: AppColor.greenPrimary.withAlpha(30),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withAlpha(20),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -214,7 +212,7 @@ class UserListItem extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColor.greenPrimary.withOpacity(0.15),
+              color: AppColor.greenPrimary.withAlpha(40),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),

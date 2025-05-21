@@ -417,7 +417,6 @@ class UserManagementController extends GetxController {
         return;
       }
       final userId = user!.id;
-      // Process zone access changes
       for (final entry in zoneChanges.entries) {
         final zoneId = entry.key;
         final isAdded = entry.value;
@@ -428,10 +427,11 @@ class UserManagementController extends GetxController {
             await _userService.removeUserFromZone(userId, zoneId);
           }
         } catch (e) {
-          throw Exception('Failed to update zone access: $e');
+          DialogHelper.showErrorDialog(
+            message: 'Gagal mengupdate perizinan zona: $e',
+          );
         }
       }
-      // Process permission changes
       for (final entry in permissionChanges.entries) {
         final permId = entry.key;
         final isAdded = entry.value;
@@ -445,7 +445,6 @@ class UserManagementController extends GetxController {
           throw Exception('Failed to update permission: $e');
         }
       }
-      // Process zone permission changes
       for (final change in zonePermissionChanges) {
         final zoneId = change['zone_id'];
         final key = change['key'];
@@ -453,25 +452,24 @@ class UserManagementController extends GetxController {
         try {
           await _userService.updateZonePermission(userId, zoneId, key, value);
         } catch (e) {
-          throw Exception('Failed to update zone permission: $e');
+          DialogHelper.showErrorDialog(
+            message: 'Gagal mengupdate permission zona: $e',
+          );
         }
       }
-      // Reset change tracking
       zoneChanges.clear();
       permissionChanges.clear();
       zonePermissionChanges.clear();
       hasChanges.value = false;
-      DialogHelper.showSnackBar(
+
+      DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Permission pegawai berhasil diperbarui',
-        isError: false,
       );
     } catch (e) {
-      DialogHelper.showSnackBar(
+      DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'Gagal menyimpan perubahan: ${e.toString()}',
-        isError: true,
-        duration: const Duration(seconds: 5),
       );
     } finally {
       isSaving.value = false;

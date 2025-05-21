@@ -7,5 +7,6 @@ final loginRoute = [
     name: LoginScreen.route,
     page: () => LoginScreen(),
     binding: LoginBinding(),
+    preventDuplicates: false,
   ),
 ];

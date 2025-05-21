@@ -1,8 +1,12 @@
 import 'package:duri_care/core/services/auth_service.dart';
 import 'package:duri_care/core/services/session_service.dart';
-import 'package:duri_care/core/services/user_service.dart';
-import 'package:flutter/widgets.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/features/home/home_controller.dart';
+import 'package:duri_care/features/login/login_controller.dart';
+import 'package:duri_care/features/profile/profile_controller.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_state.dart' as state;
@@ -19,7 +23,6 @@ class AuthController extends GetxController {
   final Rxn<String> _cachedRole = Rxn<String>();
   DateTime? _lastUsernameFetch;
   static const _usernameRefreshInterval = Duration(minutes: 30);
-
   @override
   void onInit() {
     super.onInit();
@@ -29,7 +32,7 @@ class AuthController extends GetxController {
         authState.value = state.AuthState.authenticated;
         _refreshUserData();
       } else if (event == AuthChangeEvent.signedOut) {
-        _clearCache();
+        _clearCacheExceptFirstTime();
         authState.value = state.AuthState.unauthenticated;
       } else {
         authState.value = state.AuthState.unauthenticated;
@@ -81,20 +84,99 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout() async {
-    await AuthService.to.signOut();
-    await SessionService.to.clearSession();
-    _clearCache();
-    authState.value = state.AuthState.unauthenticated;
-    authState.refresh();
-    Get.offAllNamed('/login');
+    try {
+      await _clearCacheExceptFirstTime();
+
+      authState.value = state.AuthState.unauthenticated;
+
+      try {
+        if (Get.isRegistered<ProfileController>()) {
+          final profileController = Get.find<ProfileController>();
+          profileController.disposeControllerResources();
+          Get.delete<ProfileController>(force: true);
+        }
+
+        if (Get.isRegistered<LoginController>()) {
+          Get.delete<LoginController>(force: true);
+        }
+
+        if (Get.isRegistered<HomeController>()) {
+          Get.delete<HomeController>(force: true);
+        }
+      } catch (e) {
+        debugPrint('Error removing controllers: $e');
+      }
+
+      try {
+        await AuthService.to.signOut();
+      } catch (e) {
+        debugPrint('Error during Supabase sign out: $e');
+      }
+
+      await Future.delayed(const Duration(milliseconds: 150));
+
+      Get.offAllNamed('/login', predicate: (_) => false);
+
+      await Future.delayed(const Duration(milliseconds: 300));
+      DialogHelper.showSuccessDialog(
+        title: 'Berhasil',
+        message: 'Anda telah keluar dari aplikasi',
+      );
+    } catch (e) {
+      debugPrint('Error during logout: $e');
+      Get.offAllNamed('/login', predicate: (_) => false);
+    }
   }
 
-  void _clearCache() {
+  Future<void> _clearCacheExceptFirstTime() async {
     _cachedUsername.value = null;
     _cachedEmail.value = null;
     _cachedProfilePicture.value = null;
     _cachedRole.value = null;
     _lastUsernameFetch = null;
+
+    final prefs = await SharedPreferences.getInstance();
+    final firstTimeValue = prefs.getBool('first_time') ?? false;
+
+    await prefs.clear();
+
+    await prefs.setBool('first_time', firstTimeValue);
+
+    try {
+      final box = GetStorage();
+      // Try to safely clear GetStorage
+      try {
+        // Get all keys first
+        final keys = box.getKeys<dynamic>();
+        // Clear each key individually to avoid corrupting the whole storage
+        for (final key in keys) {
+          try {
+            await box.remove(key);
+          } catch (keyError) {
+            debugPrint('Error removing key $key: $keyError');
+          }
+        }
+      } catch (keysError) {
+        debugPrint('Error getting GetStorage keys: $keysError');
+      }
+
+      // As a fallback, try the erase method
+      try {
+        await box.erase();
+      } catch (eraseError) {
+        debugPrint('Error erasing GetStorage: $eraseError');
+      }
+    } catch (e) {
+      debugPrint('Error accessing GetStorage: $e');
+      // Try to recover by reinitializing
+      try {
+        await GetStorage.init();
+      } catch (initError) {
+        debugPrint('Failed to reinitialize GetStorage: $initError');
+      }
+    }
+
+    await SessionService.to.clearSession();
   }
 
   Future<void> _refreshUserData() async {

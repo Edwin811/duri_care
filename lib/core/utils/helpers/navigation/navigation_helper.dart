@@ -24,19 +24,21 @@ class NavigationHelper extends GetxController {
 }
 
 class MainNavigationView extends GetView<NavigationHelper> {
-  MainNavigationView({super.key});
-  final navigationHelper = Get.find<NavigationHelper>();
-  final homeController = Get.find<HomeController>();
-  static const String route = '/main';
+  const MainNavigationView({super.key});
 
-  final List<Widget> pages = [HomeView(), ProfileView()];
+  static const String route = '/main';
 
   @override
   Widget build(BuildContext context) {
+    final navigationHelper = Get.find<NavigationHelper>();
+    final homeController = Get.find<HomeController>();
+
+    final List<Widget> pages = [HomeView(), ProfileView()];
+
     return Scaffold(
       body: Obx(
         () => IndexedStack(
-          index: controller.currentIndex.value,
+          index: navigationHelper.currentIndex.value,
           children: pages,
         ),
       ),
@@ -50,12 +52,12 @@ class MainNavigationView extends GetView<NavigationHelper> {
           final isOwner = userRole == 'owner';
           return isOwner
               ? FloatingActionButton(
-                  onPressed: () {
-                    Get.toNamed('/add-zone');
-                  },
-                  backgroundColor: AppColor.greenPrimary,
-                  child: const Icon(Icons.add, color: AppColor.white),
-                )
+                onPressed: () {
+                  Get.toNamed('/add-zone');
+                },
+                backgroundColor: AppColor.greenPrimary,
+                child: const Icon(Icons.add, color: AppColor.white),
+              )
               : const SizedBox.shrink();
         },
       ),

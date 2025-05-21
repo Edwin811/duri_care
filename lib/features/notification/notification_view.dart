@@ -103,146 +103,119 @@ class NotificationView extends GetView<NotificationController> {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final notification = controller.notifications[index];
-          return _buildNotificationCard(context, notification);
+          return _buildNotificationCard(context, notification, controller);
         },
       ),
     );
   }
+}
 
-  Widget _buildNotificationCard(
-    BuildContext context,
-    NotificationModel notification,
-  ) {
-    final isRead = notification.isRead;
-    final createdAt = DateTime.parse(notification.createdAt);
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(createdAt);
+Widget _buildNotificationCard(
+  BuildContext context,
+  NotificationModel notification,
+  NotificationController controller,
+) {
+  final isRead = notification.isRead;
+  final createdAt = DateTime.parse(notification.createdAt);
+  final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(createdAt);
 
-    // Determine the icon based on the notification content
-    IconData notificationIcon = Icons.notifications;
-    Color iconColor = AppColor.greenPrimary;
-    final messageLower = notification.message.toLowerCase();
-    if (messageLower.contains('irigasi')) {
-      notificationIcon = Icons.water_drop;
-      iconColor = Colors.blue;
-    } else if (messageLower.contains('hujan') ||
-        messageLower.contains('cuaca')) {
-      notificationIcon = Icons.cloud;
-      iconColor = Colors.grey;
-    } else if (messageLower.contains('jadwal')) {
-      notificationIcon = Icons.schedule;
-      iconColor = Colors.purple;
-    }
-
-    return Card(
-      elevation: 0,
-      color: isRead ? Colors.white : AppColor.greenPrimary.withAlpha(20),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color:
-              isRead
-                  ? Colors.grey.withAlpha(40)
-                  : AppColor.greenPrimary.withAlpha(125),
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          if (!notification.isRead) {
-            controller.markAsRead(notification.id);
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                backgroundColor: iconColor.withAlpha(50),
-                child: Icon(notificationIcon, color: iconColor),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notification.message,
-                      style: TextStyle(
-                        fontWeight:
-                            isRead ? FontWeight.normal : FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                        fontWeight:
-                            isRead ? FontWeight.normal : FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isRead)
-                IconButton(
-                  icon: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    color: AppColor.greenPrimary,
-                  ),
-                  onPressed: () => controller.markAsRead(notification.id),
-                  tooltip: 'Mark as read',
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+  // Determine the icon based on the notification content
+  IconData notificationIcon = Icons.notifications;
+  Color iconColor = AppColor.greenPrimary;
+  final messageLower = notification.message.toLowerCase();
+  if (messageLower.contains('irigasi')) {
+    notificationIcon = Icons.water_drop;
+    iconColor = Colors.blue;
+  } else if (messageLower.contains('hujan') || messageLower.contains('cuaca')) {
+    notificationIcon = Icons.cloud;
+    iconColor = Colors.grey;
+  } else if (messageLower.contains('jadwal')) {
+    notificationIcon = Icons.schedule;
+    iconColor = Colors.purple;
   }
 
-  void _showMarkAllAsReadConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Mark All As Read'),
-          content: const Text('Tandai semua notifikasi sebagai telah dibaca?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Batal'),
+  return Card(
+    elevation: 0,
+    color: isRead ? Colors.white : AppColor.greenPrimary.withAlpha(20),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(
+        color:
+            isRead
+                ? Colors.grey.withAlpha(40)
+                : AppColor.greenPrimary.withAlpha(125),
+      ),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        if (!notification.isRead) {
+          controller.markAsRead(notification.id);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: iconColor.withAlpha(50),
+              child: Icon(notificationIcon, color: iconColor),
             ),
-            TextButton(
-              onPressed: () async {
-                final userId =
-                    controller
-                        .notificationService
-                        .supabase
-                        .auth
-                        .currentUser
-                        ?.id;
-                if (userId != null) {
-                  await controller.markAllAsRead();
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                    controller.loadNotifications();
-                  }
-                } else {
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                }
-              },
-              child: const Text('Ya'),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification.message,
+                    style: TextStyle(
+                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                      fontWeight: isRead ? FontWeight.normal : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isRead)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: AppColor.greenPrimary,
+                    ),
+                    onPressed: () => controller.markAsRead(notification.id),
+                    tooltip: 'Mark as read',
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.only(right: 8),
+                  ),
+                IconButton(
+                  onPressed:
+                      () => controller.showDeleteConfirmation(notification.id),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.red,
+                  ),
+                  tooltip: 'Delete notification',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.only(left: 4),
+                ),
+              ],
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+      ),
+    ),
+  );
 }

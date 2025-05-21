@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 class ProfileBinding implements Bindings {
   @override
   void dependencies() {
-    if (!Get.isRegistered<ProfileController>()) {
-      Get.put<ProfileController>(ProfileController(), permanent: true);
+    if (Get.isRegistered<ProfileController>()) {
+      Get.delete<ProfileController>();
     }
+
+    Get.put<ProfileController>(ProfileController(), permanent: false);
   }
 }

@@ -1,3 +1,4 @@
+import 'package:duri_care/core/services/auth_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:get/get.dart';
@@ -9,5 +10,6 @@ class HomeBinding implements Bindings {
     Get.put(HomeController(), permanent: true);
     Get.lazyPut<ZoneController>(() => ZoneController(), fenix: true);
     Get.lazyPut(() => ScheduleService());
+    Get.lazyPut(() => AuthService());
   }
 }

@@ -79,6 +79,12 @@ class ZoneController extends GetxController {
     super.onClose();
   }
 
+  @override
+  void dispose() {
+    zoneNameController.dispose();
+    super.dispose();
+  }
+
   void _setupZoneTimers() {
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
@@ -147,7 +153,7 @@ class ZoneController extends GetxController {
     } catch (e) {
       DialogHelper.showErrorDialogSafely(
         title: 'Failed to Load Zone',
-        message: 'Error: ${e.toString()}',
+        message: 'Error: ${e.toString()}',
       );
     } finally {
       isLoading.value = false;
@@ -378,7 +384,7 @@ class ZoneController extends GetxController {
 
       if (newActiveState) {
         activeCount.value += 1;
-        startTimer(zoneIdStr, durationIrg.value);
+        startTimer(zoneIdStr, manualDuration.value);
       } else {
         activeCount.value = activeCount.value > 0 ? activeCount.value - 1 : 0;
         stopTimer(zoneIdStr);
@@ -596,7 +602,7 @@ class ZoneController extends GetxController {
         message: 'Apakah Anda yakin ingin menghapus jadwal ini?',
         onConfirm: () {
           confirmed = true;
-          Get.back(); // Close confirmation dialog
+          Get.back();
         },
         onCancel: () {
           Get.back();
@@ -614,7 +620,6 @@ class ZoneController extends GetxController {
 
           if (result['success']) {
             debugPrint('Schedule deleted successfully, reloading schedules');
-            // Reload the schedules to ensure the UI is updated correctly
             await loadSchedules();
 
             String message = result['message'];

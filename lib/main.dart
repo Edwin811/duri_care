@@ -9,10 +9,63 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:duri_care/core/bindings/initial_binding.dart';
 import 'package:flutter/services.dart';
 import 'package:duri_care/core/services/session_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
+Future<T?> safeGetStorage<T>(String key, {T? defaultValue}) async {
+  try {
+    final box = GetStorage();
+    if (!box.hasData(key)) return defaultValue;
+
+    try {
+      return box.read<T>(key);
+    } catch (e) {
+      if (e is FormatException) {
+        try {
+          await box.remove(key);
+        } catch (_) {}
+      }
+      return defaultValue;
+    }
+  } catch (_) {
+    return defaultValue;
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
+
+  try {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/GetStorage.gs');
+
+    if (await file.exists()) {
+      try {
+        final content = await file.readAsString();
+        if (content.contains('xhwc3k7zlbdd')) {
+          await file.delete();
+        }
+      } catch (_) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+
+  try {
+    await GetStorage.init();
+  } catch (_) {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/GetStorage.gs');
+      if (await file.exists()) {
+        await file.delete();
+      }
+      await GetStorage.init();
+    } catch (_) {}
+  }
+
   await dotenv.load(fileName: ".env");
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -24,8 +77,23 @@ Future<void> main() async {
     anonKey: dotenv.env['ANON_KEY']!,
   );
 
-  await Get.putAsync(() => SessionService().init());
-  runApp(const DuriCare());
+  try {
+    await Get.putAsync(() => SessionService().init());
+    runApp(const DuriCare());
+  } catch (_) {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/GetStorage.gs');
+      if (await file.exists()) {
+        await file.delete();
+      }
+      await GetStorage.init();
+      await Get.putAsync(() => SessionService().init());
+      runApp(const DuriCare());
+    } catch (_) {
+      runApp(const DuriCare());
+    }
+  }
 }
 
 class DuriCare extends StatelessWidget {

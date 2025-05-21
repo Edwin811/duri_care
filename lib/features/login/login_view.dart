@@ -91,8 +91,8 @@ class LoginScreen extends GetView<LoginController> {
                               ),
                               AppSpacing.xl,
                               AppFilledButton(
-                                onPressed: () {
-                                  controller.loginWithEmail();
+                                onPressed: () async {
+                                  await controller.loginWithEmail();
                                 },
                                 text: 'Masuk',
                               ),
