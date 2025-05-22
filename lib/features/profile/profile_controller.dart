@@ -280,6 +280,7 @@ class ProfileController extends GetxController {
         onConfirm: () async {
           disposeControllerResources();
           await _userService.signOut();
+          await authController.logout();
           navigationHelper.resetIndex();
           authController.logout();
         },

@@ -422,16 +422,6 @@ class PermissionManagementView extends GetView<UserManagementController> {
                         Icons.location_on_outlined,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // Flexible(
-                    //   child: Obx(
-                    //     () => _buildStatChip(
-                    //       controller.userPermissionIds.length.toString(),
-                    //       'Permission',
-                    //       Icons.verified_user_outlined,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ],
