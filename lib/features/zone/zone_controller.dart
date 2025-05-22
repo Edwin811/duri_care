@@ -76,6 +76,7 @@ class ZoneController extends GetxController {
   void onClose() {
     _zoneTimers.forEach((_, timer) => timer?.cancel());
     clearForm();
+    zoneNameController.dispose();
     super.onClose();
   }
 
@@ -103,7 +104,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  /// Loads all zones for the current user
   Future<void> loadZones() async {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -346,7 +346,6 @@ class ZoneController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Check if zone exists in local state
       final zoneIndex = zones.indexWhere(
         (z) => z['id'].toString() == zoneIdStr,
       );
@@ -358,13 +357,10 @@ class ZoneController extends GetxController {
         return;
       }
 
-      // Toggle zone state in database
       final updatedZone = await _zoneService.toggleZoneActive(zoneId);
 
-      // Update local state based on the actual database state
       final newActiveState = updatedZone.isActive;
 
-      // Update zones list
       zones[zoneIndex] = {
         ..._zoneModelToMap(updatedZone),
         'timer': zones[zoneIndex]['timer'] ?? '00:00:00',
@@ -379,7 +375,6 @@ class ZoneController extends GetxController {
         isActive.value = newActiveState;
       }
 
-      // Store the active state in storage
       storage.write('zone_${zoneIdStr}_is_active', newActiveState);
 
       if (newActiveState) {
@@ -396,6 +391,26 @@ class ZoneController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> saveManualDuration() async {
+    final zoneId = selectedZone['id']?.toString();
+    if (zoneId == null) return;
+
+    try {
+      DialogHelper.showSuccessDialog(
+        title: 'Berhasil',
+        message: 'Durasi berhasil disimpan.',
+      );
+      // await _zoneService.saveManualDuration(zoneId, manualDuration.value);
+      storage.write('zone_${zoneId}_duration', manualDuration.value);
+      startTimer(zoneId, manualDuration.value);
+    } catch (e) {
+      DialogHelper.showErrorDialogSafely(
+        title: 'Error Saving Duration',
+        message: e.toString(),
+      );
     }
   }
 

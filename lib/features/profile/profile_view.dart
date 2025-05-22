@@ -48,10 +48,11 @@ class ProfileView extends GetView<ProfileController> {
                         children: [
                           Obx(() {
                             final profilePic = controller.profilePicture.value;
-                            final isUrl = profilePic.startsWith('http');
+                            final isUrl = profilePic.isNotEmpty && profilePic.startsWith('http');
 
                             return Container(
                               padding: const EdgeInsets.all(3.0),
+                              key: UniqueKey(),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(

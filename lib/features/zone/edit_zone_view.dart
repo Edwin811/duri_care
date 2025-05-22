@@ -12,12 +12,11 @@ class EditZoneView extends GetView<ZoneController> {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final zoneId = Get.parameters['zoneId'] ?? '';
 
     if (controller.selectedZone.isNotEmpty) {
-      nameController.text = controller.selectedZone['name'] ?? '';
+      controller.zoneNameController.text = controller.selectedZone['name'] ?? '';
     }
 
     return GestureDetector(
@@ -55,7 +54,7 @@ class EditZoneView extends GetView<ZoneController> {
                       ),
                       const SizedBox(height: 8),
                       AppTextFormField(
-                        controller: nameController,
+                        controller: controller.zoneNameController,
                         hintText: 'Masukkan nama zona',
                         validator:
                             (value) => controller.validateName(value ?? ''),
@@ -105,7 +104,7 @@ class EditZoneView extends GetView<ZoneController> {
                     if (formKey.currentState!.validate() && zoneId.isNotEmpty) {
                       controller.updateZone(
                         zoneId,
-                        newName: nameController.text,
+                        newName: controller.zoneNameController.text,
                       );
                     }
                   },

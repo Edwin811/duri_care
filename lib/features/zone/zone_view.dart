@@ -1,6 +1,7 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/themes/app_themes.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/schedule_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -223,6 +224,10 @@ class ZoneView extends GetView<ZoneController> {
                                           ),
                                         ),
                                       ),
+                                      const SizedBox(width: 10),
+                                      AppFilledButton(onPressed: () async {
+                                        await controller.saveManualDuration();
+                                      }, text: 'Simpan'),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,

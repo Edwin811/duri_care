@@ -1,4 +1,5 @@
 import 'package:duri_care/features/profile/edit_profile_view.dart';
+import 'package:duri_care/features/profile/profile_controller.dart';
 
 import 'profile_binding.dart';
 import 'profile_view.dart';
@@ -8,7 +9,9 @@ final profileRoute = [
   GetPage(
     name: ProfileView.route,
     page: () => ProfileView(),
-    binding: ProfileBinding(),
+    binding: BindingsBuilder(() {
+      Get.find<ProfileController>();
+    }),
   ),
 ];
 

@@ -57,25 +57,45 @@ class ProfileController extends GetxController {
   Future<void> _initializeProfileData() async {
     username.value = await authController.getUsername();
     final user = await _userService.getCurrentUser();
-    if (user?.profileUrl != null && user!.profileUrl!.isNotEmpty) {
-      if (user.profileUrl!.startsWith('http')) {
-        profilePicture.value = user.profileUrl!;
+
+    if (user != null) {
+      username.value = user.fullname ?? await authController.getUsername();
+      email.value = user.email ?? await authController.getEmail(); 
+      role.value = user.roleName ?? await authController.getRole() ?? 'Pegawai';
+
+      if (user.profileUrl != null && user.profileUrl!.isNotEmpty) {
+        String baseUrl;
+        if (user.profileUrl!.startsWith('http')) {
+          baseUrl = user.profileUrl!;
+        } else {
+          baseUrl = Supabase.instance.client.storage
+              .from('image')
+              .getPublicUrl(user.profileUrl!);
+        }
+
+        if (baseUrl.isNotEmpty) {
+          final cacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
+          if (baseUrl.contains('?')) {
+            profilePicture.value = '$baseUrl&v=$cacheBuster';
+          } else {
+            profilePicture.value = '$baseUrl?v=$cacheBuster';
+          }
+        } else {
+          profilePicture.value = '';
+        }
       } else {
-        final publicUrl = Supabase.instance.client.storage
-            .from('image')
-            .getPublicUrl(user.profileUrl!);
-        profilePicture.value = publicUrl.isNotEmpty ? publicUrl : '';
+        profilePicture.value = '';
       }
     } else {
+      username.value = await authController.getUsername();
+      email.value = await authController.getEmail();
+      role.value = await authController.getRole() ?? 'Pegawai';
       profilePicture.value = '';
     }
-    role.value = await authController.getRole() ?? 'Pegawai';
-    email.value = await authController.getEmail();
+
 
     usernameController.text = username.value;
     emailController.text = email.value;
-    passwordController.text = password.value;
-    confirmPasswordController.text = confirmPassword.value;
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -97,7 +117,8 @@ class ProfileController extends GetxController {
   }
 
   Future<void> updateProfile() async {
-    if (_userService.getCurrentUserRaw() == null) return;
+    final user = _userService.getCurrentUserRaw();
+    if (user == null) return;
 
     if (!profileKey.currentState!.validate()) {
       DialogHelper.showErrorDialog(
@@ -140,15 +161,17 @@ class ProfileController extends GetxController {
       }
     }
 
+    Get.dialog(
+      const Center(child: CircularProgressIndicator(color: Colors.white)),
+      barrierDismissible: false,
+    );
+
     try {
-      String? uploadedImageUrl;
+      String? uploadedImageStoragePath;
       if (imageFile.value != null) {
-        uploadedImageUrl = await _userService.uploadProfileImage(
+        uploadedImageStoragePath = await _userService.uploadProfileImage(
           imageFile.value!,
         );
-        if (uploadedImageUrl != null) {
-          profilePicture.value = uploadedImageUrl;
-        }
       }
 
       await _userService.updateUserProfile(
@@ -157,32 +180,42 @@ class ProfileController extends GetxController {
         password:
             passwordController.text.isNotEmpty ? passwordController.text : null,
         fullname: usernameController.text,
-        profileImageUrl: uploadedImageUrl,
+        profileImageUrl: uploadedImageStoragePath,
       );
 
-      username.value = usernameController.text;
-      email.value = emailController.text;
+      await _initializeProfileData();
 
       if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.refreshUser();
       }
+      
+      imageFile.value = null;
 
-      Get.back();
+      if(Get.isDialogOpen ?? false) {
+        Get.back(); 
+      }
+
+      if (Get.previousRoute.isNotEmpty) {
+          Get.back();
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Profil berhasil diperbarui',
       );
-      _initializeProfileData();
+
     } catch (e) {
+      if(Get.isDialogOpen ?? false) {
+        Get.back();
+      }
       DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'Gagal memperbarui profil: ${e.toString()}',
       );
-      print('$e');
     }
   }
-
   String? validateEmail(String email) {
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
