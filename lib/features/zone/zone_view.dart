@@ -16,7 +16,6 @@ class ZoneView extends GetView<ZoneController> {
     final zoneId = Get.parameters['zoneId'];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Check if the zoneId is not null and is not empty
       if (zoneId != null && zoneId.isNotEmpty) {
         controller.loadZoneById(zoneId);
       }
@@ -123,6 +122,7 @@ class ZoneView extends GetView<ZoneController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Card(
+                            color: AppColor.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -138,7 +138,8 @@ class ZoneView extends GetView<ZoneController> {
                                       Container(
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: AppColor.greenPrimary.withAlpha(70),
+                                          color: AppColor.greenPrimary
+                                              .withAlpha(70),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -202,9 +203,21 @@ class ZoneView extends GetView<ZoneController> {
                                           ),
                                           child: Obx(
                                             () => Slider(
-                                              value: controller.manualDuration.value < 1 ? 
-                                                  1.0 : controller.manualDuration.value > 60 ? 
-                                                  60.0 : controller.manualDuration.value.toDouble(),
+                                              value:
+                                                  controller
+                                                              .manualDuration
+                                                              .value <
+                                                          1
+                                                      ? 1.0
+                                                      : controller
+                                                              .manualDuration
+                                                              .value >
+                                                          60
+                                                      ? 60.0
+                                                      : controller
+                                                          .manualDuration
+                                                          .value
+                                                          .toDouble(),
                                               min: 1,
                                               max: 60,
                                               divisions: 60,
@@ -224,10 +237,7 @@ class ZoneView extends GetView<ZoneController> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
-                                      AppFilledButton(onPressed: () async {
-                                        await controller.saveManualDuration();
-                                      }, text: 'Simpan'),
+
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
@@ -251,6 +261,16 @@ class ZoneView extends GetView<ZoneController> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: AppFilledButton(
+                                      onPressed: () async {
+                                        await controller.saveManualDuration();
+                                      },
+                                      text: 'Simpan',
+                                    ),
                                   ),
                                 ],
                               ),

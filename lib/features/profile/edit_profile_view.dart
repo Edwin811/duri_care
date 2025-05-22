@@ -26,7 +26,10 @@ class EditProfileView extends GetView<ProfileController> {
         appBar: AppBar(
           backgroundColor: AppColor.greenPrimary,
           leading: AppBackButton(
-            onPressed: () => Get.back(),
+            onPressed: () {
+              controller.refreshProfileData(); // Refresh data sebelum kembali
+              Get.back();
+            },
             iconColor: AppColor.white,
           ),
           title: Text(

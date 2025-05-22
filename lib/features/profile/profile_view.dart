@@ -7,12 +7,75 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-class ProfileView extends GetView<ProfileController> {
+class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
   static const String route = '/profile';
 
   @override
+  State<ProfileView> createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends State<ProfileView>
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  late ProfileController controller;
+  final UniqueKey _avatarKey = UniqueKey();
+
+  @override
+  bool get wantKeepAlive => false; // Don't keep alive to force rebuild
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    controller = Get.find<ProfileController>();
+
+    // Force refresh when first initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceRefreshProfile();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh when dependencies change (like when returning to this screen)
+    _forceRefreshProfile();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When app resumes from background, refresh profile
+    if (state == AppLifecycleState.resumed) {
+      _forceRefreshProfile();
+    }
+  }
+
+  Future<void> _forceRefreshProfile() async {
+    // Aggressively clear all caches
+    controller.clearImageCache();
+    await controller.refreshProfileData();
+
+    // Force UI update with short delay
+    Future.delayed(Duration(milliseconds: 200), () {
+      if (mounted) {
+        setState(() {
+          // Update state to force rebuild
+          controller.forceRefreshAvatar();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: SafeArea(
@@ -48,11 +111,12 @@ class ProfileView extends GetView<ProfileController> {
                         children: [
                           Obx(() {
                             final profilePic = controller.profilePicture.value;
-                            final isUrl = profilePic.isNotEmpty && profilePic.startsWith('http');
-
+                            final isUrl =
+                                profilePic.isNotEmpty &&
+                                profilePic.startsWith('http');
                             return Container(
                               padding: const EdgeInsets.all(3.0),
-                              key: UniqueKey(),
+                              key: Key('avatar_${controller.avatarKey.value}'),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -65,7 +129,15 @@ class ProfileView extends GetView<ProfileController> {
                                 backgroundColor: AppColor.greenPrimary
                                     .withAlpha(100),
                                 backgroundImage:
-                                    isUrl ? NetworkImage(profilePic) : null,
+                                    isUrl
+                                        ? NetworkImage(
+                                          profilePic,
+                                          headers: {
+                                            'Cache-Control': 'no-cache',
+                                            'Pragma': 'no-cache',
+                                          },
+                                        )
+                                        : null,
                                 child:
                                     !isUrl
                                         ? Text(
@@ -87,8 +159,20 @@ class ProfileView extends GetView<ProfileController> {
                             bottom: 0,
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
-                              onPressed: () {
-                                Get.toNamed(EditProfileView.route);
+                              onPressed: () async {
+                                // Sebelum navigasi, refresh profile terlebih dahulu
+                                await controller.refreshProfileData();
+
+                                // Navigasi ke halaman edit
+                                await Get.toNamed(EditProfileView.route);
+
+                                // Setelah kembali, refresh profile lagi untuk memastikan perubahan terupdate
+                                await controller.refreshProfileData();
+
+                                // Tambahkan delay kecil untuk memastikan UI dirender ulang
+                                await Future.delayed(
+                                  Duration(milliseconds: 200),
+                                );
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(8),
