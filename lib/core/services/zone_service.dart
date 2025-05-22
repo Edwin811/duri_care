@@ -1,4 +1,5 @@
 import 'package:duri_care/models/iot_device_model.dart';
+import 'package:duri_care/models/irrigation_history_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
 import 'package:flutter/foundation.dart';
@@ -73,6 +74,35 @@ class ZoneService extends GetxService {
       };
       return IotDeviceModel.fromMap(deviceData);
     }).toList();
+  }
+
+  Future<IrrigationHistoryModel> loadIrrigationHistory(String zoneId) async {
+    final response =
+        await _supabase
+            .from('irrigation_histories')
+            .select()
+            .eq('zone_id', zoneId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .single();
+
+    return IrrigationHistoryModel.fromMap(response);
+  }
+
+  Future<List<IrrigationHistoryModel>> loadAllIrrigationHistory(
+    String zoneId,
+  ) async {
+    final response = await _supabase
+        .from('irrigation_histories')
+        .select()
+        .eq('zone_id', zoneId)
+        .order('created_at', ascending: false);
+
+    return response
+        .map<IrrigationHistoryModel>(
+          (data) => IrrigationHistoryModel.fromMap(data),
+        )
+        .toList();
   }
 
   /// Creates a new zone

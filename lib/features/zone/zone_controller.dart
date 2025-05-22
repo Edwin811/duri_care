@@ -108,7 +108,7 @@ class ZoneController extends GetxController {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
-        DialogHelper.showErrorDialogSafely(
+        DialogHelper.showErrorDialog(
           title: 'Authentication Error',
           message: 'User not logged in. Please log in to view your zones.',
         );
@@ -118,7 +118,7 @@ class ZoneController extends GetxController {
       final zoneModels = await _zoneService.loadZones(userId);
       zones.value = zoneModels.map((model) => _zoneModelToMap(model)).toList();
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Failed to Load Zones',
         message: 'Error: ${e.toString()}',
       );
@@ -132,7 +132,7 @@ class ZoneController extends GetxController {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
-        DialogHelper.showErrorDialogSafely(
+        DialogHelper.showErrorDialog(
           title: 'Authentication Error',
           message: 'User not logged in. Please log in to view your zones.',
         );
@@ -151,7 +151,7 @@ class ZoneController extends GetxController {
       getSoilMoisture(zoneId);
       loadDevicesForZone(zoneId);
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Failed to Load Zone',
         message: 'Error: ${e.toString()}',
       );
@@ -165,7 +165,7 @@ class ZoneController extends GetxController {
     try {
       devices.value = await _zoneService.loadDevicesForZone(zoneId);
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Error Loading Devices',
         message: 'Failed to load devices for zone: ${e.toString()}',
       );
@@ -195,12 +195,45 @@ class ZoneController extends GetxController {
     try {
       devices.value = await _zoneService.loadAllDevices();
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal Memuat Perangkat',
         message: 'Gagal memuat perangkat IoT: ${e.toString()}',
       );
     } finally {
       isLoadingDevices.value = false;
+    }
+  }
+
+  final RxList<Map<String, dynamic>> irrigationHistory =
+      <Map<String, dynamic>>[].obs;
+  final RxBool isLoadingHistory = false.obs;
+  Future<void> loadHistory() async {
+    isLoadingHistory.value = true;
+    try {
+      final zoneId = selectedZone['id']?.toString();
+      if (zoneId == null) return;
+
+      final history = await _zoneService.loadIrrigationHistory(zoneId);
+      irrigationHistory.value = [
+        {
+          'id': history.id,
+          'zone_id': history.zoneId,
+          'started_at': history.startedAt,
+          'duration': history.duration,
+          'type': history.type,
+          'message': history.message,
+          'executed_by': history.executedBy,
+          'created_at': history.createdAt,
+        },
+      ];
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Memuat Riwayat',
+        message: 'Gagal memuat riwayat zona: ${e.toString()}',
+      );
+      irrigationHistory.clear();
+    } finally {
+      isLoadingHistory.value = false;
     }
   }
 
@@ -210,7 +243,7 @@ class ZoneController extends GetxController {
     final name = zoneNameController.text.trim();
 
     if (userId == null || name.isEmpty) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'User belum login atau nama zona kosong.',
       );
@@ -244,7 +277,7 @@ class ZoneController extends GetxController {
       selectedDeviceIds.clear();
       Get.offAllNamed('/main');
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal membuat zona',
         message: e.toString(),
       );
@@ -280,7 +313,7 @@ class ZoneController extends GetxController {
         onCancel: Get.back,
       );
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal hapus zona',
         message: e.toString(),
       );
@@ -291,7 +324,7 @@ class ZoneController extends GetxController {
 
   Future<void> updateZone(String zoneId, {required String newName}) async {
     if (newName.trim().isEmpty) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Nama Tidak Valid',
         message: 'Nama zona tidak boleh kosong.',
       );
@@ -329,7 +362,7 @@ class ZoneController extends GetxController {
       );
       Get.back();
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal update',
         message: e.toString(),
       );
@@ -350,7 +383,7 @@ class ZoneController extends GetxController {
         (z) => z['id'].toString() == zoneIdStr,
       );
       if (zoneIndex == -1) {
-        DialogHelper.showErrorDialogSafely(
+        DialogHelper.showErrorDialog(
           title: 'Error',
           message: 'Zone not found with ID: $zoneIdStr',
         );
@@ -385,7 +418,7 @@ class ZoneController extends GetxController {
         stopTimer(zoneIdStr);
       }
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Error Toggling Zone',
         message: e.toString(),
       );
@@ -407,7 +440,7 @@ class ZoneController extends GetxController {
       storage.write('zone_${zoneId}_duration', manualDuration.value);
       startTimer(zoneId, manualDuration.value);
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Error Saving Duration',
         message: e.toString(),
       );
@@ -470,7 +503,7 @@ class ZoneController extends GetxController {
       try {
         totalSeconds = int.parse(storedSeconds.toString());
       } catch (e) {
-        DialogHelper.showErrorDialogSafely(
+        DialogHelper.showErrorDialog(
           title: 'Error Parsing Timer',
           message: 'Error parsing timer value: $e',
         );
@@ -542,7 +575,7 @@ class ZoneController extends GetxController {
         }
       }
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal Memuat Jadwal',
         message: 'Error ketika memuat jadwal: $e',
       );
@@ -553,7 +586,7 @@ class ZoneController extends GetxController {
 
   Future<void> saveSchedule() async {
     if (selectedDate.value == null || selectedTime.value == null) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal Membuat Jadwal',
         message:
             'Tanggal dan waktu tidak boleh kosong. Silakan pilih tanggal dan waktu terlebih dahulu!',
@@ -575,7 +608,7 @@ class ZoneController extends GetxController {
       );
 
       if (combinedDateTime.isBefore(now)) {
-        DialogHelper.showErrorDialogSafely(
+        DialogHelper.showErrorDialog(
           title: 'Gagal Membuat Jadwal',
           message:
               'Jadwal tidak boleh lebih awal dari waktu saat ini. Silakan pilih waktu yang lebih baru!',
@@ -600,7 +633,7 @@ class ZoneController extends GetxController {
         },
       );
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal Menyimpan Jadwal',
         message: e.toString(),
       );
@@ -650,7 +683,7 @@ class ZoneController extends GetxController {
           }
         } catch (e) {
           debugPrint('Error deleting schedule: $e');
-          DialogHelper.showErrorDialogSafely(
+          DialogHelper.showErrorDialog(
             title: 'Gagal Menghapus Jadwal',
             message: e.toString(),
           );
@@ -658,7 +691,7 @@ class ZoneController extends GetxController {
       }
     } catch (e) {
       debugPrint('Outer error in deleteSchedule: $e');
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Gagal Menghapus Jadwal',
         message: e.toString(),
       );
@@ -714,7 +747,7 @@ class ZoneController extends GetxController {
             });
           }
         } catch (e) {
-          DialogHelper.showErrorDialogSafely(
+          DialogHelper.showErrorDialog(
             title: 'Failed to Parse Schedule',
             message: 'Error parsing schedule date: $e',
           );
@@ -722,7 +755,7 @@ class ZoneController extends GetxController {
       }
     } catch (e) {
       schedules.value = [];
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Failed to Load Schedules',
         message: 'Error: ${e.toString()}',
       );
@@ -762,14 +795,14 @@ class ZoneController extends GetxController {
             });
           }
         } catch (e) {
-          DialogHelper.showErrorDialogSafely(
+          DialogHelper.showErrorDialog(
             title: 'Failed to Process Schedule',
             message: 'Error: $e',
           );
         }
       }
     } catch (e) {
-      DialogHelper.showErrorDialogSafely(
+      DialogHelper.showErrorDialog(
         title: 'Failed to Load Schedules',
         message: 'Error: ${e.toString()}',
       );

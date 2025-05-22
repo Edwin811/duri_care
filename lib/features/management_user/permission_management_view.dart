@@ -74,11 +74,52 @@ class PermissionManagementView extends GetView<UserManagementController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildUserHeader(context, user),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  'Daftar Zona',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Daftar Zona',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Obx(
+                      () => FloatingActionButton.extended(
+                        elevation: 0,
+                        backgroundColor:
+                            controller.hasChanges.value
+                                ? AppColor.greenPrimary
+                                : Colors.grey,
+                        icon:
+                            controller.isSaving.value
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Icon(Icons.save, color: Colors.white),
+                        label: Text(
+                          controller.isSaving.value ? 'Menyimpan...' : 'Simpan',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        onPressed:
+                            controller.hasChanges.value &&
+                                    !controller.isSaving.value
+                                ? () async {
+                                  await controller.saveChanges();
+                                  if (!controller.hasChanges.value) Get.back();
+                                }
+                                : null,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -121,8 +162,8 @@ class PermissionManagementView extends GetView<UserManagementController> {
                               side: BorderSide(
                                 color:
                                     isAssigned
-                                        ? AppColor.greenPrimary.withAlpha(30)
-                                        : Colors.grey.withAlpha(30),
+                                        ? AppColor.greenPrimary.withAlpha(100)
+                                        : Colors.grey.withAlpha(40),
                                 width: 1,
                               ),
                             ),
@@ -249,34 +290,6 @@ class PermissionManagementView extends GetView<UserManagementController> {
           );
         }),
       ),
-      floatingActionButton: Obx(
-        () => FloatingActionButton.extended(
-          backgroundColor:
-              controller.hasChanges.value ? AppColor.greenPrimary : Colors.grey,
-          icon:
-              controller.isSaving.value
-                  ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                  : const Icon(Icons.save, color: Colors.white),
-          label: Text(
-            controller.isSaving.value ? 'Menyimpan...' : 'Simpan',
-            style: const TextStyle(color: Colors.white),
-          ),
-          onPressed:
-              controller.hasChanges.value && !controller.isSaving.value
-                  ? () async {
-                    await controller.saveChanges();
-                    if (!controller.hasChanges.value) Get.back();
-                  }
-                  : null,
-        ),
-      ),
     );
   }
 
@@ -292,6 +305,10 @@ class PermissionManagementView extends GetView<UserManagementController> {
       decoration: BoxDecoration(
         color: value ? AppColor.greenPrimary.withAlpha(20) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value ? AppColor.greenPrimary : Colors.grey.withAlpha(50),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -339,7 +356,7 @@ class PermissionManagementView extends GetView<UserManagementController> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColor.greenPrimary.withAlpha(20),
+            AppColor.greenPrimary.withAlpha(50),
             AppColor.greenSecondary.withAlpha(30),
           ],
           begin: Alignment.topLeft,
@@ -405,9 +422,10 @@ class PermissionManagementView extends GetView<UserManagementController> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        (user.roleName != null && (user.roleName.toLowerCase() == 'employee'))
-                          ? 'Pegawai'
-                          : (user.roleName ?? 'No Role'),
+                        (user.roleName != null &&
+                                (user.roleName.toLowerCase() == 'employee'))
+                            ? 'Pegawai'
+                            : (user.roleName ?? 'No Role'),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,

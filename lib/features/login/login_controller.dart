@@ -73,12 +73,10 @@ class LoginController extends GetxController {
 
       Get.back();
       Get.offAllNamed('/main');
-      Future.delayed(Duration(milliseconds: 300), () {
-        DialogHelper.showSuccessDialog(
-          title: 'Berhasil Masuk',
-          message: 'Selamat datang, $fullname',
-        );
-      });
+      DialogHelper.showSuccessDialog(
+        title: 'Berhasil Masuk',
+        message: 'Selamat datang, $fullname',
+      );
     } catch (e) {
       debugPrint('Login error: $e');
       Get.back();

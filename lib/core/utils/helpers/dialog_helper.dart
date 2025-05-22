@@ -1,89 +1,93 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 abstract class DialogHelper {
-  static void showErrorDialogSafely({
-    required String message,
-    String? title,
-    VoidCallback? onConfirm,
-  }) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      showErrorDialog(message: message, title: title, onConfirm: onConfirm);
-    });
-  }
-
   static Future<void> showErrorDialog({
     required String message,
     String? title,
     VoidCallback? onConfirm,
   }) async {
-    if (Get.context == null) return;
+    Future<void> showActualDialog() {
+      Timer? autoCloseTimer;
+      autoCloseTimer = Timer(const Duration(seconds: 10), () {
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+      });
 
-    Timer? autoCloseTimer;
-    autoCloseTimer = Timer(const Duration(seconds: 10), () {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-    });
-
-    return Get.dialog(
-      Dialog(
-        backgroundColor: Get.theme.scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Lottie.asset(
-                'assets/animations/error.json',
-                width: 100,
-                height: 100,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title ?? 'Error',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      return Get.dialog(
+        Dialog(
+          backgroundColor: Get.theme.scaffoldBackgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.asset(
+                  'assets/animations/error.json',
+                  width: 100,
+                  height: 100,
                 ),
-              ),
-              const SizedBox(height: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 250),
-                child: Text(
-                  message,
-                  style: const TextStyle(fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    onConfirm?.call();
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                const SizedBox(height: 16),
+                Text(
+                  title ?? 'Error',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: const Text('OK'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 250),
+                  child: Text(
+                    message,
+                    style: const TextStyle(fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      onConfirm?.call();
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('OK'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      barrierDismissible: false,
-    ).then((_) => autoCloseTimer?.cancel());
+        barrierDismissible: false,
+      ).then((_) => autoCloseTimer?.cancel());
+    }
+
+    if (Get.context == null || WidgetsBinding.instance.schedulerPhase != SchedulerPhase.idle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.context != null) {
+          showActualDialog();
+        } else {
+          debugPrint("DialogHelper: Get.context masih null setelah addPostFrameCallback untuk showErrorDialog.");
+        }
+      });
+      return;
+    }
+    
+    showActualDialog();
   }
 
   static Future<void> showSuccessDialog({

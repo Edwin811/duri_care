@@ -90,24 +90,6 @@ class AuthController extends GetxController {
       authState.value = state.AuthState.unauthenticated;
 
       try {
-        if (Get.isRegistered<ProfileController>()) {
-          final profileController = Get.find<ProfileController>();
-          profileController.disposeControllerResources();
-          Get.delete<ProfileController>(force: true);
-        }
-
-        if (Get.isRegistered<LoginController>()) {
-          Get.delete<LoginController>(force: true);
-        }
-
-        if (Get.isRegistered<HomeController>()) {
-          Get.delete<HomeController>(force: true);
-        }
-      } catch (e) {
-        debugPrint('Error removing controllers: $e');
-      }
-
-      try {
         await AuthService.to.signOut();
       } catch (e) {
         debugPrint('Error during Supabase sign out: $e');

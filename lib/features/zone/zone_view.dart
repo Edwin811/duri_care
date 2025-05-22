@@ -121,6 +121,36 @@ class ZoneView extends GetView<ZoneController> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: AppFilledButton(
+                                onPressed: () {
+                                  final zoneId =
+                                      controller.selectedZone['id']?.toString();
+                                  final zoneName =
+                                      controller.selectedZone['name']
+                                          ?.toString();
+                                  if (zoneId != null) {
+                                    Get.toNamed(
+                                      '/history',
+                                      arguments: {
+                                        'zoneId': zoneId,
+                                        'zoneName': zoneName,
+                                      },
+                                    );
+                                  }
+                                },
+                                icon: Icons.history,
+                                text: 'Riwayat',
+                                textSize: 16,
+                                width: 130,
+                                height: 40,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           Card(
                             color: AppColor.white,
                             elevation: 0,
