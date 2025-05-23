@@ -75,9 +75,13 @@ class ZoneController extends GetxController {
   @override
   void onClose() {
     _zoneTimers.forEach((_, timer) => timer?.cancel());
-    clearForm();
-    zoneNameController.dispose();
     super.onClose();
+  }
+
+  void disposeControllers() {
+    if (zoneNameController.text.isNotEmpty) {
+      zoneNameController.clear();
+    }
   }
 
   @override
@@ -146,7 +150,6 @@ class ZoneController extends GetxController {
 
       selectedZone.value = zoneMap;
       loadSchedules();
-      // Ambil status aktif dari database, bukan storage
       isActive.value = zoneModel.isActive;
       getSoilMoisture(zoneId);
       loadDevicesForZone(zoneId);
@@ -265,6 +268,9 @@ class ZoneController extends GetxController {
       if (selectedDeviceIds.isNotEmpty) {
         await _zoneService.assignDevicesToZone(zoneId, selectedDeviceIds);
       }
+
+      zoneNameController.clear();
+      selectedDeviceIds.clear();
 
       zones.add(zoneMap);
       zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
@@ -855,7 +861,9 @@ class ZoneController extends GetxController {
 
   void clearForm() {
     selectedZoneCode.value = 1;
-    zoneNameController.clear();
+    if (zoneNameController.text.isNotEmpty) {
+      zoneNameController.clear();
+    }
     selectedDate.value = DateTime.now();
     selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
     durationIrg.value = 5;
