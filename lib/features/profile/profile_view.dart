@@ -10,12 +10,18 @@ import 'package:get/get.dart';
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
   static const String route = '/profile';
-
   @override
   Widget build(BuildContext context) {
-    // Initialize controller once
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.forceRefreshProfile();
+      imageCache.clear();
+      imageCache.clearLiveImages();
+      controller.onProfilePageEntered();
+
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (Get.currentRoute.contains('profile')) {
+          controller.forceRefreshAvatar();
+        }
+      });
     });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -51,70 +57,40 @@ class ProfileView extends GetView<ProfileController> {
                     children: [
                       Stack(
                         children: [
-                          Obx(() {
-                            final profilePic = controller.profilePicture.value;
-                            final isUrl =
-                                profilePic.isNotEmpty &&
-                                profilePic.startsWith('http');
-                            return Container(
-                              padding: const EdgeInsets.all(3.0),
-                              key: Key('avatar_${controller.avatarKey.value}'),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColor.greenPrimary.withAlpha(100),
-                                  width: 4,
-                                ),
-                              ),
-                              child: CircleAvatar(
-                                radius: 55,
-                                backgroundColor: AppColor.greenPrimary
-                                    .withAlpha(100),
-                                backgroundImage:
-                                    isUrl
-                                        ? NetworkImage(
-                                          profilePic,
-                                          headers: {
-                                            'Cache-Control': 'no-cache',
-                                            'Pragma': 'no-cache',
-                                          },
-                                        )
-                                        : null,
-                                child:
-                                    !isUrl
-                                        ? Text(
-                                          profilePic.isNotEmpty
-                                              ? profilePic
-                                              : '?',
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                        : null,
-                              ),
-                            );
-                          }),
+                          _buildProfileAvatar(),
                           Positioned(
                             right: 0,
                             bottom: 0,
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
                               onPressed: () async {
-                                // Sebelum navigasi, refresh profile terlebih dahulu
-                                await controller.refreshProfileData();
+                                await controller.forceRefreshProfile();
 
-                                // Navigasi ke halaman edit
-                                await Get.toNamed(EditProfileView.route);
-
-                                // Setelah kembali, refresh profile lagi untuk memastikan perubahan terupdate
-                                await controller.refreshProfileData();
-
-                                // Tambahkan delay kecil untuk memastikan UI dirender ulang
-                                await Future.delayed(
-                                  const Duration(milliseconds: 200),
+                                final result = await Get.toNamed(
+                                  EditProfileView.route,
                                 );
+
+                                await controller.forceRefreshProfile();
+
+                                await Future.delayed(
+                                  const Duration(milliseconds: 300),
+                                );
+                                controller.forceRefreshAvatar();
+
+                                if (result == true) {
+                                  controller.clearImageCache();
+
+                                  await controller.refreshProfileData();
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                  );
+                                  controller.forceRefreshAvatar();
+
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 500),
+                                  );
+                                  controller.forceRefreshAvatar();
+                                }
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(8),
@@ -256,6 +232,52 @@ class ProfileView extends GetView<ProfileController> {
         ),
       ),
     );
+  }
+
+  Widget _buildProfileAvatar() {
+    return Obx(() {
+      final profilePic = controller.profilePicture.value;
+      final avatarKey = controller.avatarKey.value;
+      final isUrl = profilePic.isNotEmpty && profilePic.startsWith('http');
+      final initials = controller.getInitialsFromName(controller.username.value);
+      return Container(
+        padding: const EdgeInsets.all(3.0),
+        key: ValueKey('avatar_container_$avatarKey'),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColor.greenPrimary.withAlpha(100),
+            width: 4,
+          ),
+        ),
+        child: CircleAvatar(
+          key: ValueKey(
+            isUrl ? 'avatar_image_$avatarKey' : 'avatar_fallback_$avatarKey',
+          ),
+          radius: 55,
+          backgroundColor: AppColor.greenPrimary.withAlpha(200),
+          backgroundImage:
+              isUrl ? NetworkImage('$profilePic&cache_key=$avatarKey') : null,
+          onBackgroundImageError:
+              isUrl
+                  ? (exception, stackTrace) {
+                    debugPrint('Error loading profile image: $exception');
+                  }
+                  : null,
+          child:
+              !isUrl
+                  ? Text(
+                    initials,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  )
+                  : null,
+        ),
+      );
+    });
   }
 
   Widget _buildIOSSettingsItem(

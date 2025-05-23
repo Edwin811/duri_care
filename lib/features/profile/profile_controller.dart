@@ -42,18 +42,44 @@ class ProfileController extends GetxController {
     confirmPasswordController = TextEditingController();
     _initializeProfileData();
 
-    // Force refresh on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       forceRefreshProfile();
     });
   }
 
+  void onProfilePageEntered() {
+    clearImageCache();
+    forceRefreshProfile();
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      forceRefreshAvatar();
+    });
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (Get.currentRoute.contains('profile')) {
+        forceRefreshAvatar();
+      }
+    });
+  }
+
   Future<void> forceRefreshProfile() async {
     clearImageCache();
-    await refreshProfileData();
+    await _initializeProfileData(forceServerRefresh: true);
 
-    Future.delayed(const Duration(milliseconds: 200), () {
-      forceRefreshAvatar();
+    if (profilePicture.value.isNotEmpty) {
+      final baseUrl = profilePicture.value.split('?')[0];
+      final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
+      final randomSuffix =
+          (DateTime.now().millisecondsSinceEpoch % 10000).toString();
+
+      profilePicture.value =
+          '$baseUrl?v=$timestamp&t=${DateTime.now().toString()}&r=$randomSuffix';
+    }
+
+    avatarKey.value = DateTime.now().microsecondsSinceEpoch;
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      avatarKey.value = DateTime.now().microsecondsSinceEpoch + 1;
     });
   }
 
@@ -69,9 +95,11 @@ class ProfileController extends GetxController {
     isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
   }
 
-  Future<void> _initializeProfileData() async {
+  Future<void> _initializeProfileData({bool forceServerRefresh = false}) async {
     username.value = await authController.getUsername();
-    final user = await _userService.getCurrentUser(forceRefresh: true);
+    final user = await _userService.getCurrentUser(
+      forceRefresh: forceServerRefresh,
+    );
 
     if (user != null) {
       username.value = user.fullname ?? await authController.getUsername();
@@ -90,9 +118,10 @@ class ProfileController extends GetxController {
 
         if (rawUrl.isNotEmpty) {
           final baseUrl = rawUrl.split('?')[0];
-          final cacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
+          final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
+          final randomSuffix = (timestamp.hashCode % 10000).toString();
           profilePicture.value =
-              '$baseUrl?v=$cacheBuster&t=${DateTime.now().toString()}';
+              '$baseUrl?v=$timestamp&t=${DateTime.now().microsecondsSinceEpoch}&r=$randomSuffix';
         } else {
           profilePicture.value = '';
         }
@@ -108,6 +137,29 @@ class ProfileController extends GetxController {
 
     usernameController.text = username.value;
     emailController.text = email.value;
+  }
+
+  String getInitialsFromName(String name) {
+    if (name.isEmpty) return '';
+
+    final nameParts = name.trim().split(' ');
+    if (nameParts.isEmpty) return '';
+
+    if (nameParts.length == 1) {
+      if (nameParts[0].length > 1) {
+        return nameParts[0].substring(0, 1).toUpperCase();
+      }
+      return nameParts[0].toUpperCase();
+    }
+
+    String firstInitial =
+        nameParts[0].isNotEmpty ? nameParts[0][0].toUpperCase() : '';
+    String secondInitial =
+        nameParts.length > 1 && nameParts[1].isNotEmpty
+            ? nameParts[1][0].toUpperCase()
+            : '';
+
+    return '$firstInitial$secondInitial';
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -184,7 +236,6 @@ class ProfileController extends GetxController {
           imageFile.value!,
         );
       }
-
       await _userService.updateUserProfile(
         email:
             emailController.text != email.value ? emailController.text : null,
@@ -194,10 +245,14 @@ class ProfileController extends GetxController {
         profileImageUrl: uploadedImageStoragePath,
       );
 
-      refreshProfileData();
+      // Clear any existing image data to force fresh loading
       imageFile.value = null;
+      clearImageCache();
 
-      await _initializeProfileData();
+      // Reload profile data with thorough refresh
+      await forceRefreshProfile();
+
+      // Also refresh in home controller if available
       if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.refreshUser();
@@ -228,31 +283,69 @@ class ProfileController extends GetxController {
   }
 
   void forceRefreshAvatar() {
-    avatarKey.value = DateTime.now().millisecondsSinceEpoch;
+    // Use microseconds for more granular time-based key changes
+    avatarKey.value = DateTime.now().microsecondsSinceEpoch;
+
+    // Apply cache-busting to the profile picture URL if it exists
+    if (profilePicture.value.isNotEmpty) {
+      final baseUrl = profilePicture.value.split('?')[0];
+      final randomParam = DateTime.now().microsecondsSinceEpoch.toString();
+      profilePicture.value =
+          '$baseUrl?v=$randomParam&t=${DateTime.now().toString()}';
+    }
+
+    // Schedule another UI update after a short delay to ensure changes are reflected
+    Future.delayed(const Duration(milliseconds: 50), () {
+      avatarKey.value = DateTime.now().microsecondsSinceEpoch;
+    });
   }
 
   void clearImageCache() {
+    // Clear Flutter's image cache
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+
+    // Clear all cached images
     imageCache.clear();
     imageCache.clearLiveImages();
 
+    // Evict specific profile image if it exists
     if (profilePicture.value.isNotEmpty) {
-      NetworkImage(profilePicture.value).evict();
+      try {
+        NetworkImage(profilePicture.value).evict();
+        // Also try to evict any variations of the URL
+        final baseUrl = profilePicture.value.split('?')[0];
+        NetworkImage(baseUrl).evict();
+      } catch (e) {
+        debugPrint('Error evicting image: $e');
+      }
     }
 
+    // Force avatar refresh after cache clearing
     forceRefreshAvatar();
   }
 
   Future<void> refreshProfileData() async {
+    // Clear the image cache
     clearImageCache();
-    await _initializeProfileData();
 
+    // Initialize profile data with force refresh
+    await _initializeProfileData(forceServerRefresh: true);
+
+    // Ensure profile picture URL has cache-busting parameters
     if (profilePicture.value.isNotEmpty) {
       final baseUrl = profilePicture.value.split('?')[0];
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      profilePicture.value = '$baseUrl?v=$timestamp';
+      final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
+      final randomSuffix = (timestamp.hashCode % 10000).toString();
+      profilePicture.value =
+          '$baseUrl?v=$timestamp&t=${DateTime.now().toString()}&r=$randomSuffix';
     }
 
+    // Force avatar refresh with a slight delay to ensure UI updates
     forceRefreshAvatar();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      forceRefreshAvatar();
+    });
   }
 
   String? validateEmail(String email) {

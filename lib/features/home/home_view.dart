@@ -23,6 +23,10 @@ class HomeView extends GetView<HomeController> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: ListView(
+                physics: const ClampingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                shrinkWrap: true,
                 children: [
                   Column(
                     children: [
@@ -40,8 +44,7 @@ class HomeView extends GetView<HomeController> {
 
                                 return CircleAvatar(
                                   radius: 25,
-                                  backgroundColor: AppColor.greenPrimary
-                                      .withAlpha(100),
+                                  backgroundColor: AppColor.greenPrimary,
                                   backgroundImage:
                                       isUrl ? NetworkImage(profilePic) : null,
                                   child:
@@ -49,7 +52,9 @@ class HomeView extends GetView<HomeController> {
                                           ? Text(
                                             profilePic.isNotEmpty
                                                 ? profilePic
-                                                : '?',
+                                                : controller.getInitialsFromName(
+                                                    controller.username.value,
+                                                  ),
                                             style: Theme.of(
                                               context,
                                             ).textTheme.bodyLarge?.copyWith(

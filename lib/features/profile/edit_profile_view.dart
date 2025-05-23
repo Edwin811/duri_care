@@ -72,7 +72,7 @@ class EditProfileView extends GetView<ProfileController> {
                                 ? Text(
                                   controller.profilePicture.value.isNotEmpty
                                       ? controller.profilePicture.value
-                                      : '?',
+                                      : controller.username.value.toUpperCase(),
                                   style: Theme.of(
                                     context,
                                   ).textTheme.headlineMedium?.copyWith(

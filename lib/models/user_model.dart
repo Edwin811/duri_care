@@ -43,7 +43,6 @@ class UserModel {
     String? roleName = json['role_name'];
     String? roleId = json['role_id']?.toString();
 
-    // If not found, try to extract from nested structure
     if (roleName == null) {
       final userRoles = json['user_roles'] as List<dynamic>?;
 

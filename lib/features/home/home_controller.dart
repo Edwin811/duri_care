@@ -76,6 +76,29 @@ class HomeController extends GetxController {
     }
   }
 
+  String getInitialsFromName(String name) {
+    if (name.isEmpty) return '';
+
+    final nameParts = name.trim().split(' ');
+    if (nameParts.isEmpty) return '';
+
+    if (nameParts.length == 1) {
+      if (nameParts[0].length > 1) {
+        return nameParts[0].substring(0, 1).toUpperCase();
+      }
+      return nameParts[0].toUpperCase();
+    }
+
+    String firstInitial =
+        nameParts[0].isNotEmpty ? nameParts[0][0].toUpperCase() : '';
+    String secondInitial =
+        nameParts.length > 1 && nameParts[1].isNotEmpty
+            ? nameParts[1][0].toUpperCase()
+            : '';
+
+    return '$firstInitial$secondInitial';
+  }
+
   Future<void> getProfilePicture() async {
     try {
       final user = await UserService.to.getCurrentUser();
