@@ -7,74 +7,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-class ProfileView extends StatefulWidget {
+class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
   static const String route = '/profile';
 
   @override
-  State<ProfileView> createState() => _ProfileViewState();
-}
-
-class _ProfileViewState extends State<ProfileView>
-    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
-  late ProfileController controller;
-  final UniqueKey _avatarKey = UniqueKey();
-
-  @override
-  bool get wantKeepAlive => false; // Don't keep alive to force rebuild
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    controller = Get.find<ProfileController>();
-
-    // Force refresh when first initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _forceRefreshProfile();
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh when dependencies change (like when returning to this screen)
-    _forceRefreshProfile();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // When app resumes from background, refresh profile
-    if (state == AppLifecycleState.resumed) {
-      _forceRefreshProfile();
-    }
-  }
-
-  Future<void> _forceRefreshProfile() async {
-    // Aggressively clear all caches
-    controller.clearImageCache();
-    await controller.refreshProfileData();
-
-    // Force UI update with short delay
-    Future.delayed(Duration(milliseconds: 200), () {
-      if (mounted) {
-        setState(() {
-          // Update state to force rebuild
-          controller.forceRefreshAvatar();
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    // Initialize controller once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.forceRefreshProfile();
+    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -171,7 +113,7 @@ class _ProfileViewState extends State<ProfileView>
 
                                 // Tambahkan delay kecil untuk memastikan UI dirender ulang
                                 await Future.delayed(
-                                  Duration(milliseconds: 200),
+                                  const Duration(milliseconds: 200),
                                 );
                               },
                               child: Container(
@@ -275,20 +217,6 @@ class _ProfileViewState extends State<ProfileView>
                     ),
                     child: Column(
                       children: [
-                        // _buildIOSSettingsItem(
-                        //   context,
-                        //   title: 'Notifikasi',
-                        //   icon: CupertinoIcons.bell,
-                        //   trailing: Obx(
-                        //     () => Switch(
-                        //       value: controller.isNotificationEnabled.value,
-                        //       onChanged:
-                        //           (value) => controller.toggleNotification(),
-                        //       activeTrackColor: AppColor.greenPrimary,
-                        //     ),
-                        //   ),
-                        //   showBorder: true,
-                        // ),
                         Obx(
                           () =>
                               controller.role.value.toLowerCase() == 'owner'
@@ -303,28 +231,10 @@ class _ProfileViewState extends State<ProfileView>
                                           Get.toNamed('/user-management');
                                         },
                                       ),
-                                      // _buildIOSSettingsItem(
-                                      //   context,
-                                      //   title: 'Bayar Tagihan VPS Duri Care',
-                                      //   icon: CupertinoIcons.creditcard,
-                                      //   showBorder: true,
-                                      // ),
                                     ],
                                   )
                                   : const SizedBox.shrink(),
                         ),
-                        // _buildIOSSettingsItem(
-                        //   context,
-                        //   title: 'Bantuan',
-                        //   icon: CupertinoIcons.question_circle,
-                        //   showBorder: true,
-                        // ),
-                        // _buildIOSSettingsItem(
-                        //   context,
-                        //   title: 'Tentang Aplikasi',
-                        //   icon: CupertinoIcons.info_circle,
-                        //   showBorder: false,
-                        // ),
                       ],
                     ),
                   ),

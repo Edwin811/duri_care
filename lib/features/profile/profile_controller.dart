@@ -33,7 +33,6 @@ class ProfileController extends GetxController {
   final ImagePicker _picker = ImagePicker();
 
   final RxInt avatarKey = 0.obs;
-
   @override
   void onInit() {
     super.onInit();
@@ -42,6 +41,20 @@ class ProfileController extends GetxController {
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
     _initializeProfileData();
+
+    // Force refresh on first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      forceRefreshProfile();
+    });
+  }
+
+  Future<void> forceRefreshProfile() async {
+    clearImageCache();
+    await refreshProfileData();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      forceRefreshAvatar();
+    });
   }
 
   void toggleNotification() {
@@ -123,7 +136,8 @@ class ProfileController extends GetxController {
     if (!profileKey.currentState!.validate()) {
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Form tidak valid. Mohon periksa kembali data yang dimasukkan.',
+        message:
+            'Form tidak valid. Mohon periksa kembali data yang dimasukkan.',
       );
       return;
     }
@@ -170,10 +184,12 @@ class ProfileController extends GetxController {
           imageFile.value!,
         );
       }
-      
+
       await _userService.updateUserProfile(
-        email: emailController.text != email.value ? emailController.text : null,
-        password: passwordController.text.isNotEmpty ? passwordController.text : null,
+        email:
+            emailController.text != email.value ? emailController.text : null,
+        password:
+            passwordController.text.isNotEmpty ? passwordController.text : null,
         fullname: usernameController.text,
         profileImageUrl: uploadedImageStoragePath,
       );
@@ -218,24 +234,24 @@ class ProfileController extends GetxController {
   void clearImageCache() {
     imageCache.clear();
     imageCache.clearLiveImages();
-    
+
     if (profilePicture.value.isNotEmpty) {
       NetworkImage(profilePicture.value).evict();
     }
-    
+
     forceRefreshAvatar();
   }
 
   Future<void> refreshProfileData() async {
     clearImageCache();
     await _initializeProfileData();
-    
+
     if (profilePicture.value.isNotEmpty) {
       final baseUrl = profilePicture.value.split('?')[0];
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       profilePicture.value = '$baseUrl?v=$timestamp';
     }
-    
+
     forceRefreshAvatar();
   }
 

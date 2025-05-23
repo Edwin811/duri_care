@@ -136,10 +136,10 @@ class HistoryView extends GetView<HistoryController> {
                     'Dilakukan oleh: $executedBy',
                     style: const TextStyle(fontSize: 14),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     formattedDate,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: const TextStyle(color: AppColor.textSecondary, fontSize: 14),
                   ),
                 ],
               ),
