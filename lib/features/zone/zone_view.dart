@@ -145,7 +145,7 @@ class ZoneView extends GetView<ZoneController> {
                                 icon: Icons.history,
                                 text: 'Riwayat',
                                 textSize: 16,
-                                width: 130,
+                                width: 135,
                                 height: 40,
                               ),
                             ),

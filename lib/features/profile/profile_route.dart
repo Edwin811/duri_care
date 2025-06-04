@@ -10,7 +10,6 @@ final profileRoute = [
     name: ProfileView.route,
     page: () => ProfileView(),
     binding: BindingsBuilder(() {
-      // Jika sudah ada controller, buang dan buat baru
       if (Get.isRegistered<ProfileController>()) {
         Get.delete<ProfileController>();
       }

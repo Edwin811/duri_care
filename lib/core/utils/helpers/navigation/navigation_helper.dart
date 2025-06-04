@@ -50,15 +50,25 @@ class MainNavigationView extends GetView<NavigationHelper> {
           }
           final userRole = snapshot.data ?? '';
           final isOwner = userRole == 'owner';
-          return isOwner
-              ? FloatingActionButton(
-                onPressed: () {
-                  Get.toNamed('/add-zone');
-                },
-                backgroundColor: AppColor.greenPrimary,
-                child: const Icon(Icons.add, color: AppColor.white),
-              )
-              : const SizedBox.shrink();
+          return AnimatedSlide(
+            duration: const Duration(milliseconds: 300),
+            offset: isOwner ? Offset.zero : const Offset(0, 2),
+            curve: Curves.easeInOut,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: isOwner ? 1.0 : 0.0,
+              child:
+                  isOwner
+                      ? FloatingActionButton(
+                        onPressed: () {
+                          Get.toNamed('/add-zone');
+                        },
+                        backgroundColor: AppColor.greenPrimary,
+                        child: const Icon(Icons.add, color: AppColor.white),
+                      )
+                      : const SizedBox.shrink(),
+            ),
+          );
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

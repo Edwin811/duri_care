@@ -11,6 +11,8 @@ import 'dart:async';
 
 class ZoneController extends GetxController {
   final ZoneService _zoneService = Get.find<ZoneService>();
+  final SupabaseClient _supabaseClient = Supabase.instance.client;
+
   final zones = <Map<String, dynamic>>[].obs;
   final selectedZone = <String, dynamic>{}.obs;
   final RxBool isActive = false.obs;
@@ -31,7 +33,7 @@ class ZoneController extends GetxController {
 
   final selectedDate = Rx<DateTime?>(DateTime.now());
   final selectedTime = Rx<TimeOfDay?>(const TimeOfDay(hour: 6, minute: 0));
-  final durationIrg = 5.obs;
+  final RxInt durationIrg = 5.obs;
   final schedules = <ZoneScheduleModel>[].obs;
 
   final TextEditingController zoneNameController = TextEditingController();
@@ -44,14 +46,16 @@ class ZoneController extends GetxController {
   final isLoading = false.obs;
   final RxInt manualDuration = 5.obs;
 
+  final RxMap<String, bool> _pendingZoneToggles = <String, bool>{}.obs;
+
   Map<String, dynamic> _zoneModelToMap(ZoneModel model) {
     return {
       'id': model.id,
       'zone_code': model.zoneCode,
       'name': model.name,
       'is_active': model.isActive,
-      'created_at': model.createdAt,
-      'deleted_at': model.deletedAt,
+      'created_at': model.createdAt?.toIso8601String(),
+      'deleted_at': model.deletedAt?.toIso8601String(),
     };
   }
 
@@ -75,19 +79,9 @@ class ZoneController extends GetxController {
   @override
   void onClose() {
     _zoneTimers.forEach((_, timer) => timer?.cancel());
-    super.onClose();
-  }
-
-  void disposeControllers() {
-    if (zoneNameController.text.isNotEmpty) {
-      zoneNameController.clear();
-    }
-  }
-
-  @override
-  void dispose() {
+    clearForm();
     zoneNameController.dispose();
-    super.dispose();
+    super.onClose();
   }
 
   void _setupZoneTimers() {
@@ -105,6 +99,26 @@ class ZoneController extends GetxController {
           startTimer(zoneId, durationIrg.value);
         }
       }
+    }
+  }
+
+  Future<void> _initializeController() async {
+    await loadiInitialData();
+  }
+
+  Future<void> loadiInitialData() async {
+    isLoading.value = true;
+    try {
+      await loadZones();
+      loadAllZoneSchedules();
+
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Memuat Data',
+        message: 'Error: ${e.toString()}',
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -163,7 +177,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  // Load devices for a specific zone
   Future<void> loadDevicesForZone(String zoneId) async {
     try {
       devices.value = await _zoneService.loadDevicesForZone(zoneId);
@@ -177,7 +190,6 @@ class ZoneController extends GetxController {
 
   Future<void> getSoilMoisture(String zoneId) async {
     try {
-      // Simulate sensor data
       moisture.value = '${60 + DateTime.now().second % 20}%';
       temperature.value = '${25 + DateTime.now().minute % 10}°C';
       humidity.value = '${60 + DateTime.now().hour % 25}%';
@@ -192,7 +204,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  /// Mengambil data perangkat IoT dari server
   Future<void> loadDevices() async {
     isLoadingDevices.value = true;
     try {
@@ -207,40 +218,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  final RxList<Map<String, dynamic>> irrigationHistory =
-      <Map<String, dynamic>>[].obs;
-  final RxBool isLoadingHistory = false.obs;
-  Future<void> loadHistory() async {
-    isLoadingHistory.value = true;
-    try {
-      final zoneId = selectedZone['id']?.toString();
-      if (zoneId == null) return;
-
-      final history = await _zoneService.loadIrrigationHistory(zoneId);
-      irrigationHistory.value = [
-        {
-          'id': history.id,
-          'zone_id': history.zoneId,
-          'started_at': history.startedAt,
-          'duration': history.duration,
-          'type': history.type,
-          'message': history.message,
-          'executed_by': history.executedBy,
-          'created_at': history.createdAt,
-        },
-      ];
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Gagal Memuat Riwayat',
-        message: 'Gagal memuat riwayat zona: ${e.toString()}',
-      );
-      irrigationHistory.clear();
-    } finally {
-      isLoadingHistory.value = false;
-    }
-  }
-
-  /// Create a new zone
   Future<void> createZone() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final name = zoneNameController.text.trim();
@@ -253,8 +230,14 @@ class ZoneController extends GetxController {
       return;
     }
 
+    if (!formKey.currentState!.validate()) {
+        return;
+    }
+
     try {
       isLoading.value = true;
+      FocusManager.instance.primaryFocus?.unfocus();
+      await Future.delayed(Duration.zero);
 
       final zoneModel = await _zoneService.createZone(
         name: name,
@@ -269,19 +252,16 @@ class ZoneController extends GetxController {
         await _zoneService.assignDevicesToZone(zoneId, selectedDeviceIds);
       }
 
-      zoneNameController.clear();
-      selectedDeviceIds.clear();
-
       zones.add(zoneMap);
       zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
+      
+      Get.offAllNamed('/main');
 
-      await DialogHelper.showSuccessDialog(
+      DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: '$name berhasil dibuat.',
       );
-      zoneNameController.clear();
-      selectedDeviceIds.clear();
-      Get.offAllNamed('/main');
+
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal membuat zona',
@@ -294,37 +274,50 @@ class ZoneController extends GetxController {
 
   Future<void> deleteZone(int zoneId) async {
     try {
-      isLoading.value = true;
-
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Zona',
         message: 'Apakah Anda yakin ingin menghapus ${selectedZone['name']}?',
         onConfirm: () async {
-          await _zoneService.deleteZone(zoneId);
+          Get.back(); 
+          isLoading.value = true;
 
-          zones.removeWhere((z) => z['id'] == zoneId);
-          stopTimer(zoneId.toString());
+          try {
+            FocusManager.instance.primaryFocus?.unfocus();
+            await Future.delayed(Duration.zero);
 
-          if (selectedZone['id'] == zoneId) {
-            selectedZone.clear();
+            await _zoneService.deleteZone(zoneId);
+
+            zones.removeWhere((z) => z['id'] == zoneId);
+            stopTimer(zoneId.toString());
+
+            if (selectedZone['id'] == zoneId) {
+              selectedZone.clear();
+            }
+            
+            Get.offAllNamed('/main');
+
+            DialogHelper.showSuccessDialog(
+              title: 'Berhasil',
+              message: 'Zona berhasil dihapus.',
+            );
+          } catch (e) {
+            DialogHelper.showErrorDialog(
+              title: 'Gagal hapus zona',
+              message: e.toString(),
+            );
+          } finally {
+            isLoading.value = false; 
           }
-
-          DialogHelper.showSuccessDialog(
-            title: 'Berhasil',
-            message: 'Zona berhasil dihapus.',
-          );
-
-          Get.offAllNamed('/main');
         },
-        onCancel: Get.back,
+        onCancel: () {
+          Get.back();
+        },
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
-        title: 'Gagal hapus zona',
-        message: e.toString(),
+        title: 'Error',
+        message: 'Gagal menampilkan konfirmasi: ${e.toString()}',
       );
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -336,9 +329,15 @@ class ZoneController extends GetxController {
       );
       return;
     }
+     if (!formKey.currentState!.validate()) { 
+        return;
+    }
+
 
     try {
       isLoading.value = true;
+      FocusManager.instance.primaryFocus?.unfocus();
+      await Future.delayed(Duration.zero);
 
       final updated = await _zoneService.updateZone(
         zoneId: zoneId,
@@ -360,13 +359,15 @@ class ZoneController extends GetxController {
 
       if (selectedZone['id'].toString() == zoneId) {
         selectedZone['name'] = newName.trim();
+         selectedZone['zone_code'] = selectedZoneCode.value;
       }
+      
+      Get.back(); 
 
-      await DialogHelper.showSuccessDialog(
+      DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Zona berhasil diperbarui.',
       );
-      Get.back();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal update',
@@ -442,7 +443,6 @@ class ZoneController extends GetxController {
         title: 'Berhasil',
         message: 'Durasi berhasil disimpan.',
       );
-      // await _zoneService.saveManualDuration(zoneId, manualDuration.value);
       storage.write('zone_${zoneId}_duration', manualDuration.value);
       startTimer(zoneId, manualDuration.value);
     } catch (e) {
@@ -456,13 +456,17 @@ class ZoneController extends GetxController {
   void listenToZoneChanges() {
     _zoneService.zoneChangesStream().listen((updates) {
       for (final update in updates) {
-        final updatedZone = update['new'];
-        if (updatedZone == null) continue;
+        final updatedZoneData = update['new'];
+        if (updatedZoneData == null) continue;
 
-        final updatedZoneId = updatedZone['id']?.toString();
+        final updatedZoneId = updatedZoneData['id']?.toString();
         if (updatedZoneId == null) continue;
+        
+        final ZoneModel updatedZoneModel = ZoneModel.fromMap(updatedZoneData);
+        final Map<String, dynamic> mappedUpdatedZone = _zoneModelToMap(updatedZoneModel);
 
-        final updatedIsActive = updatedZone['is_active'] ?? false;
+
+        final updatedIsActive = mappedUpdatedZone['is_active'] ?? false;
 
         final zoneIndex = zones.indexWhere(
           (z) => z['id'].toString() == updatedZoneId,
@@ -471,9 +475,8 @@ class ZoneController extends GetxController {
           final existingZone = zones[zoneIndex];
           zones[zoneIndex] = {
             ...existingZone,
-            ...updatedZone,
+            ...mappedUpdatedZone,
             'timer': existingZone['timer'] ?? '00:00:00',
-            // 'moisture': existingZone['moisture'] ?? '60%',
           };
 
           if (updatedIsActive && _zoneTimers[updatedZoneId] == null) {
@@ -485,7 +488,7 @@ class ZoneController extends GetxController {
           if (selectedZone['id']?.toString() == updatedZoneId) {
             selectedZone.value = {
               ...selectedZone,
-              ...updatedZone,
+              ...mappedUpdatedZone,
               'timer': selectedZone['timer'] ?? '00:00:00',
               'moisture': selectedZone['moisture'] ?? '60%',
             };
@@ -493,6 +496,7 @@ class ZoneController extends GetxController {
           }
         }
       }
+       zones.refresh();
     });
   }
 
@@ -516,7 +520,6 @@ class ZoneController extends GetxController {
       }
     }
 
-    // Initialize the timer display
     zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
     const oneSecond = Duration(seconds: 1);
@@ -600,7 +603,15 @@ class ZoneController extends GetxController {
       return;
     }
 
-    final zoneId = selectedZone['id'].toString();
+    final zoneId = selectedZone['id']?.toString();
+    if (zoneId == null) {
+       DialogHelper.showErrorDialog(
+        title: 'Error',
+        message: 'Zona tidak terpilih.',
+      );
+      return;
+    }
+
 
     try {
       final time = selectedTime.value!;
@@ -629,13 +640,13 @@ class ZoneController extends GetxController {
       );
 
       loadSchedules();
-      clearForm();
+      clearFormSchedule(); 
 
       DialogHelper.showSuccessDialog(
         title: 'Jadwal Berhasil Disimpan',
         message: 'Jadwal irigasi otomatis Anda berhasil disimpan.',
         onConfirm: () {
-          clearForm();
+          clearFormSchedule(); 
         },
       );
     } catch (e) {
@@ -664,7 +675,6 @@ class ZoneController extends GetxController {
         },
       );
 
-      // Only proceed if the user confirmed
       if (confirmed) {
         try {
           debugPrint(
@@ -725,8 +735,6 @@ class ZoneController extends GetxController {
           'Loaded stored duration for zone $zoneId: $storedDuration minutes',
         );
       } else if (schedules.isNotEmpty) {
-        // durationIrg.value = schedules.first.schedule.duration;
-        // storage.write('zone_${zoneId}_duration', durationIrg.value);
         debugPrint(
           'Using first schedule duration for zone $zoneId: ${durationIrg.value} minutes',
         );
@@ -772,20 +780,16 @@ class ZoneController extends GetxController {
 
   Future<void> loadAllZoneSchedules() async {
     try {
-      // Cancel and clear all existing timers
       _scheduleTimers.forEach((id, timer) {
         timer.cancel();
       });
       _scheduleTimers.clear();
 
-      // Fetch all schedules from the service
       final scheduleList = await _zoneService.loadAllZoneSchedules();
       final now = DateTime.now();
 
-      // Clear any stale data from storage
       storage.remove('schedules');
 
-      // Process and set up timers for the fetched schedules
       for (var item in scheduleList) {
         try {
           final scheduledId = item.schedule.id;
@@ -860,10 +864,11 @@ class ZoneController extends GetxController {
   }
 
   void clearForm() {
-    selectedZoneCode.value = 1;
-    if (zoneNameController.text.isNotEmpty) {
-      zoneNameController.clear();
-    }
+    zoneNameController.clear(); 
+    selectedZoneCode.value = 1; 
+  }
+
+  void clearFormSchedule() {
     selectedDate.value = DateTime.now();
     selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
     durationIrg.value = 5;

@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 
 class LoginController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
-  // Use a unique debug label to help identify the key in error messages
   final GlobalKey<FormState> loginKey = GlobalKey<FormState>(
     debugLabel: 'loginFormKey',
   );
@@ -72,11 +71,11 @@ class LoginController extends GetxController {
       final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
 
       Get.back();
-      Get.offAllNamed('/main');
       DialogHelper.showSuccessDialog(
         title: 'Berhasil Masuk',
         message: 'Selamat datang, $fullname',
       );
+      Get.offAllNamed('/main');
     } catch (e) {
       debugPrint('Login error: $e');
       Get.back();

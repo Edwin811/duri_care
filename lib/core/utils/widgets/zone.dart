@@ -54,7 +54,6 @@ class Zone extends GetView<ZoneController> {
                     IconButton(
                       onPressed: () {
                         if (zoneIdStr.isNotEmpty) {
-                          // Call toggleActive directly and ignore onPowerButtonPressed
                           controller.toggleActive(zoneIdStr);
                         }
                       },

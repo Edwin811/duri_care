@@ -245,14 +245,11 @@ class ProfileController extends GetxController {
         profileImageUrl: uploadedImageStoragePath,
       );
 
-      // Clear any existing image data to force fresh loading
       imageFile.value = null;
       clearImageCache();
 
-      // Reload profile data with thorough refresh
       await forceRefreshProfile();
 
-      // Also refresh in home controller if available
       if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.refreshUser();
@@ -277,16 +274,14 @@ class ProfileController extends GetxController {
       }
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Gagal memperbarui profil: ${e.toString()}',
+        message: 'Password baru tidak boleh sama dengan password lama.',
       );
     }
   }
 
   void forceRefreshAvatar() {
-    // Use microseconds for more granular time-based key changes
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
 
-    // Apply cache-busting to the profile picture URL if it exists
     if (profilePicture.value.isNotEmpty) {
       final baseUrl = profilePicture.value.split('?')[0];
       final randomParam = DateTime.now().microsecondsSinceEpoch.toString();
@@ -294,45 +289,34 @@ class ProfileController extends GetxController {
           '$baseUrl?v=$randomParam&t=${DateTime.now().toString()}';
     }
 
-    // Schedule another UI update after a short delay to ensure changes are reflected
     Future.delayed(const Duration(milliseconds: 50), () {
       avatarKey.value = DateTime.now().microsecondsSinceEpoch;
     });
   }
 
   void clearImageCache() {
-    // Clear Flutter's image cache
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
 
-    // Clear all cached images
     imageCache.clear();
     imageCache.clearLiveImages();
 
-    // Evict specific profile image if it exists
     if (profilePicture.value.isNotEmpty) {
       try {
         NetworkImage(profilePicture.value).evict();
-        // Also try to evict any variations of the URL
         final baseUrl = profilePicture.value.split('?')[0];
         NetworkImage(baseUrl).evict();
       } catch (e) {
         debugPrint('Error evicting image: $e');
       }
     }
-
-    // Force avatar refresh after cache clearing
     forceRefreshAvatar();
   }
 
   Future<void> refreshProfileData() async {
-    // Clear the image cache
     clearImageCache();
-
-    // Initialize profile data with force refresh
     await _initializeProfileData(forceServerRefresh: true);
 
-    // Ensure profile picture URL has cache-busting parameters
     if (profilePicture.value.isNotEmpty) {
       final baseUrl = profilePicture.value.split('?')[0];
       final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
@@ -340,8 +324,6 @@ class ProfileController extends GetxController {
       profilePicture.value =
           '$baseUrl?v=$timestamp&t=${DateTime.now().toString()}&r=$randomSuffix';
     }
-
-    // Force avatar refresh with a slight delay to ensure UI updates
     forceRefreshAvatar();
     Future.delayed(const Duration(milliseconds: 100), () {
       forceRefreshAvatar();
