@@ -1,12 +1,6 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:duri_care/core/services/session_service.dart';
 
-/// Service responsible for handling home view related operations
 class HomeService extends GetxService {
-  final _storage = GetStorage();
-  final SessionService _sessionService = Get.find<SessionService>();
-
   static HomeService get to => Get.find<HomeService>();
 
   /// Initializes the home service
@@ -29,5 +23,4 @@ class HomeService extends GetxService {
       return "Selamat Malam";
     }
   }
-
 }

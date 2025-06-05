@@ -1,4 +1,4 @@
-final Map<String, String> id_ID = {
+final Map<String, String> idId = {
   'txt_success': 'Berhasil',
   'txt_ok': 'OK',
   'txt_error': 'Terjadi Kesalahan',

@@ -21,7 +21,9 @@ abstract class DialogHelper {
       return Get.dialog(
         Dialog(
           backgroundColor: Get.theme.scaffoldBackgroundColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -76,17 +78,18 @@ abstract class DialogHelper {
       ).then((_) => autoCloseTimer?.cancel());
     }
 
-    if (Get.context == null || WidgetsBinding.instance.schedulerPhase != SchedulerPhase.idle) {
+    if (Get.context == null ||
+        WidgetsBinding.instance.schedulerPhase != SchedulerPhase.idle) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (Get.context != null) {
           showActualDialog();
         } else {
-          debugPrint("DialogHelper: Get.context masih null setelah addPostFrameCallback untuk showErrorDialog.");
+          // Context still not available after post frame callback
         }
       });
       return;
     }
-    
+
     showActualDialog();
   }
 

@@ -2,7 +2,6 @@ import 'package:duri_care/models/iot_device_model.dart';
 import 'package:duri_care/models/irrigation_history_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -118,7 +117,7 @@ class ZoneService extends GetxService {
             .eq('name', name)
             .filter('deleted_at', 'is', null)
             .maybeSingle();
-    debugPrint('ZONA DUPLIKAT: $existing');
+
     if (existing != null) {
       throw Exception('Zona dengan nama "$name" sudah ada');
     }
@@ -234,7 +233,7 @@ class ZoneService extends GetxService {
             .eq('id', zoneId)
             .select()
             .single();
-    debugPrint('Updated zone service: $updatedZone');
+
     return ZoneModel.fromMap(updatedZone);
   }
 
@@ -309,32 +308,24 @@ class ZoneService extends GetxService {
     int zoneId,
   ) async {
     try {
-      final zoneScheduleResult =
-          await _supabase
-              .from('zone_schedules')
-              .delete()
-              .eq('zone_id', zoneId)
-              .eq('schedule_id', scheduleId)
-              .select();
-
-      debugPrint('Deleted zone_schedule: $zoneScheduleResult');
+      await _supabase
+          .from('zone_schedules')
+          .delete()
+          .eq('zone_id', zoneId)
+          .eq('schedule_id', scheduleId)
+          .select();
 
       final otherUsages = await _supabase
           .from('zone_schedules')
           .select('id, zone_id')
           .eq('schedule_id', scheduleId);
 
-      debugPrint('Other usages of schedule: ${otherUsages.length}');
-
       if (otherUsages.isEmpty) {
-        final scheduleResult =
-            await _supabase
-                .from('irrigation_schedules')
-                .delete()
-                .eq('id', scheduleId)
-                .select();
-
-        debugPrint('Deleted schedule: $scheduleResult');
+        await _supabase
+            .from('irrigation_schedules')
+            .delete()
+            .eq('id', scheduleId)
+            .select();
         return {
           'success': true,
           'message': 'Jadwal berhasil dihapus sepenuhnya',
@@ -349,10 +340,8 @@ class ZoneService extends GetxService {
         'remainingZones': otherUsages.length,
       };
     } on PostgrestException catch (e) {
-      debugPrint('PostgrestException in deleteSchedule: ${e.message}');
       throw Exception('Gagal menghapus jadwal: ${e.message}');
     } catch (e) {
-      debugPrint('Error in deleteSchedule: $e');
       throw Exception('Terjadi kesalahan: $e');
     }
   }

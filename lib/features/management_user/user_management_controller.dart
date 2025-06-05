@@ -111,7 +111,6 @@ class UserManagementController extends GetxController {
     try {
       isLoading.value = true;
       users.value = await _userService.fetchAllUsers();
-      UserService.to.countStaff();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error',

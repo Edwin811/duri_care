@@ -24,7 +24,7 @@ class NetworkController extends GetxController {
   Future<void> _checkConnection() async {
     final connectivity = await _connectivity.checkConnectivity();
     final hasConnection =
-        connectivity != ConnectivityResult.none && await _hasInternet();
+        !connectivity.contains(ConnectivityResult.none) && await _hasInternet();
     _updateStatus(hasConnection);
   }
 

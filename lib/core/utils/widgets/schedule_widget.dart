@@ -150,7 +150,7 @@ class SchedulingSectionWidget extends StatelessWidget {
               children: [
                 Icon(
                   Icons.hourglass_empty,
-                  color: AppColor.greenPrimary.withOpacity(0.6),
+                  color: AppColor.greenPrimary.withValues(alpha: 0.6),
                   size: 24,
                 ),
                 const SizedBox(width: 16),

@@ -4,7 +4,6 @@ import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 class LoginController extends GetxController {
@@ -77,7 +76,6 @@ class LoginController extends GetxController {
       );
       Get.offAllNamed('/main');
     } catch (e) {
-      debugPrint('Login error: $e');
       Get.back();
 
       final errorStr = e.toString().toLowerCase();

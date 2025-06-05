@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'languages/en_US.dart';
-import 'languages/id_ID.dart';
+import 'languages/en_us.dart';
+import 'languages/id_id.dart';
 
 class LocalizationHelper {
   static const String settingsBoxName = 'settings';
@@ -44,13 +44,12 @@ class LocalizationHelper {
 
   static String translate(String key, {String? languageCode}) {
     final code = languageCode ?? currentLocale.languageCode;
-
     switch (code) {
       case 'id':
-        return id_ID[key] ?? key;
+        return idId[key] ?? key;
       case 'en':
       default:
-        return en_US[key] ?? key;
+        return enUs[key] ?? key;
     }
   }
 }

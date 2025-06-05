@@ -1,4 +1,4 @@
-final Map<String, String> en_US = {
+final Map<String, String> enUs = {
   'txt_success': 'Success',
   'txt_ok': 'OK',
   'txt_error': 'Error',

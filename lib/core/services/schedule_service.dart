@@ -1,6 +1,5 @@
 import 'package:duri_care/models/irrigation_schedule.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

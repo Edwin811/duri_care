@@ -80,7 +80,7 @@ class UserManagementView extends GetView<UserManagementController> {
                       backgroundColor: AppColor.greenPrimary,
                       foregroundColor: Colors.white,
                       elevation: 2,
-                      shadowColor: AppColor.greenPrimary.withOpacity(0.3),
+                      shadowColor: AppColor.greenPrimary.withValues(alpha: 0.3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -203,7 +203,9 @@ class UserManagementView extends GetView<UserManagementController> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: AppColor.greenPrimary.withOpacity(0.1),
+                              color: AppColor.greenPrimary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -303,7 +305,9 @@ class UserManagementView extends GetView<UserManagementController> {
                                 vertical: 14,
                               ),
                               side: BorderSide(
-                                color: AppColor.greenPrimary.withOpacity(0.5),
+                                color: AppColor.greenPrimary.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -337,8 +341,8 @@ class UserManagementView extends GetView<UserManagementController> {
                                   vertical: 14,
                                 ),
                                 elevation: 2,
-                                shadowColor: AppColor.greenPrimary.withOpacity(
-                                  0.4,
+                                shadowColor: AppColor.greenPrimary.withValues(
+                                  alpha: 0.4,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),

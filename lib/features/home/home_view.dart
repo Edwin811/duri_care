@@ -1,5 +1,4 @@
 import 'package:duri_care/core/resources/resources.dart';
-import 'package:duri_care/core/utils/widgets/device.dart';
 import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone_grid.dart';

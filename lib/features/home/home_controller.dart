@@ -37,7 +37,7 @@ class HomeController extends GetxController {
     getUsername();
     getProfilePicture();
     getRoleName();
-    getStaffCount();
+    // getStaffCount();
   }
 
   @override
@@ -71,6 +71,7 @@ class HomeController extends GetxController {
     try {
       final user = await UserService.to.getCurrentUser();
       username.value = user?.fullname ?? 'Guest';
+      debugPrint('Username [HOME CONTROLLER]: ${username.value}');
     } catch (e) {
       username.value = 'Guest';
     }
@@ -129,10 +130,6 @@ class HomeController extends GetxController {
     } catch (e) {
       return role.value;
     }
-  }
-
-  Future<void> getStaffCount() async {
-    staffCount.value = await UserService.to.countStaff();
   }
 
   Future<void> refreshUser() async {

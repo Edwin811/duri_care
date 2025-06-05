@@ -275,7 +275,6 @@ class UserService extends GetxService {
     final authUser = _supabase.auth.currentUser;
     if (authUser == null) return null;
 
-    // Return cached user unless force refresh is requested
     if (!forceRefresh && currentUser.value != null) {
       return currentUser.value;
     }

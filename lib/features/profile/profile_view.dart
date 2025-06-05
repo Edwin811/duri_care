@@ -239,7 +239,9 @@ class ProfileView extends GetView<ProfileController> {
       final profilePic = controller.profilePicture.value;
       final avatarKey = controller.avatarKey.value;
       final isUrl = profilePic.isNotEmpty && profilePic.startsWith('http');
-      final initials = controller.getInitialsFromName(controller.username.value);
+      final initials = controller.getInitialsFromName(
+        controller.username.value,
+      );
       return Container(
         padding: const EdgeInsets.all(3.0),
         key: ValueKey('avatar_container_$avatarKey'),
@@ -261,7 +263,7 @@ class ProfileView extends GetView<ProfileController> {
           onBackgroundImageError:
               isUrl
                   ? (exception, stackTrace) {
-                    debugPrint('Error loading profile image: $exception');
+                    // Silent error handling for profile image loading
                   }
                   : null,
           child:
