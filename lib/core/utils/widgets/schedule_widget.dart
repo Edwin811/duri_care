@@ -31,97 +31,20 @@ class SchedulingSectionWidget extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Obx(
-                  () => Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined),
-                      const SizedBox(width: 8),
-                      Text(
-                        controller.selectedDate.value != null
-                            ? DateFormat(
-                              'dd MMMM yyyy',
-                            ).format(controller.selectedDate.value!)
-                            : 'Select date',
-                      ),
-                      const Spacer(),
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColor.greenPrimary),
-                        ),
-                        onPressed: () => controller.selectDate(context),
-                        child: const Text(
-                          'Pilih',
-                          style: TextStyle(color: AppColor.greenPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Obx(
-                  () => Row(
-                    children: [
-                      const Icon(Icons.access_time),
-                      const SizedBox(width: 8),
-                      Text(
-                        controller.selectedTime.value != null
-                            ? '${controller.selectedTime.value!.hour.toString().padLeft(2, '0')}:${controller.selectedTime.value!.minute.toString().padLeft(2, '0')}'
-                            : 'Select time',
-                      ),
-                      const Spacer(),
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColor.greenPrimary),
-                        ),
-                        onPressed: () => controller.selectTime(context),
-                        child: const Text(
-                          'Pilih',
-                          style: TextStyle(color: AppColor.greenPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.water),
-                    const SizedBox(width: 8),
-                    const Text('Durasi: '),
-                    Expanded(
-                      child: SliderTheme(
-                        data: SliderThemeData(
-                          trackHeight: 8.0,
-                          thumbShape: RoundSliderThumbShape(
-                            enabledThumbRadius: 10.0,
-                          ),
-                        ),
-                        child: Obx(
-                          () => Slider(
-                            value: controller.durationIrg.value.toDouble(),
-                            min: 5,
-                            max: 60,
-                            divisions: 11,
-                            label: '${controller.durationIrg.value} menit',
-                            onChanged: (value) {
-                              controller.durationIrg.value = value.toInt();
-                            },
-                            activeColor: AppColor.greenPrimary,
-                            inactiveColor: AppColor.greenPrimary.withAlpha(100),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Obx(() => Text('${controller.durationIrg.value} menit')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppFilledButton(
-                    onPressed: () => controller.saveSchedule(),
-                    text: 'Simpan Jadwal',
-                  ),
+                // Gunakan FutureBuilder dengan method dari controller
+                FutureBuilder<bool>(
+                  future: controller.hasAutoSchedulePermission(),
+                  builder: (context, snapshot) {
+                    final hasPermission = snapshot.data ?? false;
+
+                    if (!hasPermission) {
+                      // Ambil widget dari controller
+                      return controller.buildNoPermissionWidget();
+                    }
+
+                    // Ambil form content dari controller
+                    return controller.buildScheduleFormContent(context);
+                  },
                 ),
               ],
             ),

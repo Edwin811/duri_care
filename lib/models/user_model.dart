@@ -21,6 +21,20 @@ class UserModel {
     return UserModel(id: '');
   }
 
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel(
+      id: map['id']?.toString() ?? '',
+      email: map['email'],
+      lastSignInAt: map['last_sign_in_at'] != null
+          ? DateTime.tryParse(map['last_sign_in_at'])
+          : null,
+      fullname: map['fullname'],
+      profileUrl: map['profile_image'],
+      roleId: map['role_id']?.toString(),
+      roleName: map['role_name'],
+    );
+  }
+
   factory UserModel.fromCombinedJson(
     Map<String, dynamic> auth,
     Map<String, dynamic> user,

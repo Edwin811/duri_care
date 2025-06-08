@@ -5,6 +5,8 @@ import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/schedule_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'zone_controller.dart';
 
 class ZoneView extends GetView<ZoneController> {
@@ -40,22 +42,44 @@ class ZoneView extends GetView<ZoneController> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.edit_rounded, color: AppColor.white),
-              tooltip: 'Edit Zone',
-              onPressed: () {
-                if (zoneId != null) {
-                  Get.toNamed('/edit-zone', parameters: {'zoneId': zoneId});
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColor.redOff),
-              tooltip: 'Delete Zone',
-              onPressed: () {
-                if (zoneId != null) {
-                  controller.deleteZone(int.parse(zoneId));
-                }
+            FutureBuilder<bool>(
+              future: controller.isOwner(),
+              builder: (context, snapshot) {
+                final isOwner = snapshot.data ?? false;
+                if (!isOwner) return const SizedBox.shrink();
+
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit_rounded,
+                        color: AppColor.white,
+                      ),
+                      tooltip: 'Edit Zone',
+                      onPressed: () {
+                        if (zoneId != null) {
+                          Get.toNamed(
+                            '/edit-zone',
+                            parameters: {'zoneId': zoneId},
+                          );
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: AppColor.redOff,
+                      ),
+                      tooltip: 'Delete Zone',
+                      onPressed: () {
+                        if (zoneId != null) {
+                          controller.deleteZone(int.parse(zoneId));
+                        }
+                      },
+                    ),
+                  ],
+                );
               },
             ),
           ],

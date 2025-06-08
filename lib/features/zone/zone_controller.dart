@@ -1,5 +1,7 @@
+import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/services/zone_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/models/iot_device_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
@@ -7,7 +9,40 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 import 'dart:async';
+
+Future<bool> _hasZonePermission(String zoneId, String permission) async {
+  try {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return false;
+
+    // Check if user is owner
+    final userResponse =
+        await Supabase.instance.client
+            .from('users')
+            .select('roles(name)')
+            .eq('id', userId)
+            .single();
+
+    final roleName = userResponse['roles']['name'];
+    if (roleName == 'owner') return true; // Owner has all permissions
+
+    // Check zone permission for employee
+    final permissionResponse =
+        await Supabase.instance.client
+            .from('zone_users')
+            .select(permission)
+            .eq('user_id', userId)
+            .eq('zone_id', int.parse(zoneId))
+            .maybeSingle();
+
+    return permissionResponse?[permission] ?? false;
+  } catch (e) {
+    print('Error checking permission: $e');
+    return false;
+  }
+}
 
 class ZoneController extends GetxController {
   final ZoneService _zoneService = Get.find<ZoneService>();
@@ -263,7 +298,36 @@ class ZoneController extends GetxController {
     }
   }
 
+  // Tambahkan method check role
+  Future<bool> _isOwner() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      final userResponse =
+          await Supabase.instance.client
+              .from('users')
+              .select('roles(name)')
+              .eq('id', userId)
+              .single();
+
+      return userResponse['roles']['name'] == 'owner';
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> deleteZone(int zoneId) async {
+    // Check if user is owner
+    final isOwner = await _isOwner();
+    if (!isOwner) {
+      DialogHelper.showErrorDialog(
+        title: 'Akses Ditolak',
+        message: 'Hanya pemilik yang dapat menghapus zona.',
+      );
+      return;
+    }
+
     try {
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Zona',
@@ -313,6 +377,16 @@ class ZoneController extends GetxController {
   }
 
   Future<void> updateZone(String zoneId, {required String newName}) async {
+    // Check if user is owner
+    final isOwner = await _isOwner();
+    if (!isOwner) {
+      DialogHelper.showErrorDialog(
+        title: 'Akses Ditolak',
+        message: 'Hanya pemilik yang dapat mengubah zona.',
+      );
+      return;
+    }
+
     if (newName.trim().isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Nama Tidak Valid',
@@ -584,15 +658,6 @@ class ZoneController extends GetxController {
   }
 
   Future<void> saveSchedule() async {
-    if (selectedDate.value == null || selectedTime.value == null) {
-      DialogHelper.showErrorDialog(
-        title: 'Gagal Membuat Jadwal',
-        message:
-            'Tanggal dan waktu tidak boleh kosong. Silakan pilih tanggal dan waktu terlebih dahulu!',
-      );
-      return;
-    }
-
     final zoneId = selectedZone['id']?.toString();
     if (zoneId == null) {
       DialogHelper.showErrorDialog(
@@ -602,26 +667,49 @@ class ZoneController extends GetxController {
       return;
     }
 
-    try {
-      final time = selectedTime.value!;
-      final now = DateTime.now();
-      final combinedDateTime = DateTime(
-        selectedDate.value!.year,
-        selectedDate.value!.month,
-        selectedDate.value!.day,
-        time.hour,
-        time.minute,
+    // Check permission untuk auto schedule
+    final hasPermission = await _hasZonePermission(
+      zoneId,
+      'allow_auto_schedule',
+    );
+    if (!hasPermission) {
+      DialogHelper.showErrorDialog(
+        title: 'Akses Ditolak',
+        message:
+            'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini.',
       );
+      return;
+    }
 
-      if (combinedDateTime.isBefore(now)) {
-        DialogHelper.showErrorDialog(
-          title: 'Gagal Membuat Jadwal',
-          message:
-              'Jadwal tidak boleh lebih awal dari waktu saat ini. Silakan pilih waktu yang lebih baru!',
-        );
-        return;
-      }
+    if (selectedDate.value == null || selectedTime.value == null) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Membuat Jadwal',
+        message:
+            'Tanggal dan waktu tidak boleh kosong. Silakan pilih tanggal dan waktu terlebih dahulu!',
+      );
+      return;
+    }
 
+    final time = selectedTime.value!;
+    final now = DateTime.now();
+    final combinedDateTime = DateTime(
+      selectedDate.value!.year,
+      selectedDate.value!.month,
+      selectedDate.value!.day,
+      time.hour,
+      time.minute,
+    );
+
+    if (combinedDateTime.isBefore(now)) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Membuat Jadwal',
+        message:
+            'Jadwal tidak boleh lebih awal dari waktu saat ini. Silakan pilih waktu yang lebih baru!',
+      );
+      return;
+    }
+
+    try {
       await _zoneService.createSchedule(
         scheduledDateTime: combinedDateTime,
         duration: durationIrg.value,
@@ -846,5 +934,179 @@ class ZoneController extends GetxController {
     selectedDate.value = DateTime.now();
     selectedTime.value = const TimeOfDay(hour: 6, minute: 0);
     durationIrg.value = 5;
+  }
+
+  // Tambahkan method yang dipindahkan dari ZoneView
+  Future<bool> isOwner() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      final userResponse =
+          await Supabase.instance.client
+              .from('users')
+              .select('roles(name)')
+              .eq('id', userId)
+              .single();
+
+      return userResponse['roles']['name'] == 'owner';
+    } catch (e) {
+      print('Error checking owner status: $e');
+      return false;
+    }
+  }
+
+  // Tambahkan method yang dipindahkan dari ScheduleWidget
+  Future<bool> hasAutoSchedulePermission() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      final zoneId = selectedZone['id']?.toString();
+      if (zoneId == null) return false;
+
+      // Check if owner
+      final userResponse =
+          await Supabase.instance.client
+              .from('users')
+              .select('roles(name)')
+              .eq('id', userId)
+              .single();
+
+      if (userResponse['roles']['name'] == 'owner') return true;
+
+      // Check zone permission for employee
+      final permissionResponse =
+          await Supabase.instance.client
+              .from('zone_users')
+              .select('allow_auto_schedule')
+              .eq('user_id', userId)
+              .eq('zone_id', int.parse(zoneId))
+              .maybeSingle();
+
+      return permissionResponse?['allow_auto_schedule'] ?? false;
+    } catch (e) {
+      print('Error checking auto schedule permission: $e');
+      return false;
+    }
+  }
+
+  // Method untuk build schedule form content
+  Widget buildScheduleFormContent(BuildContext context) {
+    return Column(
+      children: [
+        Obx(
+          () => Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined),
+              const SizedBox(width: 8),
+              Text(
+                selectedDate.value != null
+                    ? DateFormat('dd MMMM yyyy').format(selectedDate.value!)
+                    : 'Select date',
+              ),
+              const Spacer(),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColor.greenPrimary),
+                ),
+                onPressed: () => selectDate(context),
+                child: const Text(
+                  'Pilih',
+                  style: TextStyle(color: AppColor.greenPrimary),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => Row(
+            children: [
+              const Icon(Icons.access_time),
+              const SizedBox(width: 8),
+              Text(
+                selectedTime.value != null
+                    ? '${selectedTime.value!.hour.toString().padLeft(2, '0')}:${selectedTime.value!.minute.toString().padLeft(2, '0')}'
+                    : 'Select time',
+              ),
+              const Spacer(),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColor.greenPrimary),
+                ),
+                onPressed: () => selectTime(context),
+                child: const Text(
+                  'Pilih',
+                  style: TextStyle(color: AppColor.greenPrimary),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.water),
+            const SizedBox(width: 8),
+            const Text('Durasi: '),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 8.0,
+                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 10.0),
+                ),
+                child: Obx(
+                  () => Slider(
+                    value: durationIrg.value.toDouble(),
+                    min: 5,
+                    max: 60,
+                    divisions: 11,
+                    label: '${durationIrg.value} menit',
+                    onChanged: (value) {
+                      durationIrg.value = value.toInt();
+                    },
+                    activeColor: AppColor.greenPrimary,
+                    inactiveColor: AppColor.greenPrimary.withAlpha(100),
+                  ),
+                ),
+              ),
+            ),
+            Obx(() => Text('${durationIrg.value} menit')),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: AppFilledButton(
+            onPressed: () => saveSchedule(),
+            text: 'Simpan Jadwal',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildNoPermissionWidget() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.orange.shade600),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini. Hubungi pemilik untuk mendapatkan akses.',
+              style: TextStyle(color: Colors.orange.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

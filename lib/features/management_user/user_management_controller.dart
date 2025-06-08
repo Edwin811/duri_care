@@ -113,8 +113,66 @@ class UserManagementController extends GetxController {
         title: 'Error',
         message: 'Failed to load users: ${e.toString()}',
       );
+      print('UM - CONTROLLER: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Fallback method
+  Future<void> _fetchUsersManually() async {
+    try {
+      // 1. Get all users
+      final allUsers = await _supabase
+          .from('users')
+          .select('id, email, fullname, created_at')
+          .order('created_at', ascending: false);
+
+      // 2. Get owner role id
+      final ownerRole =
+          await _supabase
+              .from('roles')
+              .select('id')
+              .eq('name', 'owner')
+              .single();
+
+      final ownerRoleId = ownerRole['id'];
+
+      // 3. Get user_roles untuk filter owner
+      final userRoles = await _supabase
+          .from('user_roles')
+          .select('user_id, role_id, roles(id, name)')
+          .neq('role_id', ownerRoleId);
+
+      // 4. Combine data
+      final uniqueUsers = <String, UserModel>{};
+
+      for (final userRole in userRoles) {
+        final userId = userRole['user_id'] as String;
+
+        // Find corresponding user data
+        final userData = allUsers.cast<Map<String, dynamic>?>().firstWhere(
+          (user) => user?['id'] == userId,
+          orElse: () => null,
+        );
+
+        if (userData != null) {
+          final modifiedUserData = {...userData, 'roles': userRole['roles']};
+
+          final user = UserModel.fromMap(modifiedUserData);
+          if (!uniqueUsers.containsKey(user.id)) {
+            uniqueUsers[user.id] = user;
+          }
+        }
+      }
+
+      users.value = uniqueUsers.values.toList();
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Error',
+        message: 'Failed to load users: ${e.toString()}',
+      );
+      print('UM - CONTROLLER Manual: $e');
     }
   }
 
@@ -419,6 +477,9 @@ class UserManagementController extends GetxController {
         try {
           if (isAdded) {
             await _userService.assignUserToZone(userId, zoneId);
+            DialogHelper.showSuccessDialog(
+              message: 'Berhasil mengizinkan zona',
+            );
           } else {
             await _userService.removeUserFromZone(userId, zoneId);
           }
