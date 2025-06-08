@@ -12,10 +12,8 @@ class DeviceInfo extends StatelessWidget {
   final String name;
   final RxInt total;
   final IconData icon;
-
   @override
   Widget build(BuildContext context) {
-    // Get screen size
     final Size screenSize = MediaQuery.of(context).size;
 
     return Container(

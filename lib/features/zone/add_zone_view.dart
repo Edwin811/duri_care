@@ -27,9 +27,9 @@ class AddZoneView extends GetView<ZoneController> {
           ),
           title: Text(
             'Tambah Zona Baru',
-            style: Theme.of(context).textTheme.titleLarge!.copyWith(
-              color: AppColor.white,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: AppColor.white),
           ),
           centerTitle: true,
           elevation: 0,
@@ -61,16 +61,15 @@ class AddZoneView extends GetView<ZoneController> {
                     ],
                   ),
                 ),
-                // Zone code selection
                 Text(
                   'Kode Zona',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
                   '* Kode Zona digunakan untuk menghubungkan dengan alat IoT',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium!.copyWith(color: Colors.grey.shade500),
+                  style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -119,7 +118,6 @@ class AddZoneView extends GetView<ZoneController> {
                   ),
                 ),
                 const SizedBox(height: 24.0),
-                // Submit button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -146,7 +144,6 @@ class AddZoneView extends GetView<ZoneController> {
                 ),
               ],
             ),
-            //
           ),
         ),
       ),

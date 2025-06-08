@@ -6,34 +6,23 @@ class AppThemes {
   final BuildContext _context;
 
   AppThemes._(this._context);
-
-  /// Get the AppThemes instance for the current context
   static AppThemes of(BuildContext context) {
     return AppThemes._(context);
   }
 
-  /// Whether the current theme is in dark mode
   bool get isDarkMode => Theme.of(_context).brightness == Brightness.dark;
 
-  /// Access to the color palette
   AppColors get colors => isDarkMode ? _darkColors : _lightColors;
 
-  /// Primary color shorthand
   Color get primary => colors.primary;
 
-  /// Access to text styles
   AppTextStyles get textStyle => AppTextStyles(_context);
 
-  /// Access to spacing utilities
   AppSpacing get spacing => AppSpacing();
 
-  /// Access to radius utilities
   AppRadius get radius => AppRadius();
-
-  /// Access to animation presets
   AppAnimations get animations => AppAnimations();
 
-  // Existing static methods remain unchanged
   static ColorScheme appColorScheme(ColorScheme colorScheme) => colorScheme
       .copyWith(surface: AppColor.white, primary: AppColor.greenPrimary);
 
@@ -121,7 +110,6 @@ class AppThemes {
       );
 }
 
-/// Color palette for the application
 class AppColors {
   final Color primary;
   final Color secondary;
@@ -190,7 +178,6 @@ final _darkColors = AppColors(
   splash: const Color(0xFF3977FE),
 );
 
-/// Text styles for the application
 class AppTextStyles {
   final BuildContext _context;
 
@@ -236,7 +223,6 @@ class AppTextStyles {
   );
 }
 
-/// Spacing utilities for consistent padding and margins
 class AppSpacing {
   final double xs = 4.0;
   final double sm = 8.0;
@@ -273,7 +259,6 @@ class AppSpacing {
   EdgeInsets get verticalXl => EdgeInsets.symmetric(vertical: xl);
 }
 
-/// Border radius utilities for consistent UI rounding
 class AppRadius {
   final double xs = 4.0;
   final double sm = 8.0;
@@ -295,7 +280,6 @@ class AppRadius {
   BorderRadius get allCircular => BorderRadius.circular(circular);
 }
 
-/// Animation presets for consistent motion design
 class AppAnimations {
   final Duration short = const Duration(milliseconds: 200);
   final Duration medium = const Duration(milliseconds: 300);

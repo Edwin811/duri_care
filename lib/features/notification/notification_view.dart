@@ -26,33 +26,8 @@ class NotificationView extends GetView<NotificationController> {
           IconButton(
             icon: const Icon(Icons.done_all, color: AppColor.white),
             tooltip: 'Tandai semua sebagai dibaca',
-            onPressed: () {
-              // _showMarkAllAsReadConfirmation(context);
-              DialogHelper.showConfirmationDialog(
-                title: 'Tandai Semua Dibaca',
-                message:
-                    'Apakah anda yakin menandai semua notifikasi sebagai dibaca?',
-                onConfirm: () {
-                  final userId =
-                      controller
-                          .notificationService
-                          .supabase
-                          .auth
-                          .currentUser
-                          ?.id;
-                  if (userId != null) {
-                    controller.markAllAsRead();
-                    controller.loadNotifications();
-                  } else {
-                    DialogHelper.showErrorDialog(
-                      message: 'Gagal menandai semua notifikasi sebagai dibaca',
-                    );
-                  }
-                },
-                onCancel: () {
-                  Get.back();
-                },
-              );
+            onPressed: () async {
+              await controller.markAllAsRead();
             },
           ),
         ],
@@ -118,8 +93,6 @@ Widget _buildNotificationCard(
   final isRead = notification.isRead;
   final createdAt = DateTime.parse(notification.createdAt);
   final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(createdAt);
-
-  // Determine the icon based on the notification content
   IconData notificationIcon = Icons.notifications;
   Color iconColor = AppColor.greenPrimary;
   final messageLower = notification.message.toLowerCase();
@@ -202,7 +175,9 @@ Widget _buildNotificationCard(
                   ),
                 IconButton(
                   onPressed:
-                      () => controller.showDeleteConfirmation(notification.id),
+                      () async {
+                        await controller.deleteNotification(notification.id);
+                      },
                   icon: const Icon(
                     Icons.delete_outline_rounded,
                     color: Colors.red,

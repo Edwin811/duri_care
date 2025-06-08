@@ -15,7 +15,6 @@ class HistoryController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Check if a zoneId was passed from navigation
     if (Get.arguments != null && Get.arguments['zoneId'] != null) {
       selectedZoneId.value = Get.arguments['zoneId'].toString();
       if (Get.arguments['zoneName'] != null) {
@@ -23,7 +22,6 @@ class HistoryController extends GetxController {
       }
       loadHistory();
     } else {
-      // No zone was passed, so load all zones and use the first one
       loadZones().then((_) {
         loadHistory();
       });
@@ -69,11 +67,9 @@ class HistoryController extends GetxController {
         final executedBy = history.executedBy;
         String userName = "Unknown";
 
-        // Try to get username from cache first
         if (userNameCache.containsKey(executedBy)) {
           userName = userNameCache[executedBy]!;
         } else {
-          // If not in cache, fetch from database
           try {
             final userProfile =
                 await _supabase
@@ -87,7 +83,6 @@ class HistoryController extends GetxController {
               userNameCache[executedBy] = userName;
             }
           } catch (e) {
-            // If error occurs getting user, just use the ID
             userName = 'User $executedBy';
           }
         }

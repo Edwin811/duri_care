@@ -42,35 +42,29 @@ class MainNavigationView extends GetView<NavigationHelper> {
           children: pages,
         ),
       ),
-      floatingActionButton: FutureBuilder<String>(
-        future: homeController.getRoleName(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink();
-          }
-          final userRole = snapshot.data ?? '';
-          final isOwner = userRole == 'owner';
-          return AnimatedSlide(
+      floatingActionButton: Obx(() {
+        final userRole = homeController.role.value;
+        final isOwner = userRole == 'owner';
+        return AnimatedSlide(
+          duration: const Duration(milliseconds: 300),
+          offset: isOwner ? Offset.zero : const Offset(0, 2),
+          curve: Curves.easeInOut,
+          child: AnimatedOpacity(
             duration: const Duration(milliseconds: 300),
-            offset: isOwner ? Offset.zero : const Offset(0, 2),
-            curve: Curves.easeInOut,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 300),
-              opacity: isOwner ? 1.0 : 0.0,
-              child:
-                  isOwner
-                      ? FloatingActionButton(
-                        onPressed: () {
-                          Get.toNamed('/add-zone');
-                        },
-                        backgroundColor: AppColor.greenPrimary,
-                        child: const Icon(Icons.add, color: AppColor.white),
-                      )
-                      : const SizedBox.shrink(),
-            ),
-          );
-        },
-      ),
+            opacity: isOwner ? 1.0 : 0.0,
+            child:
+                isOwner
+                    ? FloatingActionButton(
+                      onPressed: () {
+                        Get.toNamed('/add-zone');
+                      },
+                      backgroundColor: AppColor.greenPrimary,
+                      child: const Icon(Icons.add, color: AppColor.white),
+                    )
+                    : const SizedBox.shrink(),
+          ),
+        );
+      }),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Obx(
         () => Container(

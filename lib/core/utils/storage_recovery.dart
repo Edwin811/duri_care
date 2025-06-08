@@ -46,9 +46,7 @@ class StorageRecovery {
         for (final key in suspiciousKeys) {
           try {
             await box.remove(key);
-          } catch (removeError) {
-            // Silent error handling for individual key removal
-          }
+          } catch (removeError) {}
         }
         return true;
       } else {

@@ -12,7 +12,6 @@ class UserService extends GetxService {
 
   static UserService get to => Get.find<UserService>();
 
-  // ================= PROFILE =================
   Future<UserService> init() async {
     return this;
   }
@@ -74,7 +73,6 @@ class UserService extends GetxService {
     await _supabase.auth.signOut();
   }
 
-  // ================= USER MANAGEMENT =================
   Future<List<UserModel>> fetchAllUsers() async {
     try {
       final dbUsers = await _supabase.from('extended_users').select();
@@ -177,7 +175,6 @@ class UserService extends GetxService {
 
   Future<void> assignUserToZone(String userId, int zoneId) async {
     try {
-      // Check if assignment already exists
       final existing =
           await _supabase
               .from('zone_users')
@@ -187,7 +184,6 @@ class UserService extends GetxService {
               .maybeSingle();
 
       if (existing == null) {
-        // Only insert if it doesn't already exist
         await _supabase.from('zone_users').insert({
           'user_id': userId,
           'zone_id': zoneId,
@@ -214,7 +210,6 @@ class UserService extends GetxService {
     String permissionId,
   ) async {
     try {
-      // Check if permission already exists
       final existing =
           await _supabase
               .from('user_permissions')
@@ -224,7 +219,6 @@ class UserService extends GetxService {
               .maybeSingle();
 
       if (existing == null) {
-        // Only insert if it doesn't already exist
         await _supabase.from('user_permissions').insert({
           'user_id': userId,
           'permission_id': permissionId,
@@ -349,16 +343,13 @@ class UserService extends GetxService {
               .eq('user_id', userId)
               .eq('zone_id', zoneId)
               .maybeSingle();
-
       if (existing != null) {
-        // Update existing zone_users record with new permission value
         await _supabase
             .from('zone_users')
             .update({permissionKey: value})
             .eq('user_id', userId)
             .eq('zone_id', zoneId);
       } else {
-        // If no record exists, create one with the permission
         await _supabase.from('zone_users').insert({
           'user_id': userId,
           'zone_id': zoneId,

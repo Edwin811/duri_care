@@ -3,12 +3,10 @@ import 'package:get/get.dart';
 class HomeService extends GetxService {
   static HomeService get to => Get.find<HomeService>();
 
-  /// Initializes the home service
   Future<HomeService> init() async {
     return this;
   }
 
-  /// Returns the appropriate greeting based on the time of day
   String getGreeting() {
     final now = DateTime.now();
     final hour = now.hour;

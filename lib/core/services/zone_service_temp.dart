@@ -10,8 +10,7 @@ class ZoneService extends GetxService {
   static ZoneService get to => Get.find<ZoneService>();
 
   Future<ZoneService> init() async {
-    return this;
-  }
+    return this;  }
 
   Future<List<ZoneModel>> loadZones(String userId) async {
     final response = await _supabase

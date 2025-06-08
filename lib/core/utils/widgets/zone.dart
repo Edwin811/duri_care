@@ -19,9 +19,7 @@ class Zone extends GetView<ZoneController> {
   @override
   Widget build(BuildContext context) {
     final zoneIdStr = zoneData['id']?.toString() ?? '';
-
     return Obx(() {
-      // Find the current zone in the controller's zones list to get the latest data
       final zoneIndex = controller.zones.indexWhere(
         (z) => z['id'].toString() == zoneIdStr,
       );
@@ -47,7 +45,6 @@ class Zone extends GetView<ZoneController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // power button & timer
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -96,16 +93,12 @@ class Zone extends GetView<ZoneController> {
                     ),
                   ],
                 ),
-                // zone name
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     zoneData['name'],
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      color:
-                          isStatus
-                              ? AppColor.white
-                              : AppColor.greenPrimary,
+                      color: isStatus ? AppColor.white : AppColor.greenPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.w500,
                       decoration: TextDecoration.none,

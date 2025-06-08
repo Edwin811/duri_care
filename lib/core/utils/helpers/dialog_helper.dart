@@ -83,9 +83,7 @@ abstract class DialogHelper {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (Get.context != null) {
           showActualDialog();
-        } else {
-          // Context still not available after post frame callback
-        }
+        } else {}
       });
       return;
     }

@@ -165,7 +165,6 @@ class ProfileView extends GetView<ProfileController> {
                   ),
                 ),
 
-                // Settings Section
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 15, top: 10),
                   child: Text(
@@ -260,12 +259,7 @@ class ProfileView extends GetView<ProfileController> {
           backgroundColor: AppColor.greenPrimary.withAlpha(200),
           backgroundImage:
               isUrl ? NetworkImage('$profilePic&cache_key=$avatarKey') : null,
-          onBackgroundImageError:
-              isUrl
-                  ? (exception, stackTrace) {
-                    // Silent error handling for profile image loading
-                  }
-                  : null,
+          onBackgroundImageError: isUrl ? (exception, stackTrace) {} : null,
           child:
               !isUrl
                   ? Text(

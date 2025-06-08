@@ -3,12 +3,12 @@ import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
+import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
 
 class HomeController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
@@ -16,7 +16,7 @@ class HomeController extends GetxController {
   final RoleService _roleService = Get.find<RoleService>();
   final ScheduleService scheduleService = Get.find<ScheduleService>();
   final Rx<Upcomingschedule?> upcomingSchedule = Rx<Upcomingschedule?>(null);
-  final zoneController = Get.put(ZoneController());
+  final ZoneController zoneController = Get.find<ZoneController>();
   final supabase = Supabase.instance.client;
 
   final RxString username = ''.obs;
@@ -24,27 +24,51 @@ class HomeController extends GetxController {
   final RxInt staffCount = 0.obs;
 
   RxString ucapan = ''.obs;
-
   RxString profilePicture = ''.obs;
-
   RxBool isLoading = true.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadGreeting();
-    loadUpcomingSchedule();
-    getUsername();
-    getProfilePicture();
-    getRoleName();
-    // getStaffCount();
+
+    ever(authController.authState, _handleAuthStateChange);
+
+    if (authController.isAuthenticated) {
+      refreshUserSpecificData();
+    } else {
+      clearUserData();
+    }
   }
 
-  @override
-  void onReady() {
-    super.onReady();
-    getUsername();
-    getProfilePicture();
+  void _handleAuthStateChange(auth_state_enum.AuthState? authState) {
+    if (authState == auth_state_enum.AuthState.authenticated) {
+      refreshUserSpecificData();
+    } else if (authState == auth_state_enum.AuthState.unauthenticated) {
+      clearUserData();
+    }
+  }
+
+  void clearUserData() {
+    username.value = 'Guest';
+    role.value = '';
+    profilePicture.value = '';
+    upcomingSchedule.value = null;
+    staffCount.value = 0;
+  }
+
+  Future<void> refreshUserSpecificData() async {
+    isLoading.value = true;
+    try {
+      await loadUpcomingSchedule();
+      await getUsername();
+      await getProfilePicture();
+      await getRoleName();
+    } catch (e) {
+      debugPrintStack(label: 'Error refreshing user data: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void _loadGreeting() {
@@ -52,93 +76,102 @@ class HomeController extends GetxController {
   }
 
   Future<void> loadUpcomingSchedule() async {
+    if (!authController.isAuthenticated) {
+      upcomingSchedule.value = null;
+      return;
+    }
     try {
-      isLoading.value = true;
       final schedule = await scheduleService.getUpcomingScheduleWithZone();
-      if (schedule != null) {
-        upcomingSchedule.value = schedule;
-      } else {
-        upcomingSchedule.value = null;
-      }
+      upcomingSchedule.value = schedule;
     } catch (e) {
       upcomingSchedule.value = null;
-    } finally {
-      isLoading.value = false;
     }
   }
 
   Future<void> getUsername() async {
-    try {
-      final user = await UserService.to.getCurrentUser();
-      username.value = user?.fullname ?? 'Guest';
-      debugPrint('Username [HOME CONTROLLER]: ${username.value}');
-    } catch (e) {
+    if (!authController.isAuthenticated) {
       username.value = 'Guest';
+      return;
+    }
+    try {
+      final user = await UserService.to.getCurrentUser(forceRefresh: true);
+      username.value = user?.fullname ?? await authController.getUsername();
+    } catch (e) {
+      username.value = await authController.getUsername();
     }
   }
 
   String getInitialsFromName(String name) {
-    if (name.isEmpty) return '';
+    if (name.isEmpty || name == "Guest") return '?';
 
     final nameParts = name.trim().split(' ');
-    if (nameParts.isEmpty) return '';
+    if (nameParts.isEmpty) return '?';
 
     if (nameParts.length == 1) {
-      if (nameParts[0].length > 1) {
-        return nameParts[0].substring(0, 1).toUpperCase();
+      if (nameParts[0].isNotEmpty) {
+        return nameParts[0][0].toUpperCase();
       }
-      return nameParts[0].toUpperCase();
+      return '?';
     }
 
-    String firstInitial =
+    final firstInitial =
         nameParts[0].isNotEmpty ? nameParts[0][0].toUpperCase() : '';
-    String secondInitial =
+    final secondInitial =
         nameParts.length > 1 && nameParts[1].isNotEmpty
             ? nameParts[1][0].toUpperCase()
             : '';
 
+    if (firstInitial.isEmpty && secondInitial.isEmpty) return '?';
     return '$firstInitial$secondInitial';
   }
 
   Future<void> getProfilePicture() async {
+    if (!authController.isAuthenticated) {
+      profilePicture.value = '';
+      return;
+    }
     try {
-      final user = await UserService.to.getCurrentUser();
-      if (user?.profileUrl == null) {
-        profilePicture.value = '';
+      final user = await UserService.to.getCurrentUser(forceRefresh: true);
+      if (user?.profileUrl == null || user?.profileUrl?.isEmpty == true) {
+        profilePicture.value = getInitialsFromName(username.value);
       } else if (user!.profileUrl!.startsWith('http')) {
-        profilePicture.value = user.profileUrl!;
+        profilePicture.value =
+            '${user.profileUrl!}?timestamp=${DateTime.now().millisecondsSinceEpoch}';
       } else {
-        profilePicture.value = Supabase.instance.client.storage
+        final publicUrl = Supabase.instance.client.storage
             .from('image')
             .getPublicUrl(user.profileUrl!);
+        profilePicture.value =
+            '$publicUrl?timestamp=${DateTime.now().millisecondsSinceEpoch}';
       }
     } catch (e) {
-      profilePicture.value = '';
+      profilePicture.value = getInitialsFromName(username.value);
     }
   }
 
-  Future<String> getRoleName() async {
+  Future<void> getRoleName() async {
+    if (!authController.isAuthenticated) {
+      role.value = '';
+      return;
+    }
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId != null) {
         role.value = await _roleService.getRoleName(userId);
-        return role.value;
       } else {
         role.value = 'user';
-        return role.value;
       }
     } catch (e) {
-      return role.value;
+      role.value = 'user';
     }
   }
 
-  Future<void> refreshUser() async {
-    try {
-      await getUsername();
-      await getProfilePicture();
-      await getRoleName();
-    } catch (e) {
-      debugPrint('Gagal refresh user: $e');
-    }
+  Future<void> triggerUIRefresh() async {
+    if (!authController.isAuthenticated) return;
+    isLoading.value = true;
+    await getUsername();
+    await getProfilePicture();
+    await getRoleName();
+    isLoading.value = false;
   }
 }

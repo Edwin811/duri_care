@@ -48,7 +48,6 @@ class EditProfileView extends GetView<ProfileController> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                // Profile picture section
                 Obx(() {
                   return Stack(
                     children: [
@@ -106,7 +105,6 @@ class EditProfileView extends GetView<ProfileController> {
                   );
                 }),
                 const SizedBox(height: 32),
-                // Form
                 Form(
                   key: controller.profileKey,
                   child: Column(

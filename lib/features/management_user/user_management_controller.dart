@@ -36,7 +36,6 @@ class UserManagementController extends GetxController {
   final RxList<ZonePermissionModel> zonePermissions =
       <ZonePermissionModel>[].obs;
 
-  // Permission/zone change tracking fields
   final RxMap<int, bool> zoneChanges = <int, bool>{}.obs;
   final RxMap<String, bool> permissionChanges = <String, bool>{}.obs;
   final RxList<Map<String, dynamic>> zonePermissionChanges =
@@ -49,7 +48,6 @@ class UserManagementController extends GetxController {
   final RxBool passwordVisible = true.obs;
   final RxBool confirmPasswordVisible = true.obs;
 
-  // Form controllers
   late TextEditingController emailController;
   late TextEditingController fullnameController;
   late TextEditingController passwordController;
@@ -59,7 +57,6 @@ class UserManagementController extends GetxController {
   final Rx<UserModel?> selectedUser = Rx<UserModel?>(null);
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  // Helper to get filtered zones based on search query
   final RxString searchQuery = ''.obs;
 
   List<ZoneModel> get filteredZones {

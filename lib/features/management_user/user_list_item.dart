@@ -233,15 +233,20 @@ class UserListItem extends StatelessWidget {
   }
 
   String _getInitials() {
-    if (user.fullname == null || user.fullname!.isEmpty) {
+    if (user.fullname == null || user.fullname!.trim().isEmpty) {
       return '?';
     }
 
-    final nameParts = user.fullname!.split(' ');
-    if (nameParts.length > 1) {
-      return '${nameParts.first[0]}${nameParts.last[0]}'.toUpperCase();
+    final nameParts = user.fullname!.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (nameParts.isEmpty) {
+      return '?';
     }
 
-    return user.fullname![0].toUpperCase();
+    if (nameParts.length == 1) {
+      return nameParts[0][0].toUpperCase();
+    } else {
+      return (nameParts.first[0] + nameParts.last[0]).toUpperCase();
+    }
   }
 }

@@ -139,6 +139,7 @@ class ZoneView extends GetView<ZoneController> {
                                         'zoneId': zoneId,
                                         'zoneName': zoneName,
                                       },
+                                      parameters: {'zoneId': zoneId},
                                     );
                                   }
                                 },
