@@ -48,6 +48,7 @@ class EditProfileView extends GetView<ProfileController> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
+                // Avatar section - selalu bisa diedit
                 Obx(() {
                   return Stack(
                     children: [
@@ -105,90 +106,140 @@ class EditProfileView extends GetView<ProfileController> {
                   );
                 }),
                 const SizedBox(height: 32),
-                Form(
-                  key: controller.profileKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppLabelText(text: 'Nama Pengguna'),
-                      const SizedBox(height: 8),
-                      AppTextFormField(
-                        controller: controller.usernameController,
-                        hintText: 'Masukkan nama pengguna',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Nama pengguna tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                        prefixIcon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      AppLabelText(text: 'Email'),
-                      const SizedBox(height: 8),
-                      AppTextFormField(
-                        controller: controller.emailController,
-                        hintText: 'Masukkan email',
-                        validator:
-                            (value) => controller.validateEmail(value ?? ''),
-                        prefixIcon: Icons.email_outlined,
-                      ),
-                      const SizedBox(height: 16),
-                      AppLabelText(text: 'Password'),
-                      AppSpacing.sm,
-                      Obx(
-                        () => AppTextFormField(
-                          controller: controller.passwordController,
-                          obscureText: controller.isPasswrodVisible.value,
-                          hintText: 'Masukkan password',
-                          prefixIcon: Icons.lock_outline,
-                          suffixIcon: IconButton(
-                            icon:
-                                controller.isPasswrodVisible.value
-                                    ? const Icon(Icons.visibility)
-                                    : const Icon(Icons.visibility_off),
-                            onPressed:
-                                () => controller.togglePasswordVisibility(),
-                          ),
-                          validator: (value) {
-                            if (value != null && value.isNotEmpty) {
-                              return controller.validatePassword(value);
-                            }
-                            return null;
-                          },
+
+                Obx(
+                  () => Form(
+                    key: controller.profileKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nama Pengguna - disabled untuk employee
+                        AppLabelText(text: 'Nama Pengguna'),
+                        const SizedBox(height: 8),
+                        AppTextFormField(
+                          controller: controller.usernameController,
+                          hintText: 'Masukkan nama pengguna',
+                          enabled:
+                              controller
+                                  .canEditBasicInfo, // false untuk employee
+                          prefixIcon: Icons.person_outline,
+                          validator:
+                              controller.canEditBasicInfo
+                                  ? (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Nama pengguna tidak boleh kosong';
+                                    }
+                                    return null;
+                                  }
+                                  : null,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      AppLabelText(text: 'Konfirmasi Password'),
-                      AppSpacing.sm,
-                      Obx(
-                        () => AppTextFormField(
-                          controller: controller.confirmPasswordController,
-                          obscureText:
-                              controller.isConfirmPasswordVisible.value,
-                          hintText: 'Masukkan konfirmasi password',
-                          prefixIcon: Icons.lock_outline,
-                          suffixIcon: IconButton(
-                            icon:
-                                controller.isConfirmPasswordVisible.value
-                                    ? const Icon(Icons.visibility)
-                                    : const Icon(Icons.visibility_off),
-                            onPressed:
-                                () =>
-                                    controller
-                                        .toggleConfirmPasswordVisibility(),
-                          ),
-                          validator: (value) {
-                            return controller.validateConfirmPassword(
-                              value ?? '',
-                            );
-                          },
+                        const SizedBox(height: 16),
+
+                        // Email - disabled untuk employee
+                        AppLabelText(text: 'Email'),
+                        const SizedBox(height: 8),
+                        AppTextFormField(
+                          controller: controller.emailController,
+                          hintText: 'Masukkan email',
+                          enabled:
+                              controller
+                                  .canEditBasicInfo, // false untuk employee
+                          prefixIcon: Icons.email_outlined,
+                          validator:
+                              controller.canEditBasicInfo
+                                  ? (value) =>
+                                      controller.validateEmail(value ?? '')
+                                  : null,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+
+                        if (controller.isOwner) ...[
+                          const SizedBox(height: 16),
+                          AppLabelText(text: 'Password'),
+                          AppSpacing.sm,
+                          AppTextFormField(
+                            controller: controller.passwordController,
+                            obscureText: controller.isPasswrodVisible.value,
+                            hintText: 'Masukkan password',
+                            prefixIcon: Icons.lock_outline,
+                            suffixIcon: IconButton(
+                              icon:
+                                  controller.isPasswrodVisible.value
+                                      ? const Icon(Icons.visibility)
+                                      : const Icon(Icons.visibility_off),
+                              onPressed:
+                                  () => controller.togglePasswordVisibility(),
+                            ),
+                            validator: (value) {
+                              if (value != null && value.isNotEmpty) {
+                                return controller.validatePassword(value);
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AppLabelText(text: 'Konfirmasi Password'),
+                          AppSpacing.sm,
+                          AppTextFormField(
+                            controller: controller.confirmPasswordController,
+                            obscureText:
+                                controller.isConfirmPasswordVisible.value,
+                            hintText: 'Masukkan konfirmasi password',
+                            prefixIcon: Icons.lock_outline,
+                            suffixIcon: IconButton(
+                              icon:
+                                  controller.isConfirmPasswordVisible.value
+                                      ? const Icon(Icons.visibility)
+                                      : const Icon(Icons.visibility_off),
+                              onPressed:
+                                  () =>
+                                      controller
+                                          .toggleConfirmPasswordVisibility(),
+                            ),
+                            validator: (value) {
+                              return controller.validateConfirmPassword(
+                                value ?? '',
+                              );
+                            },
+                          ),
+                        ],
+
+                        // Info untuk employee
+                        if (controller.isEmployee) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColor.greenPrimary.withAlpha(50),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColor.greenPrimary),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: AppColor.greenPrimary,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Sebagai pegawai, Anda hanya dapat mengubah foto profil. Untuk mengubah data lainnya, hubungi pemilik.',
+                                    style: TextStyle(
+                                      color: AppColor.greenPrimary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
                 AppFilledButton(
                   onPressed: () {

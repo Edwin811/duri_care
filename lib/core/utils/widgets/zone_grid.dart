@@ -1,4 +1,5 @@
 import 'package:duri_care/core/utils/widgets/zone.dart';
+import 'package:duri_care/features/home/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -50,20 +51,7 @@ class ZoneGrid extends GetView<ZoneController> {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
-              child: Text(
-                'Silahkan tambahkan zona baru dengan menekan button plus di bawah',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
+            _buildRoleBasedMessage(context),
           ],
         ),
       );
@@ -98,5 +86,38 @@ class ZoneGrid extends GetView<ZoneController> {
         );
       },
     );
+  }
+
+  Widget _buildRoleBasedMessage(BuildContext context) {
+    return Obx(() {
+      final homeController = Get.find<HomeController>();
+      final userRole = homeController.role.value;
+
+      String message;
+      if (userRole == 'owner') {
+        message =
+            'Silahkan tambahkan zona baru dengan menekan button plus di bawah';
+      } else if (userRole == 'employee') {
+        message =
+            'Silahkan hubungi pemilik untuk mengakses zona';
+      } else {
+        message = 'Hubungi administrator untuk menambahkan zona';
+      }
+
+      return Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
+        ),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      );
+    });
   }
 }

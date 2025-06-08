@@ -31,7 +31,7 @@ class AuthController extends GetxController {
         authState.value = auth_state_enum.AuthState.authenticated;
         _refreshUserData();
       } else if (event == AuthChangeEvent.signedOut) {
-        _clearCacheAndResetStates(); // Updated method name
+        _clearCacheAndResetStates();
         authState.value = auth_state_enum.AuthState.unauthenticated;
       } else {
         if (AuthService.to.currentUser == null) {
@@ -81,7 +81,7 @@ class AuthController extends GetxController {
     if (response.user != null) {
       await SessionService.to.saveSession(response.session!);
       authState.value = auth_state_enum.AuthState.authenticated;
-      await _refreshUserData(); // Refresh data after state is set
+      await _refreshUserData();
     } else {
       authState.value = auth_state_enum.AuthState.unauthenticated;
     }
@@ -199,4 +199,8 @@ class AuthController extends GetxController {
     _lastUsernameFetch = null;
     getUsername();
   }
+
+  String get currentUsername => _cachedUsername.value ?? 'Guest';
+  String get currentEmail => _cachedEmail.value ?? '';
+  String? get currentRole => _cachedRole.value;
 }

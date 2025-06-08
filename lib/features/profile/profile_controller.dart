@@ -27,6 +27,12 @@ class ProfileController extends GetxController {
   late TextEditingController emailController;
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
+  bool get isOwner => role.value.toLowerCase() == 'owner';
+  bool get isEmployee =>
+      role.value.toLowerCase() == 'employee' ||
+      role.value.toLowerCase() == 'pegawai';
+  bool get canEditBasicInfo => isOwner;
+  bool get canEditPassword => isOwner;
 
   final profileKey = GlobalKey<FormState>(debugLabel: 'profileFormKey');
   final Rx<File?> imageFile = Rx<File?>(null);
@@ -96,47 +102,57 @@ class ProfileController extends GetxController {
   }
 
   Future<void> _initializeProfileData({bool forceServerRefresh = false}) async {
-    username.value = await authController.getUsername();
-    final user = await _userService.getCurrentUser(
-      forceRefresh: forceServerRefresh,
-    );
+    try {
+      final user = await _userService.getCurrentUser(
+        forceRefresh: forceServerRefresh,
+      );
 
-    if (user != null) {
-      username.value = user.fullname ?? await authController.getUsername();
-      email.value = user.email ?? await authController.getEmail();
-      role.value = user.roleName ?? await authController.getRole() ?? 'Pegawai';
+      if (user != null) {
+        username.value = user.fullname ?? '';
+        email.value = user.email ?? '';
+        role.value = user.roleName ?? 'Pegawai';
 
-      if (user.profileUrl != null && user.profileUrl!.isNotEmpty) {
-        String rawUrl;
-        if (user.profileUrl!.startsWith('http')) {
-          rawUrl = user.profileUrl!;
-        } else {
-          rawUrl = Supabase.instance.client.storage
-              .from('image')
-              .getPublicUrl(user.profileUrl!);
-        }
+        if (user.profileUrl != null && user.profileUrl!.isNotEmpty) {
+          String rawUrl;
+          if (user.profileUrl!.startsWith('http')) {
+            rawUrl = user.profileUrl!;
+          } else {
+            rawUrl = Supabase.instance.client.storage
+                .from('image')
+                .getPublicUrl(user.profileUrl!);
+          }
 
-        if (rawUrl.isNotEmpty) {
-          final baseUrl = rawUrl.split('?')[0];
-          final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-          final randomSuffix = (timestamp.hashCode % 10000).toString();
-          profilePicture.value =
-              '$baseUrl?v=$timestamp&t=${DateTime.now().microsecondsSinceEpoch}&r=$randomSuffix';
+          if (rawUrl.isNotEmpty) {
+            final baseUrl = rawUrl.split('?')[0];
+            final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
+            final randomSuffix = (timestamp.hashCode % 10000).toString();
+            profilePicture.value =
+                '$baseUrl?v=$timestamp&t=${DateTime.now().microsecondsSinceEpoch}&r=$randomSuffix';
+          } else {
+            profilePicture.value = '';
+          }
         } else {
           profilePicture.value = '';
         }
       } else {
+        // Fallback
+        username.value = '';
+        email.value = '';
+        role.value = 'Pegawai';
         profilePicture.value = '';
       }
-    } else {
-      username.value = await authController.getUsername();
-      email.value = await authController.getEmail();
-      role.value = await authController.getRole() ?? 'Pegawai';
-      profilePicture.value = '';
-    }
 
-    usernameController.text = username.value;
-    emailController.text = email.value;
+      usernameController.text = username.value;
+      emailController.text = email.value;
+    } catch (e) {
+      username.value = '';
+      email.value = '';
+      role.value = 'Pegawai';
+      profilePicture.value = '';
+
+      usernameController.text = username.value;
+      emailController.text = email.value;
+    }
   }
 
   String getInitialsFromName(String name) {
@@ -182,99 +198,129 @@ class ProfileController extends GetxController {
   }
 
   Future<void> updateProfile() async {
-    final user = _userService.getCurrentUserRaw();
-    if (user == null) return;
-
-    if (!profileKey.currentState!.validate()) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message:
-            'Form tidak valid. Mohon periksa kembali data yang dimasukkan.',
-      );
-      return;
-    }
-
-    if (passwordController.text.isNotEmpty &&
-        passwordController.text != confirmPasswordController.text) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message: 'Password dan konfirmasi password tidak sesuai.',
-      );
-      return;
-    }
-
-    if (emailController.text != email.value) {
-      try {
-        bool isEmailExists = await _userService.isEmailAlreadyExists(
-          emailController.text,
-        );
-        if (isEmailExists) {
-          DialogHelper.showErrorDialog(
-            title: 'Error',
-            message: 'Gunakan Email lain yang belum terdaftar.',
-          );
-          return;
-        }
-      } catch (e) {
+    try {
+      final user = _userService.getCurrentUserRaw();
+      if (user == null) {
         DialogHelper.showErrorDialog(
           title: 'Error',
-          message: 'Gagal memeriksa email: ${e.toString()}',
+          message: 'User tidak ditemukan. Silakan login ulang.',
         );
         return;
       }
-    }
 
-    Get.dialog(
-      const Center(child: CircularProgressIndicator(color: Colors.white)),
-      barrierDismissible: false,
-    );
+      if (!profileKey.currentState!.validate()) {
+        DialogHelper.showErrorDialog(
+          title: 'Error',
+          message:
+              'Form tidak valid. Mohon periksa kembali data yang dimasukkan.',
+        );
+        return;
+      }
 
-    try {
-      String? uploadedImageStoragePath;
-      if (imageFile.value != null) {
-        uploadedImageStoragePath = await _userService.uploadProfileImage(
-          imageFile.value!,
+      if (isOwner &&
+          passwordController.text.isNotEmpty &&
+          passwordController.text != confirmPasswordController.text) {
+        DialogHelper.showErrorDialog(
+          title: 'Error',
+          message: 'Password dan konfirmasi password tidak sesuai.',
+        );
+        return;
+      }
+
+      if (isOwner &&
+          emailController.text.isNotEmpty &&
+          emailController.text != email.value) {
+        try {
+          final emailText = emailController.text.trim();
+          if (emailText.isNotEmpty) {
+            bool isEmailExists = await _userService.isEmailAlreadyExists(
+              emailText,
+            );
+            if (isEmailExists) {
+              DialogHelper.showErrorDialog(
+                title: 'Error',
+                message: 'Gunakan Email lain yang belum terdaftar.',
+              );
+              return;
+            }
+          }
+        } catch (e) {
+          DialogHelper.showErrorDialog(
+            title: 'Error',
+            message: 'Gagal memeriksa email: ${e.toString()}',
+          );
+          return;
+        }
+      }
+
+      Get.dialog(
+        const Center(child: CircularProgressIndicator(color: Colors.white)),
+        barrierDismissible: false,
+      );
+
+      try {
+        String? uploadedImageStoragePath;
+        if (imageFile.value != null) {
+          uploadedImageStoragePath = await _userService.uploadProfileImage(
+            imageFile.value!,
+          );
+        }
+
+        await _userService.updateUserProfile(
+          email:
+              isOwner && emailController.text != email.value
+                  ? emailController.text
+                  : null,
+          password:
+              isOwner && passwordController.text.isNotEmpty
+                  ? passwordController.text
+                  : null,
+          fullname:
+              isOwner && usernameController.text.isNotEmpty
+                  ? usernameController.text
+                  : usernameController.text,
+          profileImageUrl: uploadedImageStoragePath,
+        );
+
+        imageFile.value = null;
+        clearImageCache();
+
+        await forceRefreshProfile();
+
+        if (Get.isRegistered<HomeController>()) {
+          final homeController = Get.find<HomeController>();
+          await homeController.refreshUserSpecificData();
+        }
+
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+
+        if (Get.previousRoute.isNotEmpty) {
+          Get.back();
+        }
+
+        await Future.delayed(const Duration(milliseconds: 100));
+        DialogHelper.showSuccessDialog(
+          title: 'Berhasil',
+          message:
+              isEmployee
+                  ? 'Foto profil berhasil diperbarui'
+                  : 'Profil berhasil diperbarui',
+        );
+      } catch (e) {
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+        DialogHelper.showErrorDialog(
+          title: 'Error',
+          message: 'Gagal memperbarui profil: ${e.toString()}',
         );
       }
-      await _userService.updateUserProfile(
-        email:
-            emailController.text != email.value ? emailController.text : null,
-        password:
-            passwordController.text.isNotEmpty ? passwordController.text : null,
-        fullname: usernameController.text,
-        profileImageUrl: uploadedImageStoragePath,
-      );
-
-      imageFile.value = null;
-      clearImageCache();
-
-      await forceRefreshProfile();
-
-      if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        await homeController.refreshUserSpecificData();
-      }
-
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-
-      if (Get.previousRoute.isNotEmpty) {
-        Get.back();
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      DialogHelper.showSuccessDialog(
-        title: 'Berhasil',
-        message: 'Profil berhasil diperbarui',
-      );
     } catch (e) {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Gagal memperbarui profil: ${e.toString()}',
+        message: 'Terjadi kesalahan: ${e.toString()}',
       );
     }
   }
@@ -370,10 +416,17 @@ class ProfileController extends GetxController {
         title: 'Keluar Aplikasi?',
         message: 'Apakah anda yakin ingin keluar dari aplikasi ini?',
         onConfirm: () async {
-          disposeControllerResources();
-          await _userService.signOut();
-          authController.logout();
-          navigationHelper.resetIndex();
+          Get.back();
+          try {
+            disposeControllerResources();
+            await authController.logout();
+            navigationHelper.resetIndex();
+          } catch (e) {
+            DialogHelper.showErrorDialog(
+              title: 'Error',
+              message: 'Gagal keluar: ${e.toString()}',
+            );
+          }
         },
         onCancel: () {
           Get.back();
@@ -393,15 +446,21 @@ class ProfileController extends GetxController {
       emailController.clear();
       passwordController.clear();
       confirmPasswordController.clear();
-    } catch (e) {}
+    } catch (e) {
+      // Ignore disposal errors
+    }
   }
 
   @override
   void onClose() {
-    usernameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
+    try {
+      usernameController.dispose();
+      emailController.dispose();
+      passwordController.dispose();
+      confirmPasswordController.dispose();
+    } catch (e) {
+      // Ignore disposal errors
+    }
     super.onClose();
   }
 }
