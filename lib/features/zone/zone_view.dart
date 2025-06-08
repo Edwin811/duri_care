@@ -17,7 +17,6 @@ class ZoneView extends GetView<ZoneController> {
     final isSmallScreen = screenWidth < 360;
     final isLargeScreen = screenWidth > 414;
 
-    // Responsive padding
     final horizontalPadding =
         isSmallScreen
             ? 12.0
@@ -26,7 +25,6 @@ class ZoneView extends GetView<ZoneController> {
             : 16.0;
     final cardPadding = isSmallScreen ? 16.0 : 20.0;
 
-    // Responsive spacing
     final smallSpacing = isSmallScreen ? 8.0 : 12.0;
     final mediumSpacing = isSmallScreen ? 12.0 : 16.0;
     final largeSpacing = isSmallScreen ? 16.0 : 24.0;
@@ -204,7 +202,6 @@ class ZoneView extends GetView<ZoneController> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header row - responsive layout
                                   isSmallScreen
                                       ? Column(
                                         crossAxisAlignment:
@@ -303,7 +300,7 @@ class ZoneView extends GetView<ZoneController> {
                                       ),
                                   SizedBox(
                                     height: isSmallScreen ? 16 : 20,
-                                  ), // Slider section - responsive layout
+                                  ),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -326,7 +323,6 @@ class ZoneView extends GetView<ZoneController> {
                                         ],
                                       ),
                                       SizedBox(height: smallSpacing),
-                                      // Slider with value display
                                       Row(
                                         children: [
                                           Expanded(
