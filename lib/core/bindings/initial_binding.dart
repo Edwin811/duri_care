@@ -9,6 +9,7 @@ import 'package:duri_care/core/services/zone_service.dart';
 import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/error/network_controller.dart';
+import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:get/get.dart';
 
 class InitialBinding implements Bindings {
@@ -22,9 +23,10 @@ class InitialBinding implements Bindings {
     Get.put(RoleService(), permanent: true);
     Get.put(ScheduleService(), permanent: true);
     Get.put(NotificationService(), permanent: true);
-    
+
     Get.put(NetworkController(), permanent: true);
     Get.put(AuthController(), permanent: true);
+    Get.put(NotificationController(), permanent: true);
     Get.put(NavigationHelper(), permanent: true);
   }
 }

@@ -138,7 +138,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 20),
                 Container(
-                  height: MediaQuery.of(context).size.height * 0.25,
+                  height: MediaQuery.of(context).size.height * 0.26,
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

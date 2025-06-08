@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
@@ -6,6 +7,7 @@ import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
+import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
 import 'package:get/get.dart';
@@ -29,7 +31,6 @@ class HomeController extends GetxController {
   RxString ucapan = ''.obs;
   RxString profilePicture = ''.obs;
   RxBool isLoading = true.obs;
-
   @override
   void onInit() {
     super.onInit();
@@ -41,6 +42,25 @@ class HomeController extends GetxController {
       refreshUserSpecificData();
     } else {
       clearUserData();
+    }
+
+    _setupNotificationSync();
+  }
+
+  void _setupNotificationSync() {
+    if (Get.isRegistered<NotificationController>()) {
+      final notificationController = Get.find<NotificationController>();
+
+      // Initial sync
+      unreadCount.value = notificationController.unreadCount.value;
+      hasUnreadNotifications.value =
+          notificationController.hasUnreadNotifications;
+
+      // Listen to changes in notification controller
+      ever(notificationController.unreadCount, (int count) {
+        unreadCount.value = count;
+        hasUnreadNotifications.value = count > 0;
+      });
     }
   }
 
@@ -190,9 +210,12 @@ class HomeController extends GetxController {
     }
 
     try {
-      // Simulasi count notifikasi - nanti bisa diganti dengan API call
-      unreadCount.value = 3;
-      hasUnreadNotifications.value = unreadCount.value > 0;
+      if (Get.isRegistered<NotificationController>()) {
+        final notificationController = Get.find<NotificationController>();
+        await notificationController.loadNotifications();
+      } else {
+        await refreshNotificationCount();
+      }
     } catch (e) {
       unreadCount.value = 0;
       hasUnreadNotifications.value = false;
@@ -214,7 +237,6 @@ class HomeController extends GetxController {
   //     print('🔔 Error getting FCM token: $e');
   //   }
   // }
-
   Future<void> triggerUIRefresh() async {
     if (!authController.isAuthenticated) return;
     isLoading.value = true;
@@ -223,5 +245,49 @@ class HomeController extends GetxController {
     await getRoleName();
     await _loadNotificationCount();
     isLoading.value = false;
+  }
+
+  Future<void> refreshNotificationCount() async {
+    if (!authController.isAuthenticated) return;
+
+    try {
+      final notificationService = Get.find<NotificationService>();
+      final userId = supabase.auth.currentUser?.id;
+
+      if (userId != null) {
+        final notifications = await notificationService.getUserNotifications(
+          userId,
+        );
+        final count = notifications.where((n) => !n.isRead).length;
+        unreadCount.value = count;
+        hasUnreadNotifications.value = count > 0;
+
+        if (Get.isRegistered<NotificationController>()) {
+          final notificationController = Get.find<NotificationController>();
+          notificationController.unreadCount.value = count;
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  void onNotificationRead() {
+    if (unreadCount.value > 0) {
+      unreadCount.value = unreadCount.value - 1;
+      hasUnreadNotifications.value = unreadCount.value > 0;
+    }
+  }
+
+  void onAllNotificationsRead() {
+    unreadCount.value = 0;
+    hasUnreadNotifications.value = false;
+  }
+
+  void onNotificationDeleted(bool wasUnread) {
+    if (wasUnread && unreadCount.value > 0) {
+      unreadCount.value = unreadCount.value - 1;
+      hasUnreadNotifications.value = unreadCount.value > 0;
+    }
   }
 }
