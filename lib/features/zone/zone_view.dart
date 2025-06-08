@@ -10,10 +10,26 @@ import 'zone_controller.dart';
 class ZoneView extends GetView<ZoneController> {
   const ZoneView({super.key});
   static const String route = '/zone';
-
   @override
   Widget build(BuildContext context) {
     final zoneId = Get.parameters['zoneId'];
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isLargeScreen = screenWidth > 414;
+
+    // Responsive padding
+    final horizontalPadding =
+        isSmallScreen
+            ? 12.0
+            : isLargeScreen
+            ? 24.0
+            : 16.0;
+    final cardPadding = isSmallScreen ? 16.0 : 20.0;
+
+    // Responsive spacing
+    final smallSpacing = isSmallScreen ? 8.0 : 12.0;
+    final mediumSpacing = isSmallScreen ? 12.0 : 16.0;
+    final largeSpacing = isSmallScreen ? 16.0 : 24.0;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (zoneId != null && zoneId.isNotEmpty) {
@@ -139,12 +155,12 @@ class ZoneView extends GetView<ZoneController> {
                   )
                   : SingleChildScrollView(
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(horizontalPadding),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
+                            padding: EdgeInsets.only(right: smallSpacing),
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: AppFilledButton(
@@ -167,155 +183,230 @@ class ZoneView extends GetView<ZoneController> {
                                 },
                                 icon: Icons.history,
                                 text: 'Riwayat',
-                                textSize: 16,
-                                width: 135,
-                                height: 40,
+                                textSize: isSmallScreen ? 14 : 16,
+                                width: isSmallScreen ? 120 : 135,
+                                height: isSmallScreen ? 36 : 40,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: mediumSpacing),
                           Card(
                             color: AppColor.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(
+                                isSmallScreen ? 12 : 16,
+                              ),
                               side: BorderSide(color: AppColor.greenPrimary),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(cardPadding),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: AppColor.greenPrimary
-                                              .withAlpha(70),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                  // Header row - responsive layout
+                                  isSmallScreen
+                                      ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(
+                                              isSmallScreen ? 8 : 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColor.greenPrimary
+                                                  .withAlpha(70),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.timer,
+                                              color: AppColor.greenPrimary,
+                                              size: isSmallScreen ? 20 : 24,
+                                            ),
                                           ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.timer,
-                                          color: AppColor.greenPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Durasi Penyiraman Manual',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                                color: AppColor.greenPrimary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Atur durasi penyiraman manual untuk zona ini',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.water_drop,
-                                        size: 20,
-                                        color: Colors.black54,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Text(
-                                        'Durasi:',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: SliderTheme(
-                                          data: SliderThemeData(
-                                            trackHeight: 8.0,
-                                            thumbShape:
-                                                const RoundSliderThumbShape(
-                                                  enabledThumbRadius: 10.0,
+                                          SizedBox(height: smallSpacing),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Durasi Penyiraman Manual',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize:
+                                                      isSmallScreen ? 16 : 18,
+                                                  color: AppColor.greenPrimary,
                                                 ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                'Atur durasi penyiraman manual untuk zona ini',
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      isSmallScreen ? 12 : 14,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          child: Obx(
-                                            () => Slider(
-                                              value:
-                                                  controller
-                                                              .manualDuration
-                                                              .value <
-                                                          1
-                                                      ? 1.0
-                                                      : controller
-                                                              .manualDuration
-                                                              .value >
-                                                          60
-                                                      ? 60.0
-                                                      : controller
-                                                          .manualDuration
-                                                          .value
-                                                          .toDouble(),
-                                              min: 1,
-                                              max: 60,
-                                              divisions: 60,
-                                              label:
-                                                  '${controller.manualDuration.value} menit',
-                                              onChanged: (val) {
-                                                controller
-                                                    .manualDuration
-                                                    .value = val.round();
-                                              },
-                                              activeColor:
-                                                  AppColor.greenPrimary,
-                                              inactiveColor: AppColor
-                                                  .greenPrimary
-                                                  .withAlpha(100),
+                                        ],
+                                      )
+                                      : Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(
+                                              isSmallScreen ? 8 : 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColor.greenPrimary
+                                                  .withAlpha(70),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.timer,
+                                              color: AppColor.greenPrimary,
+                                              size: isSmallScreen ? 20 : 24,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(width: mediumSpacing),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Durasi Penyiraman Manual',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize:
+                                                        isSmallScreen ? 16 : 18,
+                                                    color:
+                                                        AppColor.greenPrimary,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  'Atur durasi penyiraman manual untuk zona ini',
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        isSmallScreen ? 12 : 14,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColor.greenPrimary,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
+                                  SizedBox(
+                                    height: isSmallScreen ? 16 : 20,
+                                  ), // Slider section - responsive layout
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.water_drop,
+                                            size: isSmallScreen ? 18 : 20,
+                                            color: Colors.black54,
                                           ),
-                                        ),
-                                        child: Obx(
-                                          () => Text(
-                                            '${controller.manualDuration.value} menit',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                          SizedBox(width: smallSpacing),
+                                          Text(
+                                            'Durasi:',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: isSmallScreen ? 14 : 15,
                                             ),
                                           ),
-                                        ),
+                                        ],
+                                      ),
+                                      SizedBox(height: smallSpacing),
+                                      // Slider with value display
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: SliderTheme(
+                                              data: SliderThemeData(
+                                                trackHeight:
+                                                    isSmallScreen ? 6.0 : 8.0,
+                                                thumbShape:
+                                                    RoundSliderThumbShape(
+                                                      enabledThumbRadius:
+                                                          isSmallScreen
+                                                              ? 8.0
+                                                              : 10.0,
+                                                    ),
+                                              ),
+                                              child: Obx(
+                                                () => Slider(
+                                                  value:
+                                                      controller
+                                                                  .manualDuration
+                                                                  .value <
+                                                              1
+                                                          ? 1.0
+                                                          : controller
+                                                                  .manualDuration
+                                                                  .value >
+                                                              60
+                                                          ? 60.0
+                                                          : controller
+                                                              .manualDuration
+                                                              .value
+                                                              .toDouble(),
+                                                  min: 1,
+                                                  max: 60,
+                                                  divisions: 60,
+                                                  label:
+                                                      '${controller.manualDuration.value} menit',
+                                                  onChanged: (val) {
+                                                    controller
+                                                        .manualDuration
+                                                        .value = val.round();
+                                                  },
+                                                  activeColor:
+                                                      AppColor.greenPrimary,
+                                                  inactiveColor: AppColor
+                                                      .greenPrimary
+                                                      .withAlpha(100),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: smallSpacing),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal:
+                                                  isSmallScreen ? 8 : 10,
+                                              vertical: isSmallScreen ? 4 : 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColor.greenPrimary,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Obx(
+                                              () => Text(
+                                                '${controller.manualDuration.value} menit',
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      isSmallScreen ? 12 : 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: mediumSpacing),
                                   Align(
                                     alignment: Alignment.centerLeft,
                                     child: AppFilledButton(
@@ -323,15 +414,19 @@ class ZoneView extends GetView<ZoneController> {
                                         await controller.saveManualDuration();
                                       },
                                       text: 'Simpan',
+                                      textSize: isSmallScreen ? 14 : 16,
+                                      height: isSmallScreen ? 40 : 44,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: largeSpacing),
                           SchedulingSectionWidget(controller: controller),
-                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: largeSpacing + (isLargeScreen ? 16 : 0),
+                          ),
                         ],
                       ),
                     ),

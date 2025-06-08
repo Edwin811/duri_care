@@ -111,7 +111,6 @@ class UserManagementController extends GetxController {
         title: 'Error',
         message: 'Failed to load users: ${e.toString()}',
       );
-      print('UM - CONTROLLER: $e');
     } finally {
       isLoading.value = false;
     }

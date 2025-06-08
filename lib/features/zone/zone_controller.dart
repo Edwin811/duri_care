@@ -47,13 +47,13 @@ class ZoneController extends GetxController {
 
   final isLoading = false.obs;
   final RxInt manualDuration = 5.obs;
-
   Map<String, dynamic> _zoneModelToMap(ZoneModel model) {
     return {
       'id': model.id,
       'zone_code': model.zoneCode,
       'name': model.name,
       'is_active': model.isActive,
+      'duration': model.duration,
       'created_at': model.createdAt?.toIso8601String(),
       'deleted_at': model.deletedAt?.toIso8601String(),
     };
@@ -65,11 +65,11 @@ class ZoneController extends GetxController {
     loadZones().then((_) {
       _setupZoneTimers();
       listenToZoneChanges();
-      countActive();
       loadAllZoneSchedules();
       if (zones.isNotEmpty) {
         final firstZone = zones.first;
         isActive.value = firstZone['is_active'] ?? false;
+        manualDuration.value = firstZone['duration'] ?? 5;
       }
     });
     loadSchedules();
@@ -91,12 +91,12 @@ class ZoneController extends GetxController {
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
 
         if (zone['is_active'] == true) {
-          startTimer(zoneId, durationIrg.value);
+          startTimer(zoneId, _getZoneDuration(zoneId));
         }
 
         final remainingTime = storage.read('timer_$zoneId');
         if (remainingTime != null && remainingTime > 0) {
-          startTimer(zoneId, durationIrg.value);
+          startTimer(zoneId, _getZoneDuration(zoneId));
         }
       }
     }
@@ -152,12 +152,12 @@ class ZoneController extends GetxController {
         isLoading.value = false;
         return;
       }
-
       ZoneModel zoneModel = await _zoneService.loadZoneById(zoneId, userId);
       Map<String, dynamic> zoneMap = _zoneModelToMap(zoneModel);
       zoneMap['timer'] = zoneTimers[zoneId]?.value ?? '00:00:00';
 
       selectedZone.value = zoneMap;
+      manualDuration.value = zoneModel.duration;
       loadSchedules();
       isActive.value = zoneModel.isActive;
       getSoilMoisture(zoneId);
@@ -435,10 +435,9 @@ class ZoneController extends GetxController {
       }
 
       storage.write('zone_${zoneIdStr}_is_active', newActiveState);
-
       if (newActiveState) {
         activeCount.value += 1;
-        startTimer(zoneIdStr, manualDuration.value);
+        startTimer(zoneIdStr, _getZoneDuration(zoneIdStr));
       } else {
         activeCount.value = activeCount.value > 0 ? activeCount.value - 1 : 0;
         stopTimer(zoneIdStr);
@@ -458,15 +457,21 @@ class ZoneController extends GetxController {
     if (zoneId == null) return;
 
     try {
+      await _zoneService.saveDuration(zoneId, manualDuration.value);
+
+      await loadZones();
+
+      if (zoneId.isNotEmpty) {
+        await loadZoneById(zoneId);
+      }
+
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Durasi berhasil disimpan.',
       );
-      storage.write('zone_${zoneId}_duration', manualDuration.value);
-      startTimer(zoneId, manualDuration.value);
     } catch (e) {
       DialogHelper.showErrorDialog(
-        title: 'Error Saving Duration',
+        title: 'Gagal Menyimpan Durasi',
         message: e.toString(),
       );
     }
@@ -498,9 +503,8 @@ class ZoneController extends GetxController {
             ...mappedUpdatedZone,
             'timer': existingZone['timer'] ?? '00:00:00',
           };
-
           if (updatedIsActive && _zoneTimers[updatedZoneId] == null) {
-            startTimer(updatedZoneId, durationIrg.value);
+            startTimer(updatedZoneId, _getZoneDuration(updatedZoneId));
           } else if (!updatedIsActive && _zoneTimers[updatedZoneId] != null) {
             stopTimer(updatedZoneId);
           }
@@ -518,6 +522,19 @@ class ZoneController extends GetxController {
       }
       zones.refresh();
     });
+  }
+
+  int _getZoneDuration(String zoneId) {
+    if (selectedZone.isNotEmpty && selectedZone['id']?.toString() == zoneId) {
+      return selectedZone['duration'] ?? manualDuration.value;
+    }
+
+    final zoneIndex = zones.indexWhere((z) => z['id']?.toString() == zoneId);
+    if (zoneIndex != -1) {
+      return zones[zoneIndex]['duration'] ?? manualDuration.value;
+    }
+
+    return manualDuration.value;
   }
 
   Future<void> startTimer(String zoneId, int durationMinutes) async {
@@ -600,6 +617,21 @@ class ZoneController extends GetxController {
         );
         if (updatedIndex != -1) {
           zones.refresh();
+        }
+
+        try {
+          await _zoneService.markScheduleAsExecuted(scheduleId);
+
+          if (selectedZone['id']?.toString() == zoneId) {
+            await loadSchedules();
+          }
+          await loadAllZoneSchedules();
+        } catch (e) {
+          DialogHelper.showErrorDialog(
+            title: 'Warning',
+            message:
+                'Irigasi berhasil dijalankan, tetapi gagal menandai jadwal sebagai selesai: $e',
+          );
         }
       }
     } catch (e) {
@@ -868,10 +900,6 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> countActive() async {
-    activeCount.value = await _zoneService.countActiveZones();
-  }
-
   void selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -940,7 +968,6 @@ class ZoneController extends GetxController {
 
       return rolesList[0]['roles']['role_name'] == 'owner';
     } catch (e) {
-      debugPrint('Error checking owner status [ZONE-CONTROLLER]: $e');
       return false;
     }
   }

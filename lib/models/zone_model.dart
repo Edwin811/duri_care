@@ -3,6 +3,7 @@ class ZoneModel {
   final String name;
   final bool isActive;
   final int zoneCode;
+  final int duration; // Default duration in minutes
   final DateTime? createdAt;
   final DateTime? deletedAt;
 
@@ -10,6 +11,7 @@ class ZoneModel {
     required this.id,
     required this.name,
     required this.isActive,
+    required this.duration,
     required this.zoneCode,
     this.createdAt,
     this.deletedAt,
@@ -21,6 +23,7 @@ class ZoneModel {
       name: json['name'],
       isActive: json['is_active'],
       zoneCode: json['zone_code'],
+      duration: json['duration'],
     );
   }
 
@@ -30,6 +33,7 @@ class ZoneModel {
       name: map['name'] ?? 'Unknown Zone',
       isActive: map['is_active'] ?? false,
       zoneCode: map['zone_code'] ?? 0,
+      duration: map['manual_duration'] ?? 5,
       createdAt:
           map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
       deletedAt:
@@ -42,5 +46,6 @@ class ZoneModel {
     'name': name,
     'is_active': isActive,
     'zone_code': zoneCode,
+    'duration': duration,
   };
 }

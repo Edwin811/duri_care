@@ -44,9 +44,7 @@ class StorageRecovery {
 
       if (suspiciousKeys.isNotEmpty) {
         for (final key in suspiciousKeys) {
-          try {
-            await box.remove(key);
-          } catch (removeError) {}
+          await box.remove(key);
         }
         return true;
       } else {

@@ -202,11 +202,22 @@ class ZoneService extends GetxService {
     return ZoneModel.fromMap(updated);
   }
 
+  Future<ZoneModel> saveDuration(dynamic zoneId, int duration) async {
+    final updatedZone =
+        await _supabase
+            .from('zones')
+            .update({'manual_duration': duration})
+            .eq('id', zoneId)
+            .select()
+            .single();
+    return ZoneModel.fromMap(updatedZone);
+  }
+
   Future<ZoneModel> toggleZoneActive(dynamic zoneId) async {
     final zone =
         await _supabase
             .from('zones')
-            .select('id, is_active')
+            .select('id, is_active, manual_duration')
             .eq('id', zoneId)
             .single();
 
@@ -222,16 +233,6 @@ class ZoneService extends GetxService {
             .single();
 
     return ZoneModel.fromMap(updatedZone);
-  }
-
-  Future<int> countActiveZones() async {
-    final response = await _supabase
-        .from('zones')
-        .select('id')
-        .eq('is_active', true)
-        .filter('deleted_at', 'is', null);
-
-    return response.length;
   }
 
   Future<Map<String, dynamic>> createSchedule({
@@ -298,10 +299,9 @@ class ZoneService extends GetxService {
           .eq('zone_id', zoneId)
           .eq('schedule_id', scheduleId)
           .select();
-
       final otherUsages = await _supabase
           .from('zone_schedules')
-          .select('id, zone_id')
+          .select('zone_id')
           .eq('schedule_id', scheduleId);
 
       if (otherUsages.isEmpty) {
@@ -331,38 +331,65 @@ class ZoneService extends GetxService {
   }
 
   Future<List<ZoneScheduleModel>> loadZoneSchedules(String zoneId) async {
-    final data = await _supabase
-        .from('zone_schedules')
-        .select(
-          'id, zone_id, schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
-        )
-        .eq('zone_id', zoneId);
+    try {
+      final data = await _supabase
+          .from('zone_schedules')
+          .select(
+            'zone_id, schedule:schedule_id!inner(id, scheduled_at, duration, executed, status_id)',
+          )
+          .eq('zone_id', zoneId)
+          .eq('schedule.executed', false);
 
-    final scheduleList =
-        (data as List).map((item) => ZoneScheduleModel.fromMap(item)).toList();
+      final scheduleList =
+          (data as List)
+              .map((item) => ZoneScheduleModel.fromMap(item))
+              .toList();
 
-    scheduleList.sort(
-      (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
-    );
+      scheduleList.sort(
+        (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
+      );
 
-    return scheduleList;
+      return scheduleList;
+    } catch (e) {
+      throw Exception('Failed to load zone schedules: $e');
+    }
   }
 
   Future<List<ZoneScheduleModel>> loadAllZoneSchedules() async {
-    final data = await _supabase
-        .from('zone_schedules')
-        .select(
-          'id, zone_id, schedule:schedule_id(id, scheduled_at, duration, executed, status_id)',
-        );
+    try {
+      final data = await _supabase
+          .from('zone_schedules')
+          .select(
+            'zone_id, schedule:schedule_id!inner(id, scheduled_at, duration, executed, status_id)',
+          )
+          .eq('schedule.executed', false);
 
-    final scheduleList =
-        (data as List).map((item) => ZoneScheduleModel.fromMap(item)).toList();
+      final scheduleList =
+          (data as List)
+              .map((item) => ZoneScheduleModel.fromMap(item))
+              .toList();
 
-    scheduleList.sort(
-      (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
-    );
+      scheduleList.sort(
+        (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
+      );
 
-    return scheduleList;
+      return scheduleList;
+    } catch (e) {
+      throw Exception('Failed to load all zone schedules: $e');
+    }
+  }
+
+  Future<void> markScheduleAsExecuted(int scheduleId) async {
+    try {
+      await _supabase
+          .from('irrigation_schedules')
+          .update({'executed': true})
+          .eq('id', scheduleId);
+    } on PostgrestException catch (e) {
+      throw Exception('Gagal menandai jadwal sebagai dieksekusi: ${e.message}');
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: $e');
+    }
   }
 
   Stream<List<Map<String, dynamic>>> zoneChangesStream() {

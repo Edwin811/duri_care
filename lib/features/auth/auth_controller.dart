@@ -92,10 +92,7 @@ class AuthController extends GetxController {
     try {
       await _clearCacheAndResetStates();
 
-      try {
-        await AuthService.to.signOut();
-      } catch (e) {}
-
+      await AuthService.to.signOut();
       authState.value = auth_state_enum.AuthState.unauthenticated;
 
       Get.offAllNamed('/login', predicate: (_) => false);
@@ -128,18 +125,14 @@ class AuthController extends GetxController {
       final box = GetStorage();
       final List<String> keys = box.getKeys().cast<String>().toList();
       for (final key in keys) {
-        try {
-          await box.remove(key);
-        } catch (keyError) {}
+        await box.remove(key);
       }
     } catch (e) {
       try {
         final box = GetStorage();
         await box.erase();
       } catch (eraseError) {
-        try {
-          await GetStorage.init();
-        } catch (initError) {}
+        await GetStorage.init();
       }
     }
 
@@ -162,15 +155,13 @@ class AuthController extends GetxController {
             _usernameRefreshInterval) {
       return _cachedUsername.value!;
     }
-    try {
-      final profile = await AuthService.to.getUserProfile(user.id);
-      final fullname = profile?['fullname'] as String?;
-      if (fullname != null && fullname.isNotEmpty) {
-        _cachedUsername.value = fullname;
-        _lastUsernameFetch = DateTime.now();
-        return fullname;
-      }
-    } catch (e) {}
+    final profile = await AuthService.to.getUserProfile(user.id);
+    final fullname = profile?['fullname'] as String?;
+    if (fullname != null && fullname.isNotEmpty) {
+      _cachedUsername.value = fullname;
+      _lastUsernameFetch = DateTime.now();
+      return fullname;
+    }
     final fallbackUsername = user.email?.split('@').first ?? 'Guest';
     _cachedUsername.value = fallbackUsername;
     return fallbackUsername;

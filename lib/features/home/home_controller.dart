@@ -2,11 +2,11 @@ import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
+import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,7 +33,6 @@ class HomeController extends GetxController {
     _loadGreeting();
 
     ever(authController.authState, _handleAuthStateChange);
-
     if (authController.isAuthenticated) {
       refreshUserSpecificData();
     } else {
@@ -58,14 +57,22 @@ class HomeController extends GetxController {
   }
 
   Future<void> refreshUserSpecificData() async {
+    if (!authController.isAuthenticated) {
+      clearUserData();
+      return;
+    }
+    
     isLoading.value = true;
+    
     try {
-      await loadUpcomingSchedule();
-      await getUsername();
-      await getProfilePicture();
-      await getRoleName();
+      await Future.wait([
+        loadUpcomingSchedule(),
+        getUsername(),
+        getProfilePicture(),
+        getRoleName(),
+      ]);
     } catch (e) {
-      debugPrintStack(label: 'Error refreshing user data: $e');
+      DialogHelper.showErrorDialog(message: 'Failed to load user data: $e');
     } finally {
       isLoading.value = false;
     }
@@ -156,8 +163,10 @@ class HomeController extends GetxController {
     }
     try {
       final userId = supabase.auth.currentUser?.id;
+
       if (userId != null) {
-        role.value = await _roleService.getRoleName(userId);
+        final roleFromService = await _roleService.getRoleName(userId);
+        role.value = roleFromService;
       } else {
         role.value = 'user';
       }

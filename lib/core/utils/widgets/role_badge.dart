@@ -10,34 +10,40 @@ class RoleBadge extends StatelessWidget {
     final lowerRole = role.toLowerCase();
     String displayText;
     Color badgeColor;
+
     if (lowerRole == 'owner') {
       displayText = 'Owner';
       badgeColor = AppColor.greenSecondary;
+    } else if (lowerRole == 'employee' || lowerRole == 'employe') {
+      displayText = 'Employee';
+      badgeColor = AppColor.yellowPrimary;
     } else if (lowerRole == 'user') {
       displayText = 'User';
       badgeColor = AppColor.yellowPrimary;
     } else {
-      displayText = role;
+      displayText = role.isNotEmpty ? role : 'User';
       badgeColor = Colors.grey;
     }
 
     return Container(
       margin: const EdgeInsets.only(left: 6),
-      width: 50,
-      height: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 50, maxWidth: 100),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: badgeColor,
       ),
-      alignment: Alignment.center,
       child: Text(
         displayText,
         style: Theme.of(context).textTheme.labelMedium!.copyWith(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: FontWeight.w500,
           decoration: TextDecoration.none,
         ),
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     );
   }
