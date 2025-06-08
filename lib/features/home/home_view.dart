@@ -2,6 +2,7 @@ import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/utils/widgets/role_badge.dart';
 import 'package:duri_care/core/utils/widgets/sync_button.dart';
 import 'package:duri_care/core/utils/widgets/zone_grid.dart';
+import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:flutter/services.dart';
 import 'home_controller.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,8 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    final NotificationController notificationController = Get.find<NotificationController>();
+    
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -25,7 +28,6 @@ class HomeView extends GetView<HomeController> {
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 20),
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                // Section: User Profile Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -87,20 +89,47 @@ class HomeView extends GetView<HomeController> {
                         ),
                       ],
                     ),
-                    IconButton(
-                      onPressed: () {
-                        Get.toNamed('/notification');
-                      },
-                      icon: const Icon(
-                        Icons.notifications_none_outlined,
-                        size: 32,
-                      ),
-                    ),
+                    Obx(() {
+                      return Stack(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              Get.toNamed('/notification');
+                            },
+                            icon: const Icon(
+                              Icons.notifications_none_outlined,
+                              size: 32,
+                            ),
+                            ),
+                            if (notificationController.hasUnreadNotifications)
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                              height: 16,
+                              width: 16,
+                              decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                              child: Text(
+                                '${notificationController.unreadCount.value}',
+                                style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              ),
+                              ),
+                            ),
+                        ],
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Section: Sensor Data Grid
                 Container(
                   height: MediaQuery.of(context).size.height * 0.25,
                   width: double.infinity,
@@ -132,8 +161,6 @@ class HomeView extends GetView<HomeController> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Section: Upcoming Schedule Info
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -187,8 +214,6 @@ class HomeView extends GetView<HomeController> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Section: Zone Grid
                 const ZoneGrid(),
                 const SizedBox(height: 20),
               ],
