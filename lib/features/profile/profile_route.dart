@@ -20,8 +20,12 @@ final profileRoute = [
 
 final editProfileRoute = [
   GetPage(
-    name: EditProfileView.route,
-    page: () => EditProfileView(),
-    binding: ProfileBinding(),
+    name: '/edit-profile',
+    page: () => const EditProfileView(),
+    binding: BindingsBuilder(() {
+      Get.lazyPut<ProfileController>(() => ProfileController());
+    }),
+    transition: Transition.cupertino,
+    transitionDuration: const Duration(milliseconds: 300),
   ),
 ];

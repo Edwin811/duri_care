@@ -27,8 +27,7 @@ class EditProfileView extends GetView<ProfileController> {
           backgroundColor: AppColor.greenPrimary,
           leading: AppBackButton(
             onPressed: () {
-              controller.refreshProfileData();
-              Get.back();
+              Get.back(result: false);
             },
             iconColor: AppColor.white,
           ),
@@ -48,39 +47,51 @@ class EditProfileView extends GetView<ProfileController> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                // Avatar section - selalu bisa diedit
                 Obx(() {
+                  final profilePic = controller.profilePicture.value;
+                  final avatarKey = controller.avatarKey.value;
+                  final isUrl =
+                      profilePic.isNotEmpty && profilePic.startsWith('http');
+                  final initials = controller.getInitialsFromName(
+                    controller.username.value,
+                  );
+
                   return Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: AppColor.greenPrimary.withAlpha(100),
-                        backgroundImage:
-                            controller.imageFile.value != null
-                                ? FileImage(controller.imageFile.value!)
-                                : controller.profilePicture.value.startsWith(
-                                  'http',
-                                )
-                                ? NetworkImage(controller.profilePicture.value)
-                                    as ImageProvider
-                                : null,
-                        child:
-                            controller.imageFile.value == null &&
-                                    !controller.profilePicture.value.startsWith(
-                                      'http',
-                                    )
-                                ? Text(
-                                  controller.profilePicture.value.isNotEmpty
-                                      ? controller.profilePicture.value
-                                      : controller.username.value.toUpperCase(),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : null,
+                      Container(
+                        padding: const EdgeInsets.all(3.0),
+                        key: ValueKey('edit_avatar_container_$avatarKey'),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColor.greenPrimary.withAlpha(100),
+                            width: 4,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          key: ValueKey('edit_avatar_$avatarKey'),
+                          radius: 60,
+                          backgroundColor: AppColor.greenPrimary.withAlpha(200),
+                          backgroundImage:
+                              controller.imageFile.value != null
+                                  ? FileImage(controller.imageFile.value!)
+                                  : isUrl
+                                  ? NetworkImage(profilePic) as ImageProvider
+                                  : null,
+                          onBackgroundImageError:
+                              isUrl ? (exception, stackTrace) {} : null,
+                          child:
+                              controller.imageFile.value == null && !isUrl
+                                  ? Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : null,
+                        ),
                       ),
                       Positioned(
                         right: 0,
@@ -113,7 +124,6 @@ class EditProfileView extends GetView<ProfileController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nama Pengguna - disabled untuk employee
                         AppLabelText(text: 'Nama Pengguna'),
                         const SizedBox(height: 8),
                         AppTextFormField(
@@ -121,7 +131,7 @@ class EditProfileView extends GetView<ProfileController> {
                           hintText: 'Masukkan nama pengguna',
                           enabled:
                               controller
-                                  .canEditBasicInfo, // false untuk employee
+                                  .canEditBasicInfo, 
                           prefixIcon: Icons.person_outline,
                           validator:
                               controller.canEditBasicInfo
@@ -135,7 +145,6 @@ class EditProfileView extends GetView<ProfileController> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Email - disabled untuk employee
                         AppLabelText(text: 'Email'),
                         const SizedBox(height: 8),
                         AppTextFormField(
@@ -143,7 +152,7 @@ class EditProfileView extends GetView<ProfileController> {
                           hintText: 'Masukkan email',
                           enabled:
                               controller
-                                  .canEditBasicInfo, // false untuk employee
+                                  .canEditBasicInfo, 
                           prefixIcon: Icons.email_outlined,
                           validator:
                               controller.canEditBasicInfo

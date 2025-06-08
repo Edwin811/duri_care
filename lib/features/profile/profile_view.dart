@@ -12,18 +12,6 @@ class ProfileView extends GetView<ProfileController> {
   static const String route = '/profile';
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      imageCache.clear();
-      imageCache.clearLiveImages();
-      controller.onProfilePageEntered();
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (Get.currentRoute.contains('profile')) {
-          controller.forceRefreshAvatar();
-        }
-      });
-    });
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: SafeArea(
@@ -64,32 +52,17 @@ class ProfileView extends GetView<ProfileController> {
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
                               onPressed: () async {
-                                await controller.forceRefreshProfile();
-
-                                final result = await Get.toNamed(
-                                  EditProfileView.route,
+                                final result = await Get.to(
+                                  () => const EditProfileView(),
+                                  transition: Transition.cupertino,
+                                  duration: const Duration(milliseconds: 300),
                                 );
-
-                                await controller.forceRefreshProfile();
-
-                                await Future.delayed(
-                                  const Duration(milliseconds: 300),
-                                );
-                                controller.forceRefreshAvatar();
 
                                 if (result == true) {
-                                  controller.clearImageCache();
-
-                                  await controller.refreshProfileData();
                                   await Future.delayed(
                                     const Duration(milliseconds: 100),
                                   );
-                                  controller.forceRefreshAvatar();
-
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 500),
-                                  );
-                                  controller.forceRefreshAvatar();
+                                  await controller.refreshProfileData();
                                 }
                               },
                               child: Container(
@@ -241,6 +214,7 @@ class ProfileView extends GetView<ProfileController> {
       final initials = controller.getInitialsFromName(
         controller.username.value,
       );
+
       return Container(
         padding: const EdgeInsets.all(3.0),
         key: ValueKey('avatar_container_$avatarKey'),
@@ -252,14 +226,21 @@ class ProfileView extends GetView<ProfileController> {
           ),
         ),
         child: CircleAvatar(
-          key: ValueKey(
-            isUrl ? 'avatar_image_$avatarKey' : 'avatar_fallback_$avatarKey',
-          ),
+          key: ValueKey('avatar_$avatarKey'),
           radius: 55,
           backgroundColor: AppColor.greenPrimary.withAlpha(200),
           backgroundImage:
-              isUrl ? NetworkImage('$profilePic&cache_key=$avatarKey') : null,
-          onBackgroundImageError: isUrl ? (exception, stackTrace) {} : null,
+              isUrl
+                  ? NetworkImage(
+                    profilePic,
+                  ) // Hapus cache_key parameter yang berlebihan
+                  : null,
+          onBackgroundImageError:
+              isUrl
+                  ? (exception, stackTrace) {
+                    // Handle error tanpa rebuild
+                  }
+                  : null,
           child:
               !isUrl
                   ? Text(

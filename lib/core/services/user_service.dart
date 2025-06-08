@@ -23,32 +23,39 @@ class UserService extends GetxService {
   Future<void> updateUserProfile({
     String? email,
     String? password,
-    required String fullname,
+    String? fullname,
     String? profileImageUrl,
   }) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
 
-    final updates = <String, dynamic>{};
-    if (email != null) {
-      updates['email'] = email;
+      Map<String, dynamic> updateData = {};
+
+      if (email != null && email.isNotEmpty) {
+        updateData['email'] = email;
+      }
+
+      if (password != null && password.isNotEmpty) {
+        await _supabase.auth.updateUser(
+          UserAttributes(email: email, password: password),
+        );
+      }
+
+      if (fullname != null && fullname.isNotEmpty) {
+        updateData['fullname'] = fullname;
+      }
+
+      if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+        updateData['profile_image'] = profileImageUrl;
+      }
+
+      if (updateData.isNotEmpty) {
+        await _supabase.from('users').update(updateData).eq('id', userId);
+      }
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
     }
-    if (password != null) {
-      updates['password'] = password;
-    }
-
-    if (updates.isNotEmpty) {
-      await _supabase.auth.updateUser(
-        UserAttributes(email: updates['email'], password: updates['password']),
-      );
-    }
-
-    final updateData = {
-      'fullname': fullname,
-      if (profileImageUrl != null) 'profile_image': profileImageUrl,
-    };
-
-    await _supabase.from('users').update(updateData).eq('id', user.id);
   }
 
   Future<String?> uploadProfileImage(File file) async {

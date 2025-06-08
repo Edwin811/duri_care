@@ -54,39 +54,13 @@ class ProfileController extends GetxController {
   }
 
   void onProfilePageEntered() {
-    clearImageCache();
     forceRefreshProfile();
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      forceRefreshAvatar();
-    });
-
-    Future.delayed(const Duration(seconds: 1), () {
-      if (Get.currentRoute.contains('profile')) {
-        forceRefreshAvatar();
-      }
-    });
   }
 
   Future<void> forceRefreshProfile() async {
-    clearImageCache();
     await _initializeProfileData(forceServerRefresh: true);
 
-    if (profilePicture.value.isNotEmpty) {
-      final baseUrl = profilePicture.value.split('?')[0];
-      final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-      final randomSuffix =
-          (DateTime.now().millisecondsSinceEpoch % 10000).toString();
-
-      profilePicture.value =
-          '$baseUrl?v=$timestamp&t=${DateTime.now().toString()}&r=$randomSuffix';
-    }
-
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      avatarKey.value = DateTime.now().microsecondsSinceEpoch + 1;
-    });
   }
 
   void toggleNotification() {
@@ -110,7 +84,11 @@ class ProfileController extends GetxController {
       if (user != null) {
         username.value = user.fullname ?? '';
         email.value = user.email ?? '';
-        role.value = user.roleName ?? 'Pegawai';
+        if (user.roleName != null && user.roleName!.isNotEmpty) {
+          role.value = user.roleName!;
+        } else {
+          role.value = authController.currentRole ?? 'Pegawai';
+        }
 
         if (user.profileUrl != null && user.profileUrl!.isNotEmpty) {
           String rawUrl;
@@ -135,19 +113,18 @@ class ProfileController extends GetxController {
           profilePicture.value = '';
         }
       } else {
-        // Fallback
-        username.value = '';
-        email.value = '';
-        role.value = 'Pegawai';
+        username.value = authController.currentUsername;
+        email.value = authController.currentEmail;
+        role.value = authController.currentRole ?? 'Pegawai';
         profilePicture.value = '';
       }
 
       usernameController.text = username.value;
       emailController.text = email.value;
     } catch (e) {
-      username.value = '';
-      email.value = '';
-      role.value = 'Pegawai';
+      username.value = authController.currentUsername;
+      email.value = authController.currentEmail;
+      role.value = authController.currentRole ?? 'Pegawai';
       profilePicture.value = '';
 
       usernameController.text = username.value;
@@ -187,7 +164,7 @@ class ProfileController extends GetxController {
       );
       if (pickedFile != null) {
         imageFile.value = File(pickedFile.path);
-        forceRefreshAvatar();
+        avatarKey.value = DateTime.now().microsecondsSinceEpoch;
       }
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -260,54 +237,77 @@ class ProfileController extends GetxController {
 
       try {
         String? uploadedImageStoragePath;
+        bool hasChanges = false;
+
         if (imageFile.value != null) {
           uploadedImageStoragePath = await _userService.uploadProfileImage(
             imageFile.value!,
           );
+          hasChanges = true;
         }
 
-        await _userService.updateUserProfile(
-          email:
-              isOwner && emailController.text != email.value
-                  ? emailController.text
-                  : null,
-          password:
-              isOwner && passwordController.text.isNotEmpty
-                  ? passwordController.text
-                  : null,
-          fullname:
-              isOwner && usernameController.text.isNotEmpty
-                  ? usernameController.text
-                  : usernameController.text,
-          profileImageUrl: uploadedImageStoragePath,
-        );
+        bool hasEmailChange = isOwner && emailController.text != email.value;
+        bool hasPasswordChange = isOwner && passwordController.text.isNotEmpty;
+        bool hasNameChange =
+            isOwner && usernameController.text != username.value;
+
+        if (hasEmailChange ||
+            hasPasswordChange ||
+            hasNameChange ||
+            uploadedImageStoragePath != null) {
+          Map<String, dynamic> updateData = {};
+
+          if (hasEmailChange) {
+            updateData['email'] = emailController.text;
+          }
+
+          if (hasPasswordChange) {
+            updateData['password'] = passwordController.text;
+          }
+
+          if (hasNameChange) {
+            updateData['fullname'] = usernameController.text.trim();
+          }
+
+          if (uploadedImageStoragePath != null) {
+            updateData['profileImageUrl'] = uploadedImageStoragePath;
+          }
+
+          await _userService.updateUserProfile(
+            email: updateData['email'],
+            password: updateData['password'],
+            fullname: updateData['fullname'],
+            profileImageUrl: updateData['profileImageUrl'],
+          );
+          hasChanges = true;
+        }
 
         imageFile.value = null;
-        clearImageCache();
 
-        await forceRefreshProfile();
+        if (hasChanges) {
+          await refreshProfileData();
 
-        if (Get.isRegistered<HomeController>()) {
-          final homeController = Get.find<HomeController>();
-          await homeController.refreshUserSpecificData();
+          if (Get.isRegistered<HomeController>()) {
+            final homeController = Get.find<HomeController>();
+            await homeController.refreshUserSpecificData();
+          }
         }
 
         if (Get.isDialogOpen ?? false) {
           Get.back();
         }
 
-        if (Get.previousRoute.isNotEmpty) {
-          Get.back();
-        }
+        Get.back(result: hasChanges);
 
-        await Future.delayed(const Duration(milliseconds: 100));
-        DialogHelper.showSuccessDialog(
-          title: 'Berhasil',
-          message:
-              isEmployee
-                  ? 'Foto profil berhasil diperbarui'
-                  : 'Profil berhasil diperbarui',
-        );
+        if (hasChanges) {
+          DialogHelper.showSuccessDialog(
+            title: 'Berhasil',
+            message:
+                isEmployee
+                    ? 'Foto profil berhasil diperbarui'
+                    : 'Profil berhasil diperbarui',
+          );
+        }
       } catch (e) {
         if (Get.isDialogOpen ?? false) {
           Get.back();
@@ -316,6 +316,7 @@ class ProfileController extends GetxController {
           title: 'Error',
           message: 'Gagal memperbarui profil: ${e.toString()}',
         );
+        debugPrint('Error updating profile: $e');
       }
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -327,54 +328,12 @@ class ProfileController extends GetxController {
 
   void forceRefreshAvatar() {
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
-
-    if (profilePicture.value.isNotEmpty) {
-      final baseUrl = profilePicture.value.split('?')[0];
-      final randomParam = DateTime.now().microsecondsSinceEpoch.toString();
-      profilePicture.value =
-          '$baseUrl?v=$randomParam&t=${DateTime.now().toString()}';
-    }
-
-    Future.delayed(const Duration(milliseconds: 50), () {
-      avatarKey.value = DateTime.now().microsecondsSinceEpoch;
-    });
-  }
-
-  void clearImageCache() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-
-    imageCache.clear();
-    imageCache.clearLiveImages();
-
-    if (profilePicture.value.isNotEmpty) {
-      try {
-        NetworkImage(profilePicture.value).evict();
-        final baseUrl = profilePicture.value.split('?')[0];
-        NetworkImage(baseUrl).evict();
-      } catch (e) {}
-    }
-
-    forceRefreshAvatar();
   }
 
   Future<void> refreshProfileData() async {
-    clearImageCache();
-
     await _initializeProfileData(forceServerRefresh: true);
 
-    if (profilePicture.value.isNotEmpty) {
-      final baseUrl = profilePicture.value.split('?')[0];
-      final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-      final randomSuffix = (timestamp.hashCode % 10000).toString();
-      profilePicture.value =
-          '$baseUrl?v=$timestamp&t=${DateTime.now().toString()}&r=$randomSuffix';
-    }
-
-    forceRefreshAvatar();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      forceRefreshAvatar();
-    });
+    avatarKey.value = DateTime.now().microsecondsSinceEpoch;
   }
 
   String? validateEmail(String email) {
@@ -441,26 +400,30 @@ class ProfileController extends GetxController {
   }
 
   void disposeControllerResources() {
-    try {
-      usernameController.clear();
-      emailController.clear();
-      passwordController.clear();
-      confirmPasswordController.clear();
-    } catch (e) {
-      // Ignore disposal errors
-    }
+    usernameController.clear();
+    emailController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
   }
 
   @override
   void onClose() {
-    try {
-      usernameController.dispose();
-      emailController.dispose();
-      passwordController.dispose();
-      confirmPasswordController.dispose();
-    } catch (e) {
-      // Ignore disposal errors
-    }
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
     super.onClose();
+  }
+
+  Future<void> forceRefreshRole() async {
+    final user = await _userService.getCurrentUser(forceRefresh: true);
+    if (user != null && user.roleName != null) {
+      role.value = user.roleName!;
+    } else {
+      final authRole = authController.currentRole;
+      if (authRole != null) {
+        role.value = authRole;
+      }
+    }
   }
 }

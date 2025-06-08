@@ -1,3 +1,4 @@
+import 'package:duri_care/core/resources/resources.dart';
 import 'package:flutter/material.dart';
 
 class AppTextFormField extends StatelessWidget {
@@ -77,7 +78,7 @@ class AppTextFormField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: AppColor.greenPrimary, width: 2),
         ),
       ),
       validator: validator,

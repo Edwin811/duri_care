@@ -69,12 +69,12 @@ class LoginController extends GetxController {
       final profile = await AuthService.to.getUserProfile(userData.id);
       final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
 
-      Get.back();
       DialogHelper.showSuccessDialog(
         title: 'Berhasil Masuk',
         message: 'Selamat datang, $fullname',
       );
       Get.offAllNamed('/main');
+      Get.back();
     } catch (e) {
       Get.back();
 
