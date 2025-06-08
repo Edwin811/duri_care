@@ -393,14 +393,14 @@ class UserManagementController extends GetxController {
           if (isAdded) {
             await _userService.assignUserToZone(userId, zoneId);
             DialogHelper.showSuccessDialog(
-              message: 'Berhasil mengizinkan zona',
+              message: 'Berhasil memberikan akses zona',
             );
           } else {
             await _userService.removeUserFromZone(userId, zoneId);
           }
         } catch (e) {
           DialogHelper.showErrorDialog(
-            message: 'Gagal mengupdate perizinan zona: $e',
+            message: 'Gagal mengupdate akses zona: $e',
           );
         }
       }

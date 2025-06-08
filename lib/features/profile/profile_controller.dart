@@ -312,10 +312,36 @@ class ProfileController extends GetxController {
         if (Get.isDialogOpen ?? false) {
           Get.back();
         }
+        String errorString = e.toString().toLowerCase();
+
+        if (e is AuthException) {
+          if (e.statusCode == '422' ||
+              e.message.contains(
+                'New password should be different from the old password',
+              ) ||
+              e.message.contains('New password should be different') ||
+              e.message.contains('same_password')) {
+            DialogHelper.showErrorDialog(
+              title: 'Error',
+              message: 'Password baru tidak boleh sama dengan password lama.',
+            );
+            return;
+          }
+        } else if (errorString.contains('new password should be different') ||
+            errorString.contains('same_password') ||
+            (errorString.contains('422') && errorString.contains('password'))) {
+          DialogHelper.showErrorDialog(
+            title: 'Error',
+            message: 'Password baru tidak boleh sama dengan password lama.',
+          );
+          return;
+        }
+
         DialogHelper.showErrorDialog(
           title: 'Error',
           message: 'Gagal memperbarui profil: ${e.toString()}',
         );
+        debugPrint('Profile update error: $e');
       }
     } catch (e) {
       DialogHelper.showErrorDialog(

@@ -663,6 +663,25 @@ class ZoneController extends GetxController {
       return;
     }
 
+    final duplicateSchedule =
+        schedules.where((schedule) {
+          final scheduledAt = schedule.schedule.scheduledAt;
+          return scheduledAt.year == combinedDateTime.year &&
+              scheduledAt.month == combinedDateTime.month &&
+              scheduledAt.day == combinedDateTime.day &&
+              scheduledAt.hour == combinedDateTime.hour &&
+              scheduledAt.minute == combinedDateTime.minute;
+        }).firstOrNull;
+
+    if (duplicateSchedule != null) {
+      DialogHelper.showErrorDialog(
+        title: 'Jadwal Sudah Ada',
+        message:
+            'Sudah ada jadwal pada tanggal dan waktu yang sama. Silakan pilih waktu yang berbeda!',
+      );
+      return;
+    }
+
     try {
       await _zoneService.createSchedule(
         scheduledDateTime: combinedDateTime,
