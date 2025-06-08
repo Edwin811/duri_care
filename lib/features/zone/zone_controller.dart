@@ -229,6 +229,15 @@ class ZoneController extends GetxController {
       return;
     }
 
+    final validationError = validateName(name);
+    if (validationError != null) {
+      DialogHelper.showErrorDialog(
+        title: 'Nama Zona Tidak Valid',
+        message: validationError,
+      );
+      return;
+    }
+
     if (!formKey.currentState!.validate()) {
       return;
     }
@@ -349,6 +358,16 @@ class ZoneController extends GetxController {
       );
       return;
     }
+
+    final validationError = validateName(newName, excludeZoneId: zoneId);
+    if (validationError != null) {
+      DialogHelper.showErrorDialog(
+        title: 'Nama Zona Tidak Valid',
+        message: validationError,
+      );
+      return;
+    }
+
     if (!formKey.currentState!.validate()) {
       return;
     }
@@ -930,13 +949,56 @@ class ZoneController extends GetxController {
     }
   }
 
-  String? validateName(String? value) {
+  String? validateName(String? value, {String? excludeZoneId}) {
     if (value == null || value.isEmpty) {
       return 'Nama zona tidak boleh kosong';
     }
     if (value.length < 3) {
       return 'Nama zona minimal 3 karakter';
     }
+
+    final similarZone = _findSimilarZoneName(value.trim(), excludeZoneId);
+    if (similarZone != null) {
+      return 'Nama zona "${similarZone['name']}" sudah ada (tidak boleh mirip)';
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic>? _findSimilarZoneName(
+    String newName, [
+    String? excludeZoneId,
+  ]) {
+    final normalizedNewName = newName.toLowerCase().trim();
+
+    for (var zone in zones) {
+      final zoneId = zone['id']?.toString();
+      final zoneName = zone['name']?.toString() ?? '';
+
+      if (excludeZoneId != null && zoneId == excludeZoneId) {
+        continue;
+      }
+
+      final normalizedZoneName = zoneName.toLowerCase().trim();
+
+      if (normalizedZoneName == normalizedNewName) {
+        return zone;
+      }
+
+      final cleanNewName = normalizedNewName.replaceAll(
+        RegExp(r'[^a-z0-9]'),
+        '',
+      );
+      final cleanZoneName = normalizedZoneName.replaceAll(
+        RegExp(r'[^a-z0-9]'),
+        '',
+      );
+
+      if (cleanNewName.isNotEmpty && cleanZoneName == cleanNewName) {
+        return zone;
+      }
+    }
+
     return null;
   }
 

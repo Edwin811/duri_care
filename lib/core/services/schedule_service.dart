@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScheduleService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
-
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
     try {
       final data =
@@ -20,7 +19,8 @@ class ScheduleService extends GetxService {
       final schedule = IrrigationScheduleModel(
         id: data['schedule_id'],
         scheduledAt: DateTime.parse(data['scheduled_at']),
-        duration: data['duration'],
+        duration:
+            data['duration_minutes'],
         executed: data['executed'],
         statusId: data['status_id'],
       );
@@ -29,6 +29,7 @@ class ScheduleService extends GetxService {
 
       return Upcomingschedule(schedule: schedule, zoneName: zoneName);
     } catch (e) {
+      print('ERROR creating schedule model: $e');
       return null;
     }
   }

@@ -16,7 +16,8 @@ class EditZoneView extends GetView<ZoneController> {
     final zoneId = Get.parameters['zoneId'] ?? '';
 
     if (controller.selectedZone.isNotEmpty) {
-      controller.zoneNameController.text = controller.selectedZone['name'] ?? '';
+      controller.zoneNameController.text =
+          controller.selectedZone['name'] ?? '';
     }
 
     return GestureDetector(
@@ -57,7 +58,10 @@ class EditZoneView extends GetView<ZoneController> {
                         controller: controller.zoneNameController,
                         hintText: 'Masukkan nama zona',
                         validator:
-                            (value) => controller.validateName(value ?? ''),
+                            (value) => controller.validateName(
+                              value ?? '',
+                              excludeZoneId: zoneId,
+                            ),
                         prefixIcon: Icons.note_alt_outlined,
                       ),
                     ],

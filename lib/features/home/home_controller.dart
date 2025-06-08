@@ -10,6 +10,7 @@ import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
