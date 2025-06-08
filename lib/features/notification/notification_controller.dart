@@ -11,6 +11,7 @@ class NotificationController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
   final RxInt unreadCount = 0.obs;
+  bool get hasUnreadNotifications => unreadCount.value > 0;
 
   @override
   void onInit() {

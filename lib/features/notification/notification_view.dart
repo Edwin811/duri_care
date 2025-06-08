@@ -1,6 +1,5 @@
 import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/core/themes/app_themes.dart';
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/utils/widgets/back_button.dart';
 import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/models/notification_model.dart';
@@ -23,12 +22,26 @@ class NotificationView extends GetView<NotificationController> {
           style: AppThemes.textTheme(context, ColorScheme.dark()).titleLarge,
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.done_all, color: AppColor.white),
-            tooltip: 'Tandai semua sebagai dibaca',
-            onPressed: () async {
-              await controller.markAllAsRead();
-            },
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                Icons.done_all,
+                color:
+                    controller.hasUnreadNotifications
+                        ? AppColor.white
+                        : Colors.grey.shade400,
+              ),
+              tooltip:
+                  controller.hasUnreadNotifications
+                      ? 'Tandai semua sebagai dibaca'
+                      : 'Semua notifikasi sudah dibaca',
+              onPressed:
+                  controller.hasUnreadNotifications
+                      ? () async {
+                        await controller.markAllAsRead();
+                      }
+                      : null,
+            ),
           ),
         ],
         centerTitle: true,
@@ -174,10 +187,9 @@ Widget _buildNotificationCard(
                     padding: const EdgeInsets.only(right: 8),
                   ),
                 IconButton(
-                  onPressed:
-                      () async {
-                        await controller.deleteNotification(notification.id);
-                      },
+                  onPressed: () async {
+                    await controller.deleteNotification(notification.id);
+                  },
                   icon: const Icon(
                     Icons.delete_outline_rounded,
                     color: Colors.red,
