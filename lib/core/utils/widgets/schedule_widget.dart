@@ -9,51 +9,146 @@ class SchedulingSectionWidget extends StatelessWidget {
   final ZoneController controller;
 
   const SchedulingSectionWidget({super.key, required this.controller});
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Buat Jadwal Penyiraman Otomatis',
-          style: Theme.of(context).textTheme.titleLarge,
+        FutureBuilder<bool>(
+          future: controller.hasAutoSchedulePermission(),
+          builder: (context, snapshot) {
+            final hasPermission = snapshot.data ?? false;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasPermission) ...[
+                  Text(
+                    'Buat Jadwal Penyiraman Otomatis',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: AppColor.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: AppColor.greenPrimary),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: buildScheduleFormContent(context),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Text(
+                  'Jadwal Tersimpan',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                _buildSchedulesList(),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget buildScheduleFormContent(BuildContext context) {
+    return Column(
+      children: [
+        Obx(
+          () => Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined),
+              const SizedBox(width: 8),
+              Text(
+                controller.selectedDate.value != null
+                    ? DateFormat(
+                      'dd MMMM yyyy',
+                    ).format(controller.selectedDate.value!)
+                    : 'Select date',
+              ),
+              const Spacer(),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColor.greenPrimary),
+                ),
+                onPressed: () => controller.selectDate(context),
+                child: const Text(
+                  'Pilih',
+                  style: TextStyle(color: AppColor.greenPrimary),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        Card(
-          elevation: 0,
-          color: AppColor.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColor.greenPrimary),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Gunakan FutureBuilder dengan method dari controller
-                FutureBuilder<bool>(
-                  future: controller.hasAutoSchedulePermission(),
-                  builder: (context, snapshot) {
-                    final hasPermission = snapshot.data ?? false;
-
-                    if (!hasPermission) {
-                      // Ambil widget dari controller
-                      return controller.buildNoPermissionWidget();
-                    }
-
-                    // Ambil form content dari controller
-                    return controller.buildScheduleFormContent(context);
-                  },
+        Obx(
+          () => Row(
+            children: [
+              const Icon(Icons.access_time),
+              const SizedBox(width: 8),
+              Text(
+                controller.selectedTime.value != null
+                    ? '${controller.selectedTime.value!.hour.toString().padLeft(2, '0')}:${controller.selectedTime.value!.minute.toString().padLeft(2, '0')}'
+                    : 'Select time',
+              ),
+              const Spacer(),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColor.greenPrimary),
                 ),
-              ],
-            ),
+                onPressed: () => controller.selectTime(context),
+                child: const Text(
+                  'Pilih',
+                  style: TextStyle(color: AppColor.greenPrimary),
+                ),
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.water),
+            const SizedBox(width: 8),
+            const Text('Durasi: '),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 8.0,
+                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 10.0),
+                ),
+                child: Obx(
+                  () => Slider(
+                    value: controller.durationIrg.value.toDouble(),
+                    min: 5,
+                    max: 60,
+                    divisions: 11,
+                    label: '${controller.durationIrg.value} menit',
+                    onChanged: (value) {
+                      controller.durationIrg.value = value.toInt();
+                    },
+                    activeColor: AppColor.greenPrimary,
+                    inactiveColor: AppColor.greenPrimary.withAlpha(100),
+                  ),
+                ),
+              ),
+            ),
+            Obx(() => Text('${controller.durationIrg.value} menit')),
+          ],
         ),
         const SizedBox(height: 16),
-        Text('Jadwal Tersimpan', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        _buildSchedulesList(),
+        SizedBox(
+          width: double.infinity,
+          child: AppFilledButton(
+            onPressed: () => controller.saveSchedule(),
+            text: 'Simpan Jadwal',
+          ),
+        ),
       ],
     );
   }
@@ -169,16 +264,27 @@ class SchedulingSectionWidget extends StatelessWidget {
                   ),
                 ),
               ),
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.delete_forever_rounded,
-                  color: Colors.red,
-                  size: 32,
-                ),
-                onPressed: () {
-                  controller.deleteSchedule(
-                    schedule.schedule.id,
-                    schedule.zoneId,
+              trailing: FutureBuilder<bool>(
+                future: controller.hasAutoSchedulePermission(),
+                builder: (context, snapshot) {
+                  final hasPermission = snapshot.data ?? false;
+
+                  if (!hasPermission) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return IconButton(
+                    icon: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: Colors.red,
+                      size: 32,
+                    ),
+                    onPressed: () {
+                      controller.deleteSchedule(
+                        schedule.schedule.id,
+                        schedule.zoneId,
+                      );
+                    },
                   );
                 },
               ),

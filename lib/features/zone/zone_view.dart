@@ -5,8 +5,6 @@ import 'package:duri_care/core/utils/widgets/button.dart';
 import 'package:duri_care/core/utils/widgets/schedule_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'zone_controller.dart';
 
 class ZoneView extends GetView<ZoneController> {

@@ -316,7 +316,6 @@ class ProfileController extends GetxController {
           title: 'Error',
           message: 'Gagal memperbarui profil: ${e.toString()}',
         );
-        debugPrint('Error updating profile: $e');
       }
     } catch (e) {
       DialogHelper.showErrorDialog(

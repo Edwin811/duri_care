@@ -82,7 +82,7 @@ class UserService extends GetxService {
 
   Future<List<UserModel>> fetchAllUsers() async {
     try {
-      final dbUsers = await _supabase.from('extended_users').select();
+      final dbUsers = await _supabase.rpc('get_employees');
       return dbUsers.map<UserModel>((u) => UserModel.fromJson(u)).toList();
     } catch (e) {
       throw Exception('Failed to fetch users: $e');
@@ -284,10 +284,26 @@ class UserService extends GetxService {
       final response =
           await _supabase
               .from('users')
-              .select('fullname, profile_image')
+              .select('''
+          fullname, profile_image,
+          user_roles!inner(
+            roles!inner(id, role_name)
+          )
+        ''')
               .eq('id', authUser.id)
               .maybeSingle();
+
       if (response != null) {
+        String? roleId;
+        String? roleName;
+
+        final userRoles = response['user_roles'] as List?;
+        if (userRoles != null && userRoles.isNotEmpty) {
+          final roleData = userRoles.first['roles'];
+          roleId = roleData['id']?.toString();
+          roleName = roleData['name'];
+        }
+
         final userModel = UserModel(
           id: authUser.id,
           email: authUser.email ?? '',
@@ -297,7 +313,10 @@ class UserService extends GetxService {
                   : null,
           fullname: response['fullname'] ?? '',
           profileUrl: response['profile_image'],
+          roleId: roleId,
+          roleName: roleName,
         );
+
         currentUser.value = userModel;
         return userModel;
       } else {
@@ -306,25 +325,66 @@ class UserService extends GetxService {
           email: authUser.email ?? '',
           fullname: '',
           profileUrl: null,
+          roleId: null,
+          roleName: null,
         );
         currentUser.value = userModel;
         return userModel;
       }
     } catch (e) {
-      DialogHelper.showErrorDialog(message: 'Gagal mendapatkan data user: $e');
-      return null;
+      try {
+        return await _getCurrentUserWithSeparateRoleQuery(authUser);
+      } catch (fallbackError) {
+        DialogHelper.showErrorDialog(
+          message: 'Gagal mendapatkan data user: $fallbackError',
+        );
+        return null;
+      }
     }
   }
 
-  Future<int> countStaff() async {
+  Future<UserModel?> _getCurrentUserWithSeparateRoleQuery(User authUser) async {
     try {
-      final response = await _supabase
-          .from('extended_users')
-          .select()
-          .neq('role_name', 'owner');
-      return response.length;
+      final userResponse =
+          await _supabase
+              .from('users')
+              .select('fullname, profile_image')
+              .eq('id', authUser.id)
+              .maybeSingle();
+
+      final roleResponse =
+          await _supabase
+              .from('user_roles')
+              .select('role_id, roles!inner(id, role_name)')
+              .eq('user_id', authUser.id)
+              .maybeSingle();
+
+      String? roleId;
+      String? roleName;
+
+      if (roleResponse != null) {
+        final roleData = roleResponse['roles'];
+        roleId = roleData['id']?.toString();
+        roleName = roleData['name'];
+      }
+
+      final userModel = UserModel(
+        id: authUser.id,
+        email: authUser.email ?? '',
+        lastSignInAt:
+            authUser.lastSignInAt != null
+                ? DateTime.tryParse(authUser.lastSignInAt!)
+                : null,
+        fullname: userResponse?['fullname'] ?? '',
+        profileUrl: userResponse?['profile_image'],
+        roleId: roleId,
+        roleName: roleName,
+      );
+
+      currentUser.value = userModel;
+      return userModel;
     } catch (e) {
-      return 0;
+      throw Exception('Failed to get user with separate queries: $e');
     }
   }
 
@@ -365,6 +425,101 @@ class UserService extends GetxService {
       }
     } catch (e) {
       throw Exception('Failed to update zone permission: $e');
+    }
+  }
+
+  Future<bool> isOwner({String? userId}) async {
+    try {
+      final currentUserId = userId ?? _supabase.auth.currentUser?.id;
+      if (currentUserId == null) return false;
+
+      final userResponse =
+          await _supabase
+              .from('users')
+              .select('user_roles(roles(role_name))')
+              .eq('id', currentUserId)
+              .single();
+
+      final rolesList = userResponse['user_roles'] as List;
+      if (rolesList.isNotEmpty) {
+        final roleName = rolesList[0]['roles']['role_name'];
+        return roleName == 'owner';
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> hasZonePermission(
+    String zoneId,
+    String permission, {
+    String? userId,
+  }) async {
+    try {
+      final currentUserId = userId ?? _supabase.auth.currentUser?.id;
+      if (currentUserId == null) return false;
+
+      final userResponse =
+          await _supabase
+              .from('users')
+              .select('user_roles(roles(role_name))')
+              .eq('id', currentUserId)
+              .single();
+
+      final rolesList = userResponse['user_roles'] as List;
+      if (rolesList.isNotEmpty) {
+        final roleName = rolesList[0]['roles']['role_name'];
+        if (roleName == 'owner') return true;
+      }
+
+      final permissionResponse =
+          await _supabase
+              .from('zone_users')
+              .select(permission)
+              .eq('user_id', currentUserId)
+              .eq('zone_id', int.parse(zoneId))
+              .maybeSingle();
+
+      return permissionResponse?[permission] ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> hasAutoSchedulePermission(
+    String zoneId, {
+    String? userId,
+  }) async {
+    try {
+      final currentUserId = userId ?? _supabase.auth.currentUser?.id;
+      if (currentUserId == null) return false;
+
+      final userResponse =
+          await _supabase
+              .from('users')
+              .select('user_roles(roles(role_name))')
+              .eq('id', currentUserId)
+              .single();
+
+      final rolesList = userResponse['user_roles'] as List;
+      if (rolesList.isNotEmpty) {
+        final roleName = rolesList[0]['roles']['role_name'];
+        if (roleName == 'owner') return true;
+      }
+
+      final permissionResponse =
+          await _supabase
+              .from('zone_users')
+              .select('allow_auto_schedule')
+              .eq('user_id', currentUserId)
+              .eq('zone_id', int.parse(zoneId))
+              .maybeSingle();
+
+      return permissionResponse?['allow_auto_schedule'] ?? false;
+    } catch (e) {
+      return false;
     }
   }
 }
