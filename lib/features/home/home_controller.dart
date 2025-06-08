@@ -2,6 +2,7 @@ import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
+import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
@@ -22,6 +23,8 @@ class HomeController extends GetxController {
   final RxString username = ''.obs;
   final RxString role = ''.obs;
   final RxInt staffCount = 0.obs;
+  final RxInt unreadCount = 0.obs;
+  final RxBool hasUnreadNotifications = false.obs;
 
   RxString ucapan = ''.obs;
   RxString profilePicture = ''.obs;
@@ -31,6 +34,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadGreeting();
+    // _debugFCMToken();
 
     ever(authController.authState, _handleAuthStateChange);
     if (authController.isAuthenticated) {
@@ -54,6 +58,8 @@ class HomeController extends GetxController {
     profilePicture.value = '';
     upcomingSchedule.value = null;
     staffCount.value = 0;
+    unreadCount.value = 0;
+    hasUnreadNotifications.value = false;
   }
 
   Future<void> refreshUserSpecificData() async {
@@ -61,15 +67,16 @@ class HomeController extends GetxController {
       clearUserData();
       return;
     }
-    
+
     isLoading.value = true;
-    
+
     try {
       await Future.wait([
         loadUpcomingSchedule(),
         getUsername(),
         getProfilePicture(),
         getRoleName(),
+        _loadNotificationCount(),
       ]);
     } catch (e) {
       DialogHelper.showErrorDialog(message: 'Failed to load user data: $e');
@@ -175,12 +182,46 @@ class HomeController extends GetxController {
     }
   }
 
+  Future<void> _loadNotificationCount() async {
+    if (!authController.isAuthenticated) {
+      unreadCount.value = 0;
+      hasUnreadNotifications.value = false;
+      return;
+    }
+
+    try {
+      // Simulasi count notifikasi - nanti bisa diganti dengan API call
+      unreadCount.value = 3;
+      hasUnreadNotifications.value = unreadCount.value > 0;
+    } catch (e) {
+      unreadCount.value = 0;
+      hasUnreadNotifications.value = false;
+    }
+  }
+
+  // Future<void> _debugFCMToken() async {
+  //   try {
+  //     if (Get.isRegistered<NotificationService>()) {
+  //       final token = await NotificationService.to.getCurrentToken();
+  //       print('🔔 Current FCM Token: $token');
+
+  //       final storedToken = NotificationService.to.getStoredToken();
+  //       print('🔔 Stored FCM Token: $storedToken');
+  //     } else {
+  //       print('🔔 NotificationService not registered yet');
+  //     }
+  //   } catch (e) {
+  //     print('🔔 Error getting FCM token: $e');
+  //   }
+  // }
+
   Future<void> triggerUIRefresh() async {
     if (!authController.isAuthenticated) return;
     isLoading.value = true;
     await getUsername();
     await getProfilePicture();
     await getRoleName();
+    await _loadNotificationCount();
     isLoading.value = false;
   }
 }
