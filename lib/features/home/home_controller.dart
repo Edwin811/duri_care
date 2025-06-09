@@ -37,8 +37,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadGreeting();
-    // _debugFCMToken();
-    _getFCMToken();
+    // _getFCMToken();
 
     ever(authController.authState, _handleAuthStateChange);
     if (authController.isAuthenticated) {
@@ -50,25 +49,22 @@ class HomeController extends GetxController {
     _setupNotificationSync();
   }
 
-  Future<void> _getFCMToken() async {
-    try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      print('🔔 Current FCM Token: $fcmToken');
-    } catch (e) {
-      print('🔔 Error getting FCM token: $e');
-    }
-  }
+  // Future<void> _getFCMToken() async {
+  //   try {
+  //     final fcmToken = await FirebaseMessaging.instance.getToken();
+  //     print('Current FCM Token: $fcmToken');
+  //   } catch (e) {
+  //     print('Error getting FCM token: $e');
+  //   }
+  // }
 
   void _setupNotificationSync() {
     if (Get.isRegistered<NotificationController>()) {
       final notificationController = Get.find<NotificationController>();
-
-      // Initial sync
       unreadCount.value = notificationController.unreadCount.value;
       hasUnreadNotifications.value =
           notificationController.hasUnreadNotifications;
 
-      // Listen to changes in notification controller
       ever(notificationController.unreadCount, (int count) {
         unreadCount.value = count;
         hasUnreadNotifications.value = count > 0;
@@ -234,21 +230,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // Future<void> _debugFCMToken() async {
-  //   try {
-  //     if (Get.isRegistered<NotificationService>()) {
-  //       final token = await NotificationService.to.getCurrentToken();
-  //       print('🔔 Current FCM Token: $token');
-
-  //       final storedToken = NotificationService.to.getStoredToken();
-  //       print('🔔 Stored FCM Token: $storedToken');
-  //     } else {
-  //       print('🔔 NotificationService not registered yet');
-  //     }
-  //   } catch (e) {
-  //     print('🔔 Error getting FCM token: $e');
-  //   }
-  // }
   Future<void> triggerUIRefresh() async {
     if (!authController.isAuthenticated) return;
     isLoading.value = true;

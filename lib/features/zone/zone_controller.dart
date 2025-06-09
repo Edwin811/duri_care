@@ -51,22 +51,55 @@ class ZoneController extends GetxController {
     'created_at': model.createdAt?.toIso8601String(),
     'deleted_at': model.deletedAt?.toIso8601String(),
   };
-
   @override
   void onInit() {
     super.onInit();
-    loadZones().then((_) {
+    _initializeController();
+  }
+
+  void _initializeController() async {
+    try {
+      await loadZones();
       _setupZoneTimers();
-      listenToZoneChanges();
-      loadAllZoneSchedules();
+
       if (zones.isNotEmpty) {
         final firstZone = zones.first;
         isActive.value = firstZone['is_active'] ?? false;
         manualDuration.value = firstZone['duration'] ?? 5;
       }
+
+      listenToZoneChanges();
+      _loadBackgroundData();
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Initialization Error',
+        message: 'Failed to initialize zone controller: ${e.toString()}',
+      );
+    }
+  }
+
+  void _loadBackgroundData() {
+    Future.wait([
+      _loadAllZoneSchedulesBackground(),
+      _loadSchedulesBackground(),
+      _loadDevicesBackground(),
+    ]).catchError((error) {
+      return <void>[];
     });
-    loadSchedules();
-    loadDevices();
+  }
+
+  Future<void> _loadAllZoneSchedulesBackground() async {
+    await loadAllZoneSchedules();
+  }
+
+  Future<void> _loadSchedulesBackground() async {
+    if (selectedZone.isNotEmpty) {
+      await loadSchedules();
+    }
+  }
+
+  Future<void> _loadDevicesBackground() async {
+    await loadDevices();
   }
 
   @override
@@ -197,24 +230,78 @@ class ZoneController extends GetxController {
       );
       return;
     }
-    if (!formKey.currentState!.validate()) return;
+    if (formKey.currentState?.validate() != true) {
+      DialogHelper.showErrorDialog(
+        title: 'Validasi Gagal',
+        message: 'Pastikan semua field telah diisi dengan benar',
+      );
+      return;
+    }
+
+    final existingZoneWithCode = zones.firstWhereOrNull(
+      (zone) => zone['zone_code'] == selectedZoneCode.value,
+    );
+    if (existingZoneWithCode != null) {
+      DialogHelper.showErrorDialog(
+        title: 'Kode Zona Sudah Digunakan',
+        message:
+            'Kode zona ${selectedZoneCode.value} sudah digunakan oleh "${existingZoneWithCode['name']}". Silakan pilih kode zona lain.',
+      );
+      return;
+    }
 
     try {
       isLoading.value = true;
       FocusManager.instance.primaryFocus?.unfocus();
-      final zoneModel = await _zoneService.createZone(
-        name: name,
-        zoneCode: selectedZoneCode.value,
-        userId: userID!,
-      );
-      final zoneMap = _zoneModelToMap(zoneModel);
-      zones.add(zoneMap);
-      zoneTimers.putIfAbsent(zoneModel.id.toString(), () => '00:00:00'.obs);
+
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+      final optimisticZone = {
+        'id': tempId,
+        'zone_code': selectedZoneCode.value,
+        'name': name,
+        'is_active': false,
+        'duration': 5,
+        'created_at': DateTime.now().toIso8601String(),
+        'deleted_at': null,
+        'timer': '00:00:00',
+      };
+
+      zones.add(optimisticZone);
+      zoneTimers.putIfAbsent(tempId, () => '00:00:00'.obs);
+
       Get.offAllNamed('/main');
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: '$name berhasil dibuat',
       );
+
+      try {
+        final zoneModel = await _zoneService.createZone(
+          name: name,
+          zoneCode: selectedZoneCode.value,
+          userId: userID!,
+        );
+
+        final index = zones.indexWhere((z) => z['id'] == tempId);
+        if (index != -1) {
+          final realZoneMap = _zoneModelToMap(zoneModel);
+          realZoneMap['timer'] = '00:00:00';
+          zones[index] = realZoneMap;
+
+          zoneTimers.remove(tempId);
+          zoneTimers.putIfAbsent(zoneModel.id.toString(), () => '00:00:00'.obs);
+        }
+      } catch (dbError) {
+        zones.removeWhere((z) => z['id'] == tempId);
+        zoneTimers.remove(tempId);
+
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          DialogHelper.showErrorDialog(
+            title: 'Gagal Membuat Zona',
+            message: 'Error: ${dbError.toString()}',
+          );
+        });
+      }
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal membuat zona',
@@ -242,21 +329,41 @@ class ZoneController extends GetxController {
         onConfirm: () async {
           Get.back();
           isLoading.value = true;
+
+          final zoneIndex = zones.indexWhere((z) => z['id'] == zoneId);
+          Map<String, dynamic>? originalZone;
+
+          if (zoneIndex != -1) {
+            originalZone = Map<String, dynamic>.from(zones[zoneIndex]);
+            zones.removeAt(zoneIndex);
+          }
+
+          stopTimer(zoneId.toString());
+          if (selectedZone['id'] == zoneId) selectedZone.clear();
+
+          Get.offAllNamed('/main');
+          DialogHelper.showSuccessDialog(
+            title: 'Berhasil',
+            message: 'Zona berhasil dihapus',
+          );
+
           try {
             await _zoneService.deleteZone(zoneId);
-            zones.removeWhere((z) => z['id'] == zoneId);
-            stopTimer(zoneId.toString());
-            if (selectedZone['id'] == zoneId) selectedZone.clear();
-            Get.offAllNamed('/main');
-            DialogHelper.showSuccessDialog(
-              title: 'Berhasil',
-              message: 'Zona berhasil dihapus',
-            );
-          } catch (e) {
-            DialogHelper.showErrorDialog(
-              title: 'Gagal hapus zona',
-              message: e.toString(),
-            );
+            print('Zone deleted successfully from database');
+          } catch (dbError) {
+            print('Database deletion failed: $dbError');
+
+            if (originalZone != null) {
+              zones.insert(zoneIndex, originalZone);
+              zoneTimers.putIfAbsent(zoneId.toString(), () => '00:00:00'.obs);
+            }
+
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              DialogHelper.showErrorDialog(
+                title: 'Sinkronisasi Gagal',
+                message: 'Penghapusan dibatalkan: ${dbError.toString()}',
+              );
+            });
           } finally {
             isLoading.value = false;
           }
@@ -280,6 +387,7 @@ class ZoneController extends GetxController {
       );
       return;
     }
+
     if (newName.trim().isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Nama Tidak Valid',
@@ -287,6 +395,7 @@ class ZoneController extends GetxController {
       );
       return;
     }
+
     final validationError = validateName(newName, excludeZoneId: zoneId);
     if (validationError != null) {
       DialogHelper.showErrorDialog(
@@ -295,35 +404,61 @@ class ZoneController extends GetxController {
       );
       return;
     }
-    if (!formKey.currentState!.validate()) return;
+
+    if (formKey.currentState?.validate() != true) {
+      DialogHelper.showErrorDialog(
+        title: 'Error',
+        message: 'Pastikan semua field telah diisi dengan benar',
+      );
+      return;
+    }
 
     try {
       isLoading.value = true;
       FocusManager.instance.primaryFocus?.unfocus();
-      final updated = await _zoneService.updateZone(
-        zoneId: zoneId,
-        newName: newName.trim(),
-        zoneCode: selectedZoneCode.value,
-      );
-      final updatedMap = _zoneModelToMap(updated);
+
       final index = zones.indexWhere((z) => z['id'].toString() == zoneId);
+      Map<String, dynamic>? originalZone;
+
       if (index != -1) {
-        final currentZone = zones[index];
+        originalZone = Map<String, dynamic>.from(zones[index]);
         zones[index] = {
-          ...updatedMap,
-          'timer': currentZone['timer'] ?? '00:00:00',
-          'moisture': currentZone['moisture'] ?? '60%',
+          ...zones[index],
+          'name': newName.trim(),
+          'zone_code': selectedZoneCode.value,
         };
       }
+
       if (selectedZone['id'].toString() == zoneId) {
         selectedZone['name'] = newName.trim();
         selectedZone['zone_code'] = selectedZoneCode.value;
       }
       Get.back();
+
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Zona berhasil diperbarui',
       );
+
+      try {
+        await _zoneService.updateZone(
+          zoneId: zoneId,
+          newName: newName.trim(),
+          zoneCode: selectedZoneCode.value,
+        );
+
+      } catch (dbError) {
+
+        if (originalZone != null && index != -1) {
+          zones[index] = originalZone;
+        }
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          DialogHelper.showErrorDialog(
+            title: 'Sinkronisasi Gagal',
+            message: 'Perubahan dibatalkan: ${dbError.toString()}',
+          );
+        });
+      }
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal update',

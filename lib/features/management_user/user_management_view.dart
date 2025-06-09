@@ -34,12 +34,6 @@ class UserManagementView extends GetView<UserManagementController> {
         ),
         centerTitle: true,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: AppColor.white),
-            onPressed: () => controller.fetchUsers(),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -151,9 +145,8 @@ class UserManagementView extends GetView<UserManagementController> {
                       },
                       onTap: () async {
                         controller.selectedUser.value = user;
-                        await controller.fetchAllZones();
-                        await controller.fetchUserPermissions();
                         await Get.toNamed(PermissionManagementView.route);
+                        controller.fetchAllZones();
                       },
                     );
                   },

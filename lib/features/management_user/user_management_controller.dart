@@ -53,7 +53,6 @@ class UserManagementController extends GetxController {
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
 
-  final Rx<String?> selectedRoleId = Rx<String?>(null);
   final Rx<UserModel?> selectedUser = Rx<UserModel?>(null);
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -121,11 +120,6 @@ class UserManagementController extends GetxController {
     fullnameController.clear();
     passwordController.clear();
     confirmPasswordController.clear();
-    if (roles.isNotEmpty) {
-      selectedRoleId.value = roles.first.id;
-    } else {
-      selectedRoleId.value = null;
-    }
   }
 
   Future<void> createUser() async {
@@ -146,7 +140,7 @@ class UserManagementController extends GetxController {
         email: emailController.text,
         password: passwordController.text,
         fullname: fullnameController.text,
-        roleId: selectedRoleId.value!,
+        roleId: "2",
       );
 
       Get.back();
@@ -243,37 +237,37 @@ class UserManagementController extends GetxController {
     }
   }
 
-  Future<void> fetchUserPermissions() async {
-    final user = selectedUser.value;
-    if (user == null) return;
-    try {
-      isLoading.value = true;
-      final userId = user.id;
-      final perms = await _userService.getAllPermissions();
-      allPermissions.assignAll(
-        perms.map<PermissionModel>((p) => PermissionModel.fromMap(p)),
-      );
-      final userPermRows = await _supabase
-          .from('user_permissions')
-          .select('permission_id')
-          .eq('user_id', userId);
-      userPermissionIds.clear();
-      userPermissionIds.addAll(
-        userPermRows.map<String>((p) => p['permission_id'].toString()),
-      );
-      zoneChanges.clear();
-      permissionChanges.clear();
-      zonePermissionChanges.clear();
-      hasChanges.value = false;
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Error',
-        message: 'Gagal memuat data permission: ${e.toString()}',
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
+  // Future<void> fetchUserPermissions() async {
+  //   final user = selectedUser.value;
+  //   if (user == null) return;
+  //   try {
+  //     isLoading.value = true;
+  //     final userId = user.id;
+  //     final perms = await _userService.getAllPermissions();
+  //     allPermissions.assignAll(
+  //       perms.map<PermissionModel>((p) => PermissionModel.fromMap(p)),
+  //     );
+  //     final userPermRows = await _supabase
+  //         .from('user_permissions')
+  //         .select('permission_id')
+  //         .eq('user_id', userId);
+  //     userPermissionIds.clear();
+  //     userPermissionIds.addAll(
+  //       userPermRows.map<String>((p) => p['permission_id'].toString()),
+  //     );
+  //     zoneChanges.clear();
+  //     permissionChanges.clear();
+  //     zonePermissionChanges.clear();
+  //     hasChanges.value = false;
+  //   } catch (e) {
+  //     DialogHelper.showErrorDialog(
+  //       title: 'Error',
+  //       message: 'Gagal memuat data permission: ${e.toString()}',
+  //     );
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
   Future<void> updateZonePermission(int zoneId, bool add) async {
     final user = selectedUser.value;

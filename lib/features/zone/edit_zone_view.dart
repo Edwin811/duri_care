@@ -9,15 +9,15 @@ import 'package:get/get.dart';
 class EditZoneView extends GetView<ZoneController> {
   const EditZoneView({super.key});
   static const String route = '/edit-zone';
-
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final zoneId = Get.parameters['zoneId'] ?? '';
 
     if (controller.selectedZone.isNotEmpty) {
       controller.zoneNameController.text =
           controller.selectedZone['name'] ?? '';
+      controller.selectedZoneCode.value =
+          controller.selectedZone['zone_code'] ?? 1;
     }
 
     return GestureDetector(
@@ -45,7 +45,7 @@ class EditZoneView extends GetView<ZoneController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Form(
-                  key: formKey,
+                  key: controller.formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -105,7 +105,8 @@ class EditZoneView extends GetView<ZoneController> {
                 ),
                 AppFilledButton(
                   onPressed: () {
-                    if (formKey.currentState!.validate() && zoneId.isNotEmpty) {
+                    if (controller.formKey.currentState?.validate() == true &&
+                        zoneId.isNotEmpty) {
                       controller.updateZone(
                         zoneId,
                         newName: controller.zoneNameController.text,

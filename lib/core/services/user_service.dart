@@ -137,27 +137,27 @@ class UserService extends GetxService {
     }
   }
 
-  Future<void> updateUserRole(String userId, String roleId) async {
-    try {
-      final existingRoles = await _supabase
-          .from('user_roles')
-          .select()
-          .eq('user_id', userId);
-      if (existingRoles.isNotEmpty) {
-        await _supabase
-            .from('user_roles')
-            .update({'role_id': roleId})
-            .eq('user_id', userId);
-      } else {
-        await _supabase.from('user_roles').insert({
-          'user_id': userId,
-          'role_id': roleId,
-        });
-      }
-    } catch (e) {
-      throw Exception('Failed to update user role: $e');
-    }
-  }
+  // Future<void> updateUserRole(String userId, String roleId) async {
+  //   try {
+  //     final existingRoles = await _supabase
+  //         .from('user_roles')
+  //         .select()
+  //         .eq('user_id', userId);
+  //     if (existingRoles.isNotEmpty) {
+  //       await _supabase
+  //           .from('user_roles')
+  //           .update({'role_id': roleId})
+  //           .eq('user_id', userId);
+  //     } else {
+  //       await _supabase.from('user_roles').insert({
+  //         'user_id': userId,
+  //         'role_id': roleId,
+  //       });
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Failed to update user role: $e');
+  //   }
+  // }
 
   Future<void> deleteUser(String userId) async {
     try {
