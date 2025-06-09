@@ -121,6 +121,7 @@ class ZoneService extends GetxService {
               'name': name,
               'is_active': false,
               'zone_code': zoneCode,
+              'manual_duration': 5,
               'created_at': DateTime.now().toIso8601String(),
             })
             .select()
@@ -134,25 +135,26 @@ class ZoneService extends GetxService {
     await _supabase.from('zone_users').insert({
       'zone_id': zoneId,
       'user_id': userId,
+      'allow_auto_schedule': true,
     });
 
     return ZoneModel.fromMap(newZone);
   }
 
-  Future<void> assignDevicesToZone(String zoneId, List<int> deviceIds) async {
-    final deviceAssignments =
-        deviceIds
-            .map(
-              (deviceId) => {
-                'device_id': deviceId,
-                'zone_id': zoneId,
-                'assigned_at': DateTime.now().toIso8601String(),
-              },
-            )
-            .toList();
+  // Future<void> assignDevicesToZone(String zoneId, List<int> deviceIds) async {
+  //   final deviceAssignments =
+  //       deviceIds
+  //           .map(
+  //             (deviceId) => {
+  //               'device_id': deviceId,
+  //               'zone_id': zoneId,
+  //               'assigned_at': DateTime.now().toIso8601String(),
+  //             },
+  //           )
+  //           .toList();
 
-    await _supabase.from('zone_devices').insert(deviceAssignments);
-  }
+  //   await _supabase.from('zone_devices').insert(deviceAssignments);
+  // }
 
   Future<void> addDeviceToZone({
     required String zoneId,
@@ -231,6 +233,18 @@ class ZoneService extends GetxService {
             .eq('id', zoneId)
             .select()
             .single();
+    final userId = _supabase.auth.currentUser?.id;
+    if (newState) {
+      await _supabase.from('irrigation_histories').insert({
+        'zone_id': zoneId,
+        'executed_by': userId,
+        'started_at': DateTime.now().toIso8601String(),
+        'duration': zone['manual_duration'],
+        'type': 'manual',
+        'message': 'Irigasi manual telah dimulai',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    }
 
     return ZoneModel.fromMap(updatedZone);
   }

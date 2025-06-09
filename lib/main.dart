@@ -2,6 +2,9 @@ import 'package:duri_care/core/routes/app_pages.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/features/error/error_404_view.dart';
 import 'package:duri_care/features/error/network_controller.dart';
+import 'package:duri_care/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
@@ -18,9 +21,24 @@ Future<void> main() async {
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    DialogHelper.showErrorDialog(message: "Failed to load environment variables. Please check your .env file.");
+    DialogHelper.showErrorDialog(
+      message:
+          "Failed to load environment variables. Please check your .env file.",
+    );
     return;
   }
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+    announcement: true,
+    carPlay: true,
+    criticalAlert: true,
+    provisional: false,
+  );
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -39,7 +57,8 @@ Future<void> main() async {
       await GetStorage.init();
     } catch (recoveryError) {
       DialogHelper.showErrorDialog(
-        message: "Failed to initialize storage. Please check your device's storage.",
+        message:
+            "Failed to initialize storage. Please check your device's storage.",
       );
       return;
     }

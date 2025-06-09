@@ -10,6 +10,7 @@ import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -37,6 +38,7 @@ class HomeController extends GetxController {
     super.onInit();
     _loadGreeting();
     // _debugFCMToken();
+    _getFCMToken();
 
     ever(authController.authState, _handleAuthStateChange);
     if (authController.isAuthenticated) {
@@ -46,6 +48,15 @@ class HomeController extends GetxController {
     }
 
     _setupNotificationSync();
+  }
+
+  Future<void> _getFCMToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      print('🔔 Current FCM Token: $fcmToken');
+    } catch (e) {
+      print('🔔 Error getting FCM token: $e');
+    }
   }
 
   void _setupNotificationSync() {

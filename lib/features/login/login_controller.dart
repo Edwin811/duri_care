@@ -68,16 +68,21 @@ class LoginController extends GetxController {
 
       final profile = await AuthService.to.getUserProfile(userData.id);
       final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
-
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
       DialogHelper.showSuccessDialog(
         title: 'Berhasil Masuk',
         message: 'Selamat datang, $fullname',
+        onConfirm: () {
+          isLoading.value = false;
+          Get.offAllNamed('/main');
+        },
       );
-      Get.offAllNamed('/main');
-      Get.back();
     } catch (e) {
-      Get.back();
-
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('invalid_credentials')) {
         DialogHelper.showErrorDialog(

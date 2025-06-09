@@ -13,51 +13,43 @@ import 'dart:async';
 class ZoneController extends GetxController {
   final ZoneService _zoneService = Get.find<ZoneService>();
   final UserService _userService = Get.find<UserService>();
+  final storage = GetStorage();
 
   final zones = <Map<String, dynamic>>[].obs;
   final selectedZone = <String, dynamic>{}.obs;
   final RxBool isActive = false.obs;
-  final storage = GetStorage();
   final RxInt activeCount = 0.obs;
   final RxBool isLoadingSchedules = false.obs;
   final Map<int, Timer> _scheduleTimers = {};
-
   final zoneCodes = [1, 2, 3, 4, 5, 6, 7, 8].obs;
   final RxInt selectedZoneCode = 1.obs;
-
   final Map<String, Timer?> _zoneTimers = {};
   final RxMap<String, RxString> zoneTimers = <String, RxString>{}.obs;
-
   final RxString moisture = '0%'.obs;
   final RxString temperature = '0°C'.obs;
   final RxString humidity = '0%'.obs;
-
   final selectedDate = Rx<DateTime?>(DateTime.now());
   final selectedTime = Rx<TimeOfDay?>(const TimeOfDay(hour: 6, minute: 0));
   final RxInt durationIrg = 5.obs;
   final schedules = <ZoneScheduleModel>[].obs;
-
   final TextEditingController zoneNameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-
-  RxBool isLoadingDevices = false.obs;
+  final isLoadingDevices = false.obs;
   final devices = <IotDeviceModel>[].obs;
   final selectedDeviceIds = <int>[].obs;
   final userID = Supabase.instance.client.auth.currentUser?.id;
-
   final isLoading = false.obs;
   final RxInt manualDuration = 5.obs;
-  Map<String, dynamic> _zoneModelToMap(ZoneModel model) {
-    return {
-      'id': model.id,
-      'zone_code': model.zoneCode,
-      'name': model.name,
-      'is_active': model.isActive,
-      'duration': model.duration,
-      'created_at': model.createdAt?.toIso8601String(),
-      'deleted_at': model.deletedAt?.toIso8601String(),
-    };
-  }
+
+  Map<String, dynamic> _zoneModelToMap(ZoneModel model) => {
+    'id': model.id,
+    'zone_code': model.zoneCode,
+    'name': model.name,
+    'is_active': model.isActive,
+    'duration': model.duration,
+    'created_at': model.createdAt?.toIso8601String(),
+    'deleted_at': model.deletedAt?.toIso8601String(),
+  };
 
   @override
   void onInit() {
@@ -89,11 +81,9 @@ class ZoneController extends GetxController {
       final zoneId = zone['id']?.toString();
       if (zoneId != null) {
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
-
         if (zone['is_active'] == true) {
           startTimer(zoneId, _getZoneDuration(zoneId));
         }
-
         final remainingTime = storage.read('timer_$zoneId');
         if (remainingTime != null && remainingTime > 0) {
           startTimer(zoneId, _getZoneDuration(zoneId));
@@ -102,33 +92,16 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> loadiInitialData() async {
-    isLoading.value = true;
-    try {
-      await loadZones();
-      loadAllZoneSchedules();
-    } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Gagal Memuat Data',
-        message: 'Error: ${e.toString()}',
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
   Future<void> loadZones() async {
     try {
-      final userId = userID;
-      if (userId == null) {
+      if (userID == null) {
         DialogHelper.showErrorDialog(
           title: 'Authentication Error',
-          message: 'User not logged in. Please log in to view your zones.',
+          message: 'User not logged in',
         );
         return;
       }
-
-      final zoneModels = await _zoneService.loadZones(userId);
+      final zoneModels = await _zoneService.loadZones(userID!);
       zones.value = zoneModels.map((model) => _zoneModelToMap(model)).toList();
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -140,22 +113,18 @@ class ZoneController extends GetxController {
 
   Future<void> loadZoneById(String zoneId) async {
     if (zoneId.isEmpty) return;
-
     isLoading.value = true;
     try {
-      final userId = userID;
-      if (userId == null) {
+      if (userID == null) {
         DialogHelper.showErrorDialog(
           title: 'Authentication Error',
-          message: 'User not logged in. Please log in to view your zones.',
+          message: 'User not logged in',
         );
-        isLoading.value = false;
         return;
       }
-      ZoneModel zoneModel = await _zoneService.loadZoneById(zoneId, userId);
+      ZoneModel zoneModel = await _zoneService.loadZoneById(zoneId, userID!);
       Map<String, dynamic> zoneMap = _zoneModelToMap(zoneModel);
       zoneMap['timer'] = zoneTimers[zoneId]?.value ?? '00:00:00';
-
       selectedZone.value = zoneMap;
       manualDuration.value = zoneModel.duration;
       loadSchedules();
@@ -172,17 +141,13 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<bool> _hasZonePermission(String zoneId, String permission) async {
-    return await _userService.hasZonePermission(zoneId, permission);
-  }
-
   Future<void> loadDevicesForZone(String zoneId) async {
     try {
       devices.value = await _zoneService.loadDevicesForZone(zoneId);
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error Loading Devices',
-        message: 'Failed to load devices for zone: ${e.toString()}',
+        message: 'Failed to load devices: ${e.toString()}',
       );
     }
   }
@@ -192,10 +157,7 @@ class ZoneController extends GetxController {
       moisture.value = '${60 + DateTime.now().second % 20}%';
       temperature.value = '${25 + DateTime.now().minute % 10}°C';
       humidity.value = '${60 + DateTime.now().hour % 25}%';
-
-      if (selectedZone.isNotEmpty) {
-        selectedZone['moisture'] = moisture.value;
-      }
+      if (selectedZone.isNotEmpty) selectedZone['moisture'] = moisture.value;
     } catch (e) {
       moisture.value = '60%';
       temperature.value = '28°C';
@@ -210,7 +172,7 @@ class ZoneController extends GetxController {
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Memuat Perangkat',
-        message: 'Gagal memuat perangkat IoT: ${e.toString()}',
+        message: 'Error: ${e.toString()}',
       );
     } finally {
       isLoadingDevices.value = false;
@@ -218,17 +180,14 @@ class ZoneController extends GetxController {
   }
 
   Future<void> createZone() async {
-    final userId = userID;
     final name = zoneNameController.text.trim();
-
-    if (userId == null || name.isEmpty) {
+    if (userID == null || name.isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'User belum login atau nama zona kosong.',
+        message: 'User belum login atau nama zona kosong',
       );
       return;
     }
-
     final validationError = validateName(name);
     if (validationError != null) {
       DialogHelper.showErrorDialog(
@@ -237,37 +196,23 @@ class ZoneController extends GetxController {
       );
       return;
     }
-
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+    if (!formKey.currentState!.validate()) return;
 
     try {
       isLoading.value = true;
       FocusManager.instance.primaryFocus?.unfocus();
-      await Future.delayed(Duration.zero);
-
       final zoneModel = await _zoneService.createZone(
         name: name,
         zoneCode: selectedZoneCode.value,
-        userId: userId,
+        userId: userID!,
       );
-
       final zoneMap = _zoneModelToMap(zoneModel);
-      final zoneId = zoneModel.id.toString();
-
-      if (selectedDeviceIds.isNotEmpty) {
-        await _zoneService.assignDevicesToZone(zoneId, selectedDeviceIds);
-      }
-
       zones.add(zoneMap);
-      zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
-
+      zoneTimers.putIfAbsent(zoneModel.id.toString(), () => '00:00:00'.obs);
       Get.offAllNamed('/main');
-
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
-        message: '$name berhasil dibuat.',
+        message: '$name berhasil dibuat',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -279,16 +224,12 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<bool> _isOwner() async {
-    return await _userService.isOwner();
-  }
-
   Future<void> deleteZone(int zoneId) async {
-    final isOwner = await _isOwner();
+    final isOwner = await _userService.isOwner();
     if (!isOwner) {
       DialogHelper.showErrorDialog(
         title: 'Akses Ditolak',
-        message: 'Hanya pemilik yang dapat menghapus zona.',
+        message: 'Hanya pemilik yang dapat menghapus zona',
       );
       return;
     }
@@ -300,25 +241,15 @@ class ZoneController extends GetxController {
         onConfirm: () async {
           Get.back();
           isLoading.value = true;
-
           try {
-            FocusManager.instance.primaryFocus?.unfocus();
-            await Future.delayed(Duration.zero);
-
             await _zoneService.deleteZone(zoneId);
-
             zones.removeWhere((z) => z['id'] == zoneId);
             stopTimer(zoneId.toString());
-
-            if (selectedZone['id'] == zoneId) {
-              selectedZone.clear();
-            }
-
+            if (selectedZone['id'] == zoneId) selectedZone.clear();
             Get.offAllNamed('/main');
-
             DialogHelper.showSuccessDialog(
               title: 'Berhasil',
-              message: 'Zona berhasil dihapus.',
+              message: 'Zona berhasil dihapus',
             );
           } catch (e) {
             DialogHelper.showErrorDialog(
@@ -329,9 +260,7 @@ class ZoneController extends GetxController {
             isLoading.value = false;
           }
         },
-        onCancel: () {
-          Get.back();
-        },
+        onCancel: () => Get.back(),
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -342,23 +271,21 @@ class ZoneController extends GetxController {
   }
 
   Future<void> updateZone(String zoneId, {required String newName}) async {
-    final isOwner = await _isOwner();
+    final isOwner = await _userService.isOwner();
     if (!isOwner) {
       DialogHelper.showErrorDialog(
         title: 'Akses Ditolak',
-        message: 'Hanya pemilik yang dapat mengubah zona.',
+        message: 'Hanya pemilik yang dapat mengubah zona',
       );
       return;
     }
-
     if (newName.trim().isEmpty) {
       DialogHelper.showErrorDialog(
         title: 'Nama Tidak Valid',
-        message: 'Nama zona tidak boleh kosong.',
+        message: 'Nama zona tidak boleh kosong',
       );
       return;
     }
-
     final validationError = validateName(newName, excludeZoneId: zoneId);
     if (validationError != null) {
       DialogHelper.showErrorDialog(
@@ -367,24 +294,17 @@ class ZoneController extends GetxController {
       );
       return;
     }
-
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+    if (!formKey.currentState!.validate()) return;
 
     try {
       isLoading.value = true;
       FocusManager.instance.primaryFocus?.unfocus();
-      await Future.delayed(Duration.zero);
-
       final updated = await _zoneService.updateZone(
         zoneId: zoneId,
         newName: newName.trim(),
         zoneCode: selectedZoneCode.value,
       );
-
       final updatedMap = _zoneModelToMap(updated);
-
       final index = zones.indexWhere((z) => z['id'].toString() == zoneId);
       if (index != -1) {
         final currentZone = zones[index];
@@ -394,17 +314,14 @@ class ZoneController extends GetxController {
           'moisture': currentZone['moisture'] ?? '60%',
         };
       }
-
       if (selectedZone['id'].toString() == zoneId) {
         selectedZone['name'] = newName.trim();
         selectedZone['zone_code'] = selectedZoneCode.value;
       }
-
       Get.back();
-
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
-        message: 'Zona berhasil diperbarui.',
+        message: 'Zona berhasil diperbarui',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -418,75 +335,76 @@ class ZoneController extends GetxController {
 
   Future<void> toggleActive(dynamic zoneId, {bool fromTimer = false}) async {
     if (zoneId == null) return;
-
     final zoneIdStr = zoneId.toString();
-
     try {
-      isLoading.value = true;
-
       final zoneIndex = zones.indexWhere(
         (z) => z['id'].toString() == zoneIdStr,
       );
-      if (zoneIndex == -1) {
-        DialogHelper.showErrorDialog(
-          title: 'Error',
-          message: 'Zone not found with ID: $zoneIdStr',
-        );
-        return;
-      }
+      if (zoneIndex == -1) return;
 
-      final updatedZone = await _zoneService.toggleZoneActive(zoneId);
+      final currentState = zones[zoneIndex]['is_active'] ?? false;
+      final newState = !currentState;
 
-      final newActiveState = updatedZone.isActive;
-
-      zones[zoneIndex] = {
-        ..._zoneModelToMap(updatedZone),
-        'timer': zones[zoneIndex]['timer'] ?? '00:00:00',
-        'moisture': zones[zoneIndex]['moisture'] ?? '60%',
-      };
+      zones[zoneIndex]['is_active'] = newState;
       zones.refresh();
 
       if (selectedZone.isNotEmpty &&
           selectedZone['id'].toString() == zoneIdStr) {
-        selectedZone['is_active'] = newActiveState;
+        selectedZone['is_active'] = newState;
         selectedZone.refresh();
-        isActive.value = newActiveState;
+        isActive.value = newState;
       }
 
-      storage.write('zone_${zoneIdStr}_is_active', newActiveState);
-      if (newActiveState) {
+      if (newState) {
         activeCount.value += 1;
         startTimer(zoneIdStr, _getZoneDuration(zoneIdStr));
       } else {
         activeCount.value = activeCount.value > 0 ? activeCount.value - 1 : 0;
         stopTimer(zoneIdStr);
       }
+
+      _updateZoneInBackground(zoneId, zoneIndex, newState);
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Error Toggling Zone',
         message: e.toString(),
       );
-    } finally {
-      isLoading.value = false;
+    }
+  }
+
+  Future<void> _updateZoneInBackground(
+    dynamic zoneId,
+    int zoneIndex,
+    bool newState,
+  ) async {
+    try {
+      final updatedZone = await _zoneService.toggleZoneActive(zoneId);
+      storage.write('zone_${zoneId.toString()}_is_active', newState);
+      if (updatedZone.isActive != newState) {
+        zones[zoneIndex]['is_active'] = updatedZone.isActive;
+        zones.refresh();
+        if (selectedZone.isNotEmpty &&
+            selectedZone['id'].toString() == zoneId.toString()) {
+          selectedZone['is_active'] = updatedZone.isActive;
+          selectedZone.refresh();
+          isActive.value = updatedZone.isActive;
+        }
+      }
+    } catch (e) {
+      print('Background zone update error: $e');
     }
   }
 
   Future<void> saveManualDuration() async {
     final zoneId = selectedZone['id']?.toString();
     if (zoneId == null) return;
-
     try {
       await _zoneService.saveDuration(zoneId, manualDuration.value);
-
       await loadZones();
-
-      if (zoneId.isNotEmpty) {
-        await loadZoneById(zoneId);
-      }
-
+      if (zoneId.isNotEmpty) await loadZoneById(zoneId);
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
-        message: 'Durasi berhasil disimpan.',
+        message: 'Durasi berhasil disimpan',
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -501,17 +419,13 @@ class ZoneController extends GetxController {
       for (final update in updates) {
         final updatedZoneData = update['new'];
         if (updatedZoneData == null) continue;
-
         final updatedZoneId = updatedZoneData['id']?.toString();
         if (updatedZoneId == null) continue;
-
         final ZoneModel updatedZoneModel = ZoneModel.fromMap(updatedZoneData);
         final Map<String, dynamic> mappedUpdatedZone = _zoneModelToMap(
           updatedZoneModel,
         );
-
         final updatedIsActive = mappedUpdatedZone['is_active'] ?? false;
-
         final zoneIndex = zones.indexWhere(
           (z) => z['id'].toString() == updatedZoneId,
         );
@@ -527,7 +441,6 @@ class ZoneController extends GetxController {
           } else if (!updatedIsActive && _zoneTimers[updatedZoneId] != null) {
             stopTimer(updatedZoneId);
           }
-
           if (selectedZone['id']?.toString() == updatedZoneId) {
             selectedZone.value = {
               ...selectedZone,
@@ -547,12 +460,10 @@ class ZoneController extends GetxController {
     if (selectedZone.isNotEmpty && selectedZone['id']?.toString() == zoneId) {
       return selectedZone['duration'] ?? manualDuration.value;
     }
-
     final zoneIndex = zones.indexWhere((z) => z['id']?.toString() == zoneId);
     if (zoneIndex != -1) {
       return zones[zoneIndex]['duration'] ?? manualDuration.value;
     }
-
     return manualDuration.value;
   }
 
@@ -561,10 +472,8 @@ class ZoneController extends GetxController {
       _zoneTimers[zoneId]?.cancel();
       _zoneTimers[zoneId] = null;
     }
-
     int totalSeconds = durationMinutes * 60;
     final storedSeconds = storage.read('timer_$zoneId');
-
     if (storedSeconds != null) {
       try {
         totalSeconds = int.parse(storedSeconds.toString());
@@ -575,9 +484,7 @@ class ZoneController extends GetxController {
         );
       }
     }
-
     zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
-
     const oneSecond = Duration(seconds: 1);
     _zoneTimers[zoneId] = Timer.periodic(oneSecond, (timer) {
       if (totalSeconds > 0) {
@@ -588,11 +495,9 @@ class ZoneController extends GetxController {
           '0',
         );
         final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
-
         if (zoneTimers.containsKey(zoneId)) {
           zoneTimers[zoneId]?.value = '$hours:$minutes:$seconds';
         }
-
         storage.write('timer_$zoneId', totalSeconds);
       } else {
         stopTimer(zoneId);
@@ -604,11 +509,9 @@ class ZoneController extends GetxController {
   void stopTimer(String zoneId) {
     _zoneTimers[zoneId]?.cancel();
     _zoneTimers[zoneId] = null;
-
     if (zoneTimers.containsKey(zoneId)) {
       zoneTimers[zoneId]?.value = '00:00:00';
     }
-
     storage.remove('timer_$zoneId');
   }
 
@@ -620,30 +523,21 @@ class ZoneController extends GetxController {
     try {
       final zoneIndex = zones.indexWhere((z) => z['id'].toString() == zoneId);
       if (zoneIndex == -1) return;
-
       final isZoneActive = zones[zoneIndex]['is_active'] ?? false;
       if (!isZoneActive) {
         durationIrg.value = duration;
         storage.write('zone_${zoneId}_duration', duration);
-
         storage.remove('timer_$zoneId');
         await toggleActive(zoneId);
         stopTimer(zoneId);
-
         await startTimer(zoneId, duration);
         final updatedIndex = zones.indexWhere(
           (z) => z['id'].toString() == zoneId,
         );
-        if (updatedIndex != -1) {
-          zones.refresh();
-        }
-
+        if (updatedIndex != -1) zones.refresh();
         try {
           await _zoneService.markScheduleAsExecuted(scheduleId);
-
-          if (selectedZone['id']?.toString() == zoneId) {
-            await loadSchedules();
-          }
+          if (selectedZone['id']?.toString() == zoneId) await loadSchedules();
           await loadAllZoneSchedules();
         } catch (e) {
           DialogHelper.showErrorDialog(
@@ -668,12 +562,11 @@ class ZoneController extends GetxController {
     if (zoneId == null) {
       DialogHelper.showErrorDialog(
         title: 'Error',
-        message: 'Zona tidak terpilih.',
+        message: 'Zona tidak terpilih',
       );
       return;
     }
-
-    final hasPermission = await _hasZonePermission(
+    final hasPermission = await _userService.hasZonePermission(
       zoneId,
       'allow_auto_schedule',
     );
@@ -681,20 +574,17 @@ class ZoneController extends GetxController {
       DialogHelper.showErrorDialog(
         title: 'Akses Ditolak',
         message:
-            'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini.',
+            'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini',
       );
       return;
     }
-
     if (selectedDate.value == null || selectedTime.value == null) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Membuat Jadwal',
-        message:
-            'Tanggal dan waktu tidak boleh kosong. Silakan pilih tanggal dan waktu terlebih dahulu!',
+        message: 'Tanggal dan waktu tidak boleh kosong',
       );
       return;
     }
-
     final time = selectedTime.value!;
     final now = DateTime.now();
     final combinedDateTime = DateTime(
@@ -704,16 +594,13 @@ class ZoneController extends GetxController {
       time.hour,
       time.minute,
     );
-
     if (combinedDateTime.isBefore(now)) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Membuat Jadwal',
-        message:
-            'Jadwal tidak boleh lebih awal dari waktu saat ini. Silakan pilih waktu yang lebih baru!',
+        message: 'Jadwal tidak boleh lebih awal dari waktu saat ini',
       );
       return;
     }
-
     final duplicateSchedule =
         schedules.where((schedule) {
           final scheduledAt = schedule.schedule.scheduledAt;
@@ -723,32 +610,25 @@ class ZoneController extends GetxController {
               scheduledAt.hour == combinedDateTime.hour &&
               scheduledAt.minute == combinedDateTime.minute;
         }).firstOrNull;
-
     if (duplicateSchedule != null) {
       DialogHelper.showErrorDialog(
         title: 'Jadwal Sudah Ada',
-        message:
-            'Sudah ada jadwal pada tanggal dan waktu yang sama. Silakan pilih waktu yang berbeda!',
+        message: 'Sudah ada jadwal pada tanggal dan waktu yang sama',
       );
       return;
     }
-
     try {
       await _zoneService.createSchedule(
         scheduledDateTime: combinedDateTime,
         duration: durationIrg.value,
         zoneId: zoneId,
       );
-
       loadSchedules();
       clearFormSchedule();
-
       DialogHelper.showSuccessDialog(
         title: 'Jadwal Berhasil Disimpan',
-        message: 'Jadwal irigasi otomatis Anda berhasil disimpan.',
-        onConfirm: () {
-          clearFormSchedule();
-        },
+        message: 'Jadwal irigasi otomatis Anda berhasil disimpan',
+        onConfirm: () => clearFormSchedule(),
       );
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -760,7 +640,7 @@ class ZoneController extends GetxController {
 
   Future<void> deleteSchedule(int scheduleId, int zoneId) async {
     final zoneIdStr = zoneId.toString();
-    final hasPermission = await _hasZonePermission(
+    final hasPermission = await _userService.hasZonePermission(
       zoneIdStr,
       'allow_auto_schedule',
     );
@@ -768,14 +648,12 @@ class ZoneController extends GetxController {
       DialogHelper.showErrorDialog(
         title: 'Akses Ditolak',
         message:
-            'Anda tidak memiliki izin untuk menghapus jadwal irigasi otomatis pada zona ini.',
+            'Anda tidak memiliki izin untuk menghapus jadwal irigasi otomatis pada zona ini',
       );
       return;
     }
-
     try {
       isLoadingSchedules.value = true;
-
       bool confirmed = false;
       await DialogHelper.showConfirmationDialog(
         title: 'Hapus Jadwal',
@@ -792,19 +670,16 @@ class ZoneController extends GetxController {
       if (confirmed) {
         try {
           final result = await _zoneService.deleteSchedule(scheduleId, zoneId);
-
           if (result['success']) {
             await loadSchedules();
-
             String message = result['message'];
             if (result['wasCompletelyDeleted']) {
-              message = 'Jadwal berhasil dihapus sepenuhnya.';
+              message = 'Jadwal berhasil dihapus sepenuhnya';
             } else {
               final remainingZones = result['remainingZones'] ?? 0;
               message =
-                  'Jadwal berhasil dihapus dari zona ini. Jadwal masih digunakan oleh $remainingZones zona lainnya.';
+                  'Jadwal berhasil dihapus dari zona ini. Jadwal masih digunakan oleh $remainingZones zona lainnya';
             }
-
             DialogHelper.showSuccessDialog(title: 'Berhasil', message: message);
           }
         } catch (e) {
@@ -827,38 +702,31 @@ class ZoneController extends GetxController {
   Future<void> loadSchedules() async {
     isLoadingSchedules.value = true;
     final zoneId = selectedZone['id']?.toString();
-
     if (zoneId == null || zoneId.isEmpty) {
       isLoadingSchedules.value = false;
       return;
     }
-
     try {
       schedules.value = await _zoneService.loadZoneSchedules(zoneId);
       final storedDuration = storage.read('zone_${zoneId}_duration');
-      if (storedDuration != null) {
-        durationIrg.value = storedDuration;
-      } else if (schedules.isNotEmpty) {}
-
+      if (storedDuration != null) durationIrg.value = storedDuration;
       final now = DateTime.now();
       for (var item in schedules) {
         try {
           final scheduledAt = item.schedule.scheduledAt;
           final duration = item.schedule.duration;
           final scheduledId = item.schedule.id;
-
           storage.write('schedule_${scheduledId}_duration', duration);
-
           if (scheduledAt.isAfter(now)) {
             final timeUntilSchedule = scheduledAt.difference(now);
-
-            _scheduleTimers[scheduledId] = Timer(timeUntilSchedule, () {
-              _executeScheduledIrrigation(
+            _scheduleTimers[scheduledId] = Timer(
+              timeUntilSchedule,
+              () => _executeScheduledIrrigation(
                 item.zoneId.toString(),
                 duration,
                 scheduledId,
-              );
-            });
+              ),
+            );
           }
         } catch (e) {
           DialogHelper.showErrorDialog(
@@ -880,29 +748,23 @@ class ZoneController extends GetxController {
 
   Future<void> loadAllZoneSchedules() async {
     try {
-      _scheduleTimers.forEach((id, timer) {
-        timer.cancel();
-      });
+      _scheduleTimers.forEach((id, timer) => timer.cancel());
       _scheduleTimers.clear();
-
       final scheduleList = await _zoneService.loadAllZoneSchedules();
       final now = DateTime.now();
-
       storage.remove('schedules');
-
       for (var item in scheduleList) {
         try {
           final scheduledId = item.schedule.id;
           final scheduledAt = item.schedule.scheduledAt;
           final duration = item.schedule.duration;
           final zoneId = item.zoneId.toString();
-
           if (scheduledAt.isAfter(now)) {
             final timeUntilSchedule = scheduledAt.difference(now);
-
-            _scheduleTimers[scheduledId] = Timer(timeUntilSchedule, () {
-              _executeScheduledIrrigation(zoneId, duration, scheduledId);
-            });
+            _scheduleTimers[scheduledId] = Timer(
+              timeUntilSchedule,
+              () => _executeScheduledIrrigation(zoneId, duration, scheduledId),
+            );
           }
         } catch (e) {
           DialogHelper.showErrorDialog(
@@ -926,7 +788,6 @@ class ZoneController extends GetxController {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-
     if (pickedDate != null && pickedDate != selectedDate.value) {
       selectedDate.value = pickedDate;
     }
@@ -943,25 +804,15 @@ class ZoneController extends GetxController {
         );
       },
     );
-
-    if (pickedTime != null) {
-      selectedTime.value = pickedTime;
-    }
+    if (pickedTime != null) selectedTime.value = pickedTime;
   }
 
   String? validateName(String? value, {String? excludeZoneId}) {
-    if (value == null || value.isEmpty) {
-      return 'Nama zona tidak boleh kosong';
-    }
-    if (value.length < 3) {
-      return 'Nama zona minimal 3 karakter';
-    }
-
+    if (value == null || value.isEmpty) return 'Nama zona tidak boleh kosong';
+    if (value.length < 3) return 'Nama zona minimal 3 karakter';
     final similarZone = _findSimilarZoneName(value.trim(), excludeZoneId);
-    if (similarZone != null) {
+    if (similarZone != null)
       return 'Nama zona "${similarZone['name']}" sudah ada (tidak boleh mirip)';
-    }
-
     return null;
   }
 
@@ -970,21 +821,12 @@ class ZoneController extends GetxController {
     String? excludeZoneId,
   ]) {
     final normalizedNewName = newName.toLowerCase().trim();
-
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
       final zoneName = zone['name']?.toString() ?? '';
-
-      if (excludeZoneId != null && zoneId == excludeZoneId) {
-        continue;
-      }
-
+      if (excludeZoneId != null && zoneId == excludeZoneId) continue;
       final normalizedZoneName = zoneName.toLowerCase().trim();
-
-      if (normalizedZoneName == normalizedNewName) {
-        return zone;
-      }
-
+      if (normalizedZoneName == normalizedNewName) return zone;
       final cleanNewName = normalizedNewName.replaceAll(
         RegExp(r'[^a-z0-9]'),
         '',
@@ -993,12 +835,8 @@ class ZoneController extends GetxController {
         RegExp(r'[^a-z0-9]'),
         '',
       );
-
-      if (cleanNewName.isNotEmpty && cleanZoneName == cleanNewName) {
-        return zone;
-      }
+      if (cleanNewName.isNotEmpty && cleanZoneName == cleanNewName) return zone;
     }
-
     return null;
   }
 
@@ -1017,17 +855,14 @@ class ZoneController extends GetxController {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return false;
-
       final userResponse =
           await Supabase.instance.client
               .from('users')
               .select('user_roles!inner(roles!inner(role_name))')
               .eq('id', userId)
               .single();
-
       final rolesList = userResponse['user_roles'] as List;
       if (rolesList.isEmpty) return false;
-
       return rolesList[0]['roles']['role_name'] == 'owner';
     } catch (e) {
       return false;
