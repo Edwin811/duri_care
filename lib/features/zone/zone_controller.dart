@@ -61,13 +61,11 @@ class ZoneController extends GetxController {
     try {
       await loadZones();
       _setupZoneTimers();
-
       if (zones.isNotEmpty) {
         final firstZone = zones.first;
         isActive.value = firstZone['is_active'] ?? false;
         manualDuration.value = firstZone['duration'] ?? 5;
       }
-
       listenToZoneChanges();
       _loadBackgroundData();
     } catch (e) {
@@ -115,12 +113,21 @@ class ZoneController extends GetxController {
       final zoneId = zone['id']?.toString();
       if (zoneId != null) {
         zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
-        if (zone['is_active'] == true) {
-          startTimer(zoneId, _getZoneDuration(zoneId));
-        }
+
+        final isZoneActive = zone['is_active'] == true;
         final remainingTime = storage.read('timer_$zoneId');
-        if (remainingTime != null && remainingTime > 0) {
-          startTimer(zoneId, _getZoneDuration(zoneId));
+
+        if (isZoneActive) {
+          if (remainingTime != null && remainingTime > 0) {
+            startTimer(zoneId, _getZoneDuration(zoneId));
+          } else {
+            startTimer(zoneId, _getZoneDuration(zoneId));
+          }
+        } else {
+          if (remainingTime != null) {
+            storage.remove('timer_$zoneId');
+          }
+          zoneTimers[zoneId]?.value = '00:00:00';
         }
       }
     }
@@ -137,11 +144,34 @@ class ZoneController extends GetxController {
       }
       final zoneModels = await _zoneService.loadZones(userID!);
       zones.value = zoneModels.map((model) => _zoneModelToMap(model)).toList();
+
+      _cleanupStaleTimerData();
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Load Zones',
         message: 'Error: ${e.toString()}',
       );
+    }
+  }
+
+  void _cleanupStaleTimerData() {
+    final storage = GetStorage();
+    final activeZoneIds =
+        zones
+            .where((zone) => zone['is_active'] == true)
+            .map((zone) => zone['id']?.toString())
+            .where((id) => id != null)
+            .toSet();
+
+    final keys = storage.getKeys();
+    for (final key in keys) {
+      if (key.toString().startsWith('timer_')) {
+        final zoneId = key.toString().replaceFirst('timer_', '');
+
+        if (!activeZoneIds.contains(zoneId)) {
+          storage.remove(key);
+        }
+      }
     }
   }
 
@@ -446,9 +476,7 @@ class ZoneController extends GetxController {
           newName: newName.trim(),
           zoneCode: selectedZoneCode.value,
         );
-
       } catch (dbError) {
-
         if (originalZone != null && index != -1) {
           zones[index] = originalZone;
         }
@@ -640,7 +668,7 @@ class ZoneController extends GetxController {
         storage.write('timer_$zoneId', totalSeconds);
       } else {
         stopTimer(zoneId);
-        toggleActive(zoneId);
+        _deactivateZoneOnTimerExpiry(zoneId);
       }
     });
   }
@@ -652,6 +680,36 @@ class ZoneController extends GetxController {
       zoneTimers[zoneId]?.value = '00:00:00';
     }
     storage.remove('timer_$zoneId');
+  }
+
+  Future<void> _deactivateZoneOnTimerExpiry(String zoneId) async {
+    try {
+      final zoneIndex = zones.indexWhere((z) => z['id'].toString() == zoneId);
+      if (zoneIndex == -1) return;
+
+      final currentState = zones[zoneIndex]['is_active'] ?? false;
+
+      if (currentState) {
+        zones[zoneIndex]['is_active'] = false;
+        zones.refresh();
+
+        if (selectedZone.isNotEmpty &&
+            selectedZone['id'].toString() == zoneId) {
+          selectedZone['is_active'] = false;
+          selectedZone.refresh();
+          isActive.value = false;
+        }
+
+        activeCount.value = activeCount.value > 0 ? activeCount.value - 1 : 0;
+
+        _updateZoneInBackground(zoneId, zoneIndex, false);
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Error Deactivating Zone',
+        message: 'Failed to deactivate zone: ${e.toString()}',
+      );
+    }
   }
 
   Future<void> _executeScheduledIrrigation(
