@@ -4,6 +4,7 @@ import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/iot_device_model.dart';
 import 'package:duri_care/models/zone_model.dart';
 import 'package:duri_care/models/zone_schedule.dart';
+import 'package:duri_care/models/irrigation_schedule.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -378,7 +379,10 @@ class ZoneController extends GetxController {
     bool newState,
   ) async {
     try {
-      final updatedZone = await _zoneService.toggleZoneActive(zoneId);
+      final updatedZone = await _zoneService.toggleZoneActive(
+        zoneId,
+        type: 'manual',
+      );
       storage.write('zone_${zoneId.toString()}_is_active', newState);
       if (updatedZone.isActive != newState) {
         zones[zoneIndex]['is_active'] = updatedZone.isActive;
@@ -525,27 +529,18 @@ class ZoneController extends GetxController {
       if (zoneIndex == -1) return;
       final isZoneActive = zones[zoneIndex]['is_active'] ?? false;
       if (!isZoneActive) {
-        durationIrg.value = duration;
-        storage.write('zone_${zoneId}_duration', duration);
         storage.remove('timer_$zoneId');
-        await toggleActive(zoneId);
-        stopTimer(zoneId);
-        await startTimer(zoneId, duration);
-        final updatedIndex = zones.indexWhere(
-          (z) => z['id'].toString() == zoneId,
-        );
-        if (updatedIndex != -1) zones.refresh();
-        try {
-          await _zoneService.markScheduleAsExecuted(scheduleId);
-          if (selectedZone['id']?.toString() == zoneId) await loadSchedules();
-          await loadAllZoneSchedules();
-        } catch (e) {
-          DialogHelper.showErrorDialog(
-            title: 'Warning',
-            message:
-                'Irigasi berhasil dijalankan, tetapi gagal menandai jadwal sebagai selesai: $e',
-          );
+
+        zones[zoneIndex]['is_active'] = true;
+        zones.refresh();
+        if (selectedZone['id']?.toString() == zoneId) {
+          selectedZone['is_active'] = true;
+          selectedZone.refresh();
+          isActive.value = true;
         }
+        await startTimer(zoneId, duration);
+
+        _updateScheduledZoneInBackground(zoneId, duration, scheduleId);
       }
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -557,6 +552,19 @@ class ZoneController extends GetxController {
     }
   }
 
+  Future<void> _updateScheduledZoneInBackground(
+    String zoneId,
+    int duration,
+    int scheduleId,
+  ) async {
+    await _zoneService.toggleZoneActive(zoneId, type: 'auto');
+    await _zoneService.markScheduleAsExecuted(scheduleId);
+    if (selectedZone['id']?.toString() == zoneId) {
+      await loadSchedules(preserveFormDuration: true);
+    }
+    await loadAllZoneSchedules();
+  }
+
   Future<void> saveSchedule() async {
     final zoneId = selectedZone['id']?.toString();
     if (zoneId == null) {
@@ -566,18 +574,7 @@ class ZoneController extends GetxController {
       );
       return;
     }
-    final hasPermission = await _userService.hasZonePermission(
-      zoneId,
-      'allow_auto_schedule',
-    );
-    if (!hasPermission) {
-      DialogHelper.showErrorDialog(
-        title: 'Akses Ditolak',
-        message:
-            'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini',
-      );
-      return;
-    }
+
     if (selectedDate.value == null || selectedTime.value == null) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Membuat Jadwal',
@@ -585,6 +582,7 @@ class ZoneController extends GetxController {
       );
       return;
     }
+
     final time = selectedTime.value!;
     final now = DateTime.now();
     final combinedDateTime = DateTime(
@@ -594,6 +592,7 @@ class ZoneController extends GetxController {
       time.hour,
       time.minute,
     );
+
     if (combinedDateTime.isBefore(now)) {
       DialogHelper.showErrorDialog(
         title: 'Gagal Membuat Jadwal',
@@ -601,6 +600,7 @@ class ZoneController extends GetxController {
       );
       return;
     }
+
     final duplicateSchedule =
         schedules.where((schedule) {
           final scheduledAt = schedule.schedule.scheduledAt;
@@ -610,6 +610,7 @@ class ZoneController extends GetxController {
               scheduledAt.hour == combinedDateTime.hour &&
               scheduledAt.minute == combinedDateTime.minute;
         }).firstOrNull;
+
     if (duplicateSchedule != null) {
       DialogHelper.showErrorDialog(
         title: 'Jadwal Sudah Ada',
@@ -617,25 +618,72 @@ class ZoneController extends GetxController {
       );
       return;
     }
+    clearFormSchedule();
+
+    final optimisticScheduleData = {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'duration': durationIrg.value,
+      'scheduled_at': combinedDateTime.toIso8601String(),
+      'executed': false,
+      'status_id': 1,
+    };
+
+    _addOptimisticSchedule(optimisticScheduleData, combinedDateTime, zoneId);
+
+    DialogHelper.showSuccessDialog(
+      title: 'Jadwal Berhasil Disimpan',
+      message: 'Jadwal irigasi otomatis Anda berhasil disimpan',
+    );
+
+    _saveScheduleInBackground(combinedDateTime, zoneId);
+  }
+
+  void _saveScheduleInBackground(
+    DateTime combinedDateTime,
+    String zoneId,
+  ) async {
     try {
-      await _zoneService.createSchedule(
+      final hasPermission = await _userService.hasZonePermission(
+        zoneId,
+        'allow_auto_schedule',
+      );
+
+      if (!hasPermission) {
+        _removeOptimisticSchedule(combinedDateTime);
+        DialogHelper.showErrorDialog(
+          title: 'Akses Ditolak',
+          message:
+              'Anda tidak memiliki izin untuk membuat jadwal otomatis pada zona ini',
+        );
+        return;
+      }
+
+      final scheduleData = await _zoneService.createSchedule(
         scheduledDateTime: combinedDateTime,
         duration: durationIrg.value,
         zoneId: zoneId,
       );
-      loadSchedules();
-      clearFormSchedule();
-      DialogHelper.showSuccessDialog(
-        title: 'Jadwal Berhasil Disimpan',
-        message: 'Jadwal irigasi otomatis Anda berhasil disimpan',
-        onConfirm: () => clearFormSchedule(),
-      );
+
+      _updateOptimisticScheduleWithRealData(scheduleData, combinedDateTime);
+
+      _backgroundReloadSchedules();
     } catch (e) {
+      _removeOptimisticSchedule(combinedDateTime);
       DialogHelper.showErrorDialog(
         title: 'Gagal Menyimpan Jadwal',
         message: e.toString(),
       );
     }
+  }
+
+  void _backgroundReloadSchedules() {
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      final currentLoadingState = isLoadingSchedules.value;
+      await loadSchedules(preserveFormDuration: true);
+      if (!currentLoadingState) {
+        isLoadingSchedules.value = false;
+      }
+    });
   }
 
   Future<void> deleteSchedule(int scheduleId, int zoneId) async {
@@ -699,51 +747,93 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> loadSchedules() async {
-    isLoadingSchedules.value = true;
+  Future<void> loadSchedules({bool preserveFormDuration = false}) async {
     final zoneId = selectedZone['id']?.toString();
     if (zoneId == null || zoneId.isEmpty) {
       isLoadingSchedules.value = false;
       return;
     }
+
+    final wasLoading = isLoadingSchedules.value;
+    if (!wasLoading) {
+      isLoadingSchedules.value = true;
+    }
+
     try {
-      schedules.value = await _zoneService.loadZoneSchedules(zoneId);
-      final storedDuration = storage.read('zone_${zoneId}_duration');
-      if (storedDuration != null) durationIrg.value = storedDuration;
-      final now = DateTime.now();
-      for (var item in schedules) {
-        try {
-          final scheduledAt = item.schedule.scheduledAt;
-          final duration = item.schedule.duration;
-          final scheduledId = item.schedule.id;
-          storage.write('schedule_${scheduledId}_duration', duration);
-          if (scheduledAt.isAfter(now)) {
-            final timeUntilSchedule = scheduledAt.difference(now);
-            _scheduleTimers[scheduledId] = Timer(
-              timeUntilSchedule,
-              () => _executeScheduledIrrigation(
-                item.zoneId.toString(),
-                duration,
-                scheduledId,
-              ),
-            );
-          }
-        } catch (e) {
-          DialogHelper.showErrorDialog(
-            title: 'Failed to Parse Schedule',
-            message: 'Error parsing schedule date: $e',
-          );
+      final futures = <Future>[];
+
+      final schedulesFuture = _zoneService.loadZoneSchedules(zoneId);
+      futures.add(schedulesFuture);
+      if (!preserveFormDuration) {
+        final storedDuration = storage.read('zone_${zoneId}_duration');
+        if (storedDuration != null) {
+          durationIrg.value = storedDuration;
+        }
+      } else {
+        final storedDuration = storage.read('zone_${zoneId}_duration');
+        if (storedDuration != null) {
+          storage.remove('zone_${zoneId}_duration');
         }
       }
+
+      final results = await Future.wait(futures);
+      final loadedSchedules = results[0] as List<ZoneScheduleModel>;
+
+      schedules.value = loadedSchedules;
+
+      _setupScheduleTimersInBackground(loadedSchedules);
     } catch (e) {
       schedules.value = [];
-      DialogHelper.showErrorDialog(
-        title: 'Failed to Load Schedules',
-        message: 'Error: ${e.toString()}',
-      );
+      if (!wasLoading) {
+        DialogHelper.showErrorDialog(
+          title: 'Failed to Load Schedules',
+          message: 'Error: ${e.toString()}',
+        );
+      }
     } finally {
-      isLoadingSchedules.value = false;
+      if (!wasLoading) {
+        isLoadingSchedules.value = false;
+      }
     }
+  }
+
+  void _setupScheduleTimersInBackground(
+    List<ZoneScheduleModel> loadedSchedules,
+  ) {
+    Future.microtask(() async {
+      try {
+        final now = DateTime.now();
+        for (var item in loadedSchedules) {
+          try {
+            final scheduledAt = item.schedule.scheduledAt;
+            final duration = item.schedule.duration;
+            final scheduledId = item.schedule.id;
+            storage.write('schedule_${scheduledId}_duration', duration);
+            if (scheduledAt.isAfter(now)) {
+              final timeUntilSchedule = scheduledAt.difference(now);
+              _scheduleTimers[scheduledId] = Timer(
+                timeUntilSchedule,
+                () => _executeScheduledIrrigation(
+                  item.zoneId.toString(),
+                  duration,
+                  scheduledId,
+                ),
+              );
+            }
+          } catch (e) {
+            DialogHelper.showErrorDialog(
+              title: 'Failed to Process Schedule',
+              message: 'Error: $e',
+            );
+          }
+        }
+      } catch (e) {
+        DialogHelper.showErrorDialog(
+          title: 'Failed to Setup Schedule Timers',
+          message: 'Error: ${e.toString()}',
+        );
+      }
+    });
   }
 
   Future<void> loadAllZoneSchedules() async {
@@ -811,8 +901,9 @@ class ZoneController extends GetxController {
     if (value == null || value.isEmpty) return 'Nama zona tidak boleh kosong';
     if (value.length < 3) return 'Nama zona minimal 3 karakter';
     final similarZone = _findSimilarZoneName(value.trim(), excludeZoneId);
-    if (similarZone != null)
+    if (similarZone != null) {
       return 'Nama zona "${similarZone['name']}" sudah ada (tidak boleh mirip)';
+    }
     return null;
   }
 
@@ -873,5 +964,119 @@ class ZoneController extends GetxController {
     final zoneId = selectedZone['id']?.toString();
     if (zoneId == null) return false;
     return await _userService.hasAutoSchedulePermission(zoneId);
+  }
+
+  void _addOptimisticSchedule(
+    Map<String, dynamic> scheduleData,
+    DateTime combinedDateTime,
+    String zoneId,
+  ) {
+    try {
+      final optimisticSchedule = ZoneScheduleModel(
+        zoneId: int.parse(zoneId),
+        schedule: IrrigationScheduleModel(
+          id: scheduleData['id'] ?? DateTime.now().millisecondsSinceEpoch,
+          scheduledAt: combinedDateTime,
+          duration: durationIrg.value,
+          executed: false,
+          statusId: 1,
+        ),
+      );
+
+      final currentSchedules = List<ZoneScheduleModel>.from(schedules);
+      currentSchedules.add(optimisticSchedule);
+      currentSchedules.sort(
+        (a, b) => a.schedule.scheduledAt.compareTo(b.schedule.scheduledAt),
+      );
+
+      schedules.value = currentSchedules;
+
+      final now = DateTime.now();
+      if (combinedDateTime.isAfter(now)) {
+        final timeUntilSchedule = combinedDateTime.difference(now);
+        final scheduledId = optimisticSchedule.schedule.id;
+        _scheduleTimers[scheduledId] = Timer(
+          timeUntilSchedule,
+          () => _executeScheduledIrrigation(
+            zoneId,
+            durationIrg.value,
+            scheduledId,
+          ),
+        );
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Menambahkan Jadwal',
+        message: 'Terjadi kesalahan saat menambahkan jadwal: $e',
+      );
+    }
+  }
+
+  void _removeOptimisticSchedule(DateTime combinedDateTime) {
+    try {
+      final updatedSchedules =
+          schedules.where((schedule) {
+            final scheduledAt = schedule.schedule.scheduledAt;
+            return !(scheduledAt.year == combinedDateTime.year &&
+                scheduledAt.month == combinedDateTime.month &&
+                scheduledAt.day == combinedDateTime.day &&
+                scheduledAt.hour == combinedDateTime.hour &&
+                scheduledAt.minute == combinedDateTime.minute);
+          }).toList();
+
+      schedules.value = updatedSchedules;
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Menghapus Jadwal',
+        message: 'Terjadi kesalahan saat menghapus jadwal: $e',
+      );
+    }
+  }
+
+  void _updateOptimisticScheduleWithRealData(
+    Map<String, dynamic> scheduleData,
+    DateTime combinedDateTime,
+  ) {
+    try {
+      final scheduleIndex = schedules.indexWhere((schedule) {
+        final scheduledAt = schedule.schedule.scheduledAt;
+        return scheduledAt.year == combinedDateTime.year &&
+            scheduledAt.month == combinedDateTime.month &&
+            scheduledAt.day == combinedDateTime.day &&
+            scheduledAt.hour == combinedDateTime.hour &&
+            scheduledAt.minute == combinedDateTime.minute;
+      });
+
+      if (scheduleIndex != -1) {
+        final currentSchedule = schedules[scheduleIndex];
+        final updatedSchedule = ZoneScheduleModel(
+          zoneId: currentSchedule.zoneId,
+          schedule: IrrigationScheduleModel(
+            id: scheduleData['id'],
+            scheduledAt: combinedDateTime,
+            duration: scheduleData['duration'],
+            executed: scheduleData['executed'] ?? false,
+            statusId: scheduleData['status_id'] ?? 1,
+          ),
+        );
+
+        final updatedSchedules = List<ZoneScheduleModel>.from(schedules);
+        updatedSchedules[scheduleIndex] = updatedSchedule;
+        schedules.value = updatedSchedules;
+      }
+    } catch (e) {
+      DialogHelper.showErrorDialog(
+        title: 'Gagal Memperbarui Jadwal',
+        message: 'Terjadi kesalahan saat memperbarui jadwal: $e',
+      );
+    }
+  }
+
+  void resetDurationToDefault() {
+    durationIrg.value = 5;
+    final zoneId = selectedZone['id']?.toString();
+    if (zoneId != null) {
+      storage.remove('zone_${zoneId}_duration');
+    }
   }
 }

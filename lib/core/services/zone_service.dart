@@ -215,11 +215,14 @@ class ZoneService extends GetxService {
     return ZoneModel.fromMap(updatedZone);
   }
 
-  Future<ZoneModel> toggleZoneActive(dynamic zoneId) async {
+  Future<ZoneModel> toggleZoneActive(
+    dynamic zoneId, {
+    String type = 'manual',
+  }) async {
     final zone =
         await _supabase
             .from('zones')
-            .select('id, is_active, manual_duration')
+            .select('id, is_active, manual_duration, name')
             .eq('id', zoneId)
             .single();
 
@@ -233,15 +236,40 @@ class ZoneService extends GetxService {
             .eq('id', zoneId)
             .select()
             .single();
+
     final userId = _supabase.auth.currentUser?.id;
+
+    String fullname = 'System';
+    if (userId != null) {
+      try {
+        final userResponse =
+            await _supabase
+                .from('users')
+                .select('fullname')
+                .eq('id', userId)
+                .single();
+        fullname = userResponse['fullname'] ?? 'System';
+      } catch (e) {
+        fullname = type == 'auto' ? 'System' : 'Unknown User';
+      }
+    }
+
     if (newState) {
+      String message;
+      if (type == 'auto') {
+        message = 'Penyiraman otomatis dimulai oleh sistem';
+      } else {
+        message =
+            '$fullname memulai penyiraman manual dengan durasi ${zone['manual_duration']} menit';
+      }
+
       await _supabase.from('irrigation_histories').insert({
         'zone_id': zoneId,
         'executed_by': userId,
         'started_at': DateTime.now().toIso8601String(),
         'duration': zone['manual_duration'],
-        'type': 'manual',
-        'message': 'Irigasi manual telah dimulai',
+        'type': type,
+        'message': message,
         'created_at': DateTime.now().toIso8601String(),
       });
     }
@@ -254,52 +282,66 @@ class ZoneService extends GetxService {
     required int duration,
     required String zoneId,
   }) async {
-    final existingSchedule =
-        await _supabase
-            .from('irrigation_schedules')
-            .select()
-            .eq('scheduled_at', scheduledDateTime.toIso8601String())
-            .eq('duration', duration)
-            .maybeSingle();
+    try {
+      // Optimize by reducing database calls and using transactions where possible
 
-    dynamic scheduleId;
-    Map<String, dynamic> scheduleData;
+      // First, try to create the schedule directly
+      Map<String, dynamic> scheduleData;
+      dynamic scheduleId;
 
-    if (existingSchedule != null) {
-      scheduleId = existingSchedule['id'];
-      scheduleData = existingSchedule;
-    } else {
-      final insertedSchedule =
+      try {
+        // Try to insert new schedule
+        final insertedSchedule =
+            await _supabase
+                .from('irrigation_schedules')
+                .insert({
+                  'duration': duration,
+                  'status_id': 1,
+                  'scheduled_at': scheduledDateTime.toIso8601String(),
+                  'executed': false,
+                })
+                .select()
+                .single();
+        scheduleId = insertedSchedule['id'];
+        scheduleData = insertedSchedule;
+      } catch (e) {
+        // If insert fails (duplicate), try to find existing
+        final existingSchedule =
+            await _supabase
+                .from('irrigation_schedules')
+                .select()
+                .eq('scheduled_at', scheduledDateTime.toIso8601String())
+                .eq('duration', duration)
+                .maybeSingle();
+
+        if (existingSchedule != null) {
+          scheduleId = existingSchedule['id'];
+          scheduleData = existingSchedule;
+        } else {
+          throw Exception('Failed to create or find schedule');
+        }
+      }
+
+      // Check and create zone_schedule relationship efficiently
+      final existingZoneSchedule =
           await _supabase
-              .from('irrigation_schedules')
-              .insert({
-                'duration': duration,
-                'status_id': 1,
-                'scheduled_at': scheduledDateTime.toIso8601String(),
-                'executed': false,
-              })
+              .from('zone_schedules')
               .select()
-              .single();
-      scheduleId = insertedSchedule['id'];
-      scheduleData = insertedSchedule;
+              .eq('zone_id', int.parse(zoneId))
+              .eq('schedule_id', scheduleId)
+              .maybeSingle();
+
+      if (existingZoneSchedule == null) {
+        await _supabase.from('zone_schedules').insert({
+          'zone_id': int.parse(zoneId),
+          'schedule_id': scheduleId,
+        });
+      }
+
+      return scheduleData;
+    } catch (e) {
+      throw Exception('Gagal membuat jadwal: $e');
     }
-
-    final existingZoneSchedule =
-        await _supabase
-            .from('zone_schedules')
-            .select()
-            .eq('zone_id', int.parse(zoneId))
-            .eq('schedule_id', scheduleId)
-            .maybeSingle();
-
-    if (existingZoneSchedule == null) {
-      await _supabase.from('zone_schedules').insert({
-        'zone_id': int.parse(zoneId),
-        'schedule_id': scheduleId,
-      });
-    }
-
-    return scheduleData;
   }
 
   Future<Map<String, dynamic>> deleteSchedule(

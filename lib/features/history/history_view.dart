@@ -76,7 +76,7 @@ class HistoryView extends GetView<HistoryController> {
 
   Widget _buildHistoryCard(BuildContext context, Map<String, dynamic> history) {
     final startedAt = history['started_at'] as DateTime;
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(startedAt);
+    final formattedDate = DateFormat('dd MMMM yyyy, HH:mm').format(startedAt);
     final duration = history['duration'] as int;
     final type = history['type'] as String;
     final message = history['message'] as String;

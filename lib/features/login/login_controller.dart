@@ -68,9 +68,16 @@ class LoginController extends GetxController {
 
       final profile = await AuthService.to.getUserProfile(userData.id);
       final fullname = profile?['fullname'] ?? userData.email ?? 'Pengguna';
+
+      // Close loading dialog first
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
+
+      // Add a small delay to ensure dialog is properly closed
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Show success dialog
       DialogHelper.showSuccessDialog(
         title: 'Berhasil Masuk',
         message: 'Selamat datang, $fullname',
@@ -83,6 +90,10 @@ class LoginController extends GetxController {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
+
+      // Add delay before showing error dialog
+      await Future.delayed(const Duration(milliseconds: 100));
+
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('invalid_credentials')) {
         DialogHelper.showErrorDialog(

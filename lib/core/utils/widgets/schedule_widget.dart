@@ -74,15 +74,13 @@ class SchedulingSectionWidget extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
 
-    // Responsive spacing and sizing
     final smallSpacing = isSmallScreen ? 6.0 : 8.0;
     final mediumSpacing = isSmallScreen ? 12.0 : 16.0;
     final buttonHeight = isSmallScreen ? 36.0 : 40.0;
-    final fontSize = isSmallScreen ? 13.0 : 14.0;
+    final fontSize = isSmallScreen ? 14.0 : 16.0;
 
     return Column(
       children: [
-        // Date selection - responsive layout
         Obx(
           () =>
               isSmallScreen
@@ -159,7 +157,6 @@ class SchedulingSectionWidget extends StatelessWidget {
         ),
         SizedBox(height: smallSpacing),
 
-        // Time selection - responsive layout
         Obx(
           () =>
               isSmallScreen
@@ -231,7 +228,6 @@ class SchedulingSectionWidget extends StatelessWidget {
                   ),
         ),
         SizedBox(height: smallSpacing),
-        // Duration slider - responsive layout
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
