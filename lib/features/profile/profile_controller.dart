@@ -238,12 +238,30 @@ class ProfileController extends GetxController {
       try {
         String? uploadedImageStoragePath;
         bool hasChanges = false;
-
         if (imageFile.value != null) {
-          uploadedImageStoragePath = await _userService.uploadProfileImage(
-            imageFile.value!,
-          );
-          hasChanges = true;
+          try {
+            final userId = Supabase.instance.client.auth.currentUser?.id;
+            if (userId == null) {
+              throw Exception('User tidak terautentikasi untuk upload foto');
+            }
+
+            uploadedImageStoragePath = await _userService.uploadProfileImage(
+              imageFile.value!,
+              userId: userId,
+            );
+            hasChanges = true;
+          } catch (e) {
+            if (Get.isDialogOpen ?? false) {
+              Get.back();
+            }
+
+            DialogHelper.showErrorDialog(
+              title: 'Error Upload Foto',
+              message: e.toString(),
+            );
+
+            return;
+          }
         }
 
         bool hasEmailChange = isOwner && emailController.text != email.value;
@@ -312,6 +330,7 @@ class ProfileController extends GetxController {
         if (Get.isDialogOpen ?? false) {
           Get.back();
         }
+
         String errorString = e.toString().toLowerCase();
 
         if (e is AuthException) {
@@ -335,6 +354,15 @@ class ProfileController extends GetxController {
             message: 'Password baru tidak boleh sama dengan password lama.',
           );
           return;
+        } else if (errorString.contains('row-level security policy') ||
+            errorString.contains('unauthorized') ||
+            errorString.contains('403')) {
+          DialogHelper.showErrorDialog(
+            title: 'Error',
+            message:
+                'Tidak memiliki izin untuk memperbarui profil. Silakan login ulang.',
+          );
+          return;
         }
 
         DialogHelper.showErrorDialog(
@@ -344,6 +372,10 @@ class ProfileController extends GetxController {
         debugPrint('Profile update error: $e');
       }
     } catch (e) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
       DialogHelper.showErrorDialog(
         title: 'Error',
         message: 'Terjadi kesalahan: ${e.toString()}',

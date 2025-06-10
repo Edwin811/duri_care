@@ -109,24 +109,19 @@ class ZoneController extends GetxController {
   }
 
   void _setupZoneTimers() {
+
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
       if (zoneId != null) {
-        zoneTimers.putIfAbsent(zoneId, () => '00:00:00'.obs);
-
         final isZoneActive = zone['is_active'] == true;
         final remainingTime = storage.read('timer_$zoneId');
+        if (!isZoneActive && remainingTime != null) {
+          storage.remove('timer_$zoneId');
+        }
 
         if (isZoneActive) {
-          if (remainingTime != null && remainingTime > 0) {
-            startTimer(zoneId, _getZoneDuration(zoneId));
-          } else {
-            startTimer(zoneId, _getZoneDuration(zoneId));
-          }
+          startTimer(zoneId, _getZoneDuration(zoneId));
         } else {
-          if (remainingTime != null) {
-            storage.remove('timer_$zoneId');
-          }
           zoneTimers[zoneId]?.value = '00:00:00';
         }
       }
@@ -142,9 +137,9 @@ class ZoneController extends GetxController {
         );
         return;
       }
+
       final zoneModels = await _zoneService.loadZones(userID!);
       zones.value = zoneModels.map((model) => _zoneModelToMap(model)).toList();
-
       _cleanupStaleTimerData();
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -688,8 +683,9 @@ class ZoneController extends GetxController {
       if (zoneIndex == -1) return;
 
       final currentState = zones[zoneIndex]['is_active'] ?? false;
-
       if (currentState) {
+        print('Timer expired for zone $zoneId - deactivating');
+
         zones[zoneIndex]['is_active'] = false;
         zones.refresh();
 
@@ -705,10 +701,8 @@ class ZoneController extends GetxController {
         _updateZoneInBackground(zoneId, zoneIndex, false);
       }
     } catch (e) {
-      DialogHelper.showErrorDialog(
-        title: 'Error Deactivating Zone',
-        message: 'Failed to deactivate zone: ${e.toString()}',
-      );
+      // Log error silently - don't show dialog for timer expiry issues
+      print('Error deactivating zone on timer expiry: $e');
     }
   }
 
@@ -751,7 +745,7 @@ class ZoneController extends GetxController {
     int scheduleId,
   ) async {
     await _zoneService.toggleZoneActive(zoneId, type: 'auto');
-    await _zoneService.markScheduleAsExecuted(scheduleId);
+    // await _zoneService.markScheduleAsExecuted(scheduleId);
     if (selectedZone['id']?.toString() == zoneId) {
       await loadSchedules(preserveFormDuration: true);
     }

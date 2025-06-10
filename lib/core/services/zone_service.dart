@@ -435,18 +435,18 @@ class ZoneService extends GetxService {
     }
   }
 
-  Future<void> markScheduleAsExecuted(int scheduleId) async {
-    try {
-      await _supabase
-          .from('irrigation_schedules')
-          .update({'executed': true})
-          .eq('id', scheduleId);
-    } on PostgrestException catch (e) {
-      throw Exception('Gagal menandai jadwal sebagai dieksekusi: ${e.message}');
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: $e');
-    }
-  }
+  // Future<void> markScheduleAsExecuted(int scheduleId) async {
+  //   try {
+  //     await _supabase
+  //         .from('irrigation_schedules')
+  //         .update({'executed': true})
+  //         .eq('id', scheduleId);
+  //   } on PostgrestException catch (e) {
+  //     throw Exception('Gagal menandai jadwal sebagai dieksekusi: ${e.message}');
+  //   } catch (e) {
+  //     throw Exception('Terjadi kesalahan: $e');
+  //   }
+  // }
 
   Stream<List<Map<String, dynamic>>> zoneChangesStream() {
     return _supabase

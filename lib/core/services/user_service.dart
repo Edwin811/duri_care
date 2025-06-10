@@ -58,22 +58,28 @@ class UserService extends GetxService {
     }
   }
 
-  Future<String?> uploadProfileImage(File file) async {
+  Future<String?> uploadProfileImage(File file, {required String userId}) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return null;
+    if (user == null) throw Exception('User tidak terautentikasi');
 
-    final filePath =
-        'avatars/${user.id}_${DateTime.now().millisecondsSinceEpoch}.png';
+    try {
+      final fileExtension = file.path.split('.').last.toLowerCase();
+      final fileName =
+          '${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final filePath = 'profiles/$fileName';
 
-    final storageResponse = await _supabase.storage
-        .from('image')
-        .upload(filePath, file, fileOptions: const FileOptions(upsert: true));
+      await _supabase.storage
+          .from('image')
+          .upload(
+            filePath,
+            file,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
 
-    if (storageResponse.isEmpty) {
-      throw Exception('Upload to storage failed');
+      return filePath;
+    } catch (e) {
+      throw Exception('Gagal mengupload foto profil: ${e.toString()}');
     }
-
-    return filePath;
   }
 
   Future<void> signOut() async {
