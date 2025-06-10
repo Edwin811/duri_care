@@ -3,7 +3,7 @@ class ZoneModel {
   final String name;
   final bool isActive;
   final int zoneCode;
-  final int duration; // Default duration in minutes
+  final int duration;
   final DateTime? createdAt;
   final DateTime? deletedAt;
 
@@ -30,9 +30,9 @@ class ZoneModel {
   factory ZoneModel.fromMap(Map<String, dynamic> map) {
     return ZoneModel(
       id: map['id'],
-      name: map['name'] ?? 'Unknown Zone',
+      name: map['name'],
       isActive: map['is_active'] ?? false,
-      zoneCode: map['zone_code'] ?? 0,
+      zoneCode: map['zone_code'],
       duration: map['manual_duration'] ?? 5,
       createdAt:
           map['created_at'] != null ? DateTime.parse(map['created_at']) : null,

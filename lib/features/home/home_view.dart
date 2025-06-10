@@ -157,29 +157,37 @@ class HomeView extends GetView<HomeController> {
                     crossAxisSpacing: 8,
                     childAspectRatio: 1.8,
                     children: [
-                      _buildSensorCard(
-                        context,
-                        'Sensor Hujan',
-                        '75%',
-                        Icons.cloudy_snowing,
+                      Obx(
+                        () => _buildSensorCard(
+                          context,
+                          'Sensor Hujan',
+                          '${controller.rainfallIntensity.value}%',
+                          Icons.cloudy_snowing,
+                        ),
                       ),
-                      _buildSensorCard(
-                        context,
-                        'Kelembaban Tanah',
-                        '68%',
-                        Icons.grass_outlined,
+                      Obx(
+                        () => _buildSensorCard(
+                          context,
+                          'Kelembaban Tanah',
+                          '${controller.soilMoisture.value}%',
+                          Icons.grass_outlined,
+                        ),
                       ),
-                      _buildSensorCard(
-                        context,
-                        'Kelembaban Udara',
-                        '82%',
-                        Icons.air_outlined,
+                      Obx(
+                        () => _buildSensorCard(
+                          context,
+                          'Kelembaban Udara',
+                          '${controller.airHumidity.value}%',
+                          Icons.air_outlined,
+                        ),
                       ),
-                      _buildSensorCard(
-                        context,
-                        'Suhu Udara',
-                        '28°C',
-                        Icons.thermostat_outlined,
+                      Obx(
+                        () => _buildSensorCard(
+                          context,
+                          'Suhu Udara',
+                          '${controller.airMoisture.value}°C',
+                          Icons.thermostat_outlined,
+                        ),
                       ),
                     ],
                   ),

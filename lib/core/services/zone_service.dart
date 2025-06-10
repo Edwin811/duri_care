@@ -27,7 +27,7 @@ class ZoneService extends GetxService {
     }).toList();
   }
 
-  Future<ZoneModel> loadZoneById(String zoneId, String userId) async {
+  Future<ZoneModel> loadZoneById(int zoneId, String userId) async {
     final response =
         await _supabase
             .from('zones')
@@ -36,11 +36,10 @@ class ZoneService extends GetxService {
             .eq('zone_users.user_id', userId)
             .filter('deleted_at', 'is', null)
             .single();
-
     return ZoneModel.fromMap(response);
   }
 
-  Future<List<IotDeviceModel>> loadDevicesForZone(String zoneId) async {
+  Future<List<IotDeviceModel>> loadDevicesForZone(int zoneId) async {
     final response = await _supabase
         .from('iot_devices')
         .select()
@@ -68,7 +67,7 @@ class ZoneService extends GetxService {
     }).toList();
   }
 
-  Future<IrrigationHistoryModel> loadIrrigationHistory(String zoneId) async {
+  Future<IrrigationHistoryModel> loadIrrigationHistory(int zoneId) async {
     final response =
         await _supabase
             .from('irrigation_histories')
@@ -82,7 +81,7 @@ class ZoneService extends GetxService {
   }
 
   Future<List<IrrigationHistoryModel>> loadAllIrrigationHistory(
-    String zoneId,
+    int zoneId,
   ) async {
     final response = await _supabase
         .from('irrigation_histories')
@@ -141,33 +140,6 @@ class ZoneService extends GetxService {
     return ZoneModel.fromMap(newZone);
   }
 
-  // Future<void> assignDevicesToZone(String zoneId, List<int> deviceIds) async {
-  //   final deviceAssignments =
-  //       deviceIds
-  //           .map(
-  //             (deviceId) => {
-  //               'device_id': deviceId,
-  //               'zone_id': zoneId,
-  //               'assigned_at': DateTime.now().toIso8601String(),
-  //             },
-  //           )
-  //           .toList();
-
-  //   await _supabase.from('zone_devices').insert(deviceAssignments);
-  // }
-
-  Future<void> addDeviceToZone({
-    required String zoneId,
-    required int iotCode,
-    required String name,
-  }) async {
-    await _supabase.from('iot_devices').insert({
-      'zone_id': zoneId,
-      'iot_code': iotCode,
-      'name': name,
-    });
-  }
-
   Future<void> deleteZone(int zoneId) async {
     await _supabase
         .from('zones')
@@ -204,7 +176,7 @@ class ZoneService extends GetxService {
     return ZoneModel.fromMap(updated);
   }
 
-  Future<ZoneModel> saveDuration(dynamic zoneId, int duration) async {
+  Future<ZoneModel> saveDuration(int zoneId, int duration) async {
     final updatedZone =
         await _supabase
             .from('zones')
@@ -283,14 +255,10 @@ class ZoneService extends GetxService {
     required String zoneId,
   }) async {
     try {
-      // Optimize by reducing database calls and using transactions where possible
-
-      // First, try to create the schedule directly
       Map<String, dynamic> scheduleData;
       dynamic scheduleId;
 
       try {
-        // Try to insert new schedule
         final insertedSchedule =
             await _supabase
                 .from('irrigation_schedules')
@@ -305,7 +273,6 @@ class ZoneService extends GetxService {
         scheduleId = insertedSchedule['id'];
         scheduleData = insertedSchedule;
       } catch (e) {
-        // If insert fails (duplicate), try to find existing
         final existingSchedule =
             await _supabase
                 .from('irrigation_schedules')
@@ -322,7 +289,6 @@ class ZoneService extends GetxService {
         }
       }
 
-      // Check and create zone_schedule relationship efficiently
       final existingZoneSchedule =
           await _supabase
               .from('zone_schedules')
@@ -386,7 +352,7 @@ class ZoneService extends GetxService {
     }
   }
 
-  Future<List<ZoneScheduleModel>> loadZoneSchedules(String zoneId) async {
+  Future<List<ZoneScheduleModel>> loadZoneSchedules(int zoneId) async {
     try {
       final data = await _supabase
           .from('zone_schedules')
@@ -434,19 +400,6 @@ class ZoneService extends GetxService {
       throw Exception('Failed to load all zone schedules: $e');
     }
   }
-
-  // Future<void> markScheduleAsExecuted(int scheduleId) async {
-  //   try {
-  //     await _supabase
-  //         .from('irrigation_schedules')
-  //         .update({'executed': true})
-  //         .eq('id', scheduleId);
-  //   } on PostgrestException catch (e) {
-  //     throw Exception('Gagal menandai jadwal sebagai dieksekusi: ${e.message}');
-  //   } catch (e) {
-  //     throw Exception('Terjadi kesalahan: $e');
-  //   }
-  // }
 
   Stream<List<Map<String, dynamic>>> zoneChangesStream() {
     return _supabase

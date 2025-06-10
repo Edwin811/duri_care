@@ -10,8 +10,16 @@ import 'package:get/get.dart';
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
   static const String route = '/profile';
+
   @override
   Widget build(BuildContext context) {
+    // Trigger refresh when profile view is built/becomes visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<ProfileController>()) {
+        controller.onProfilePageEntered();
+      }
+    });
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: SafeArea(

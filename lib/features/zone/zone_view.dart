@@ -31,7 +31,7 @@ class ZoneView extends GetView<ZoneController> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (zoneId != null && zoneId.isNotEmpty) {
-        controller.loadZoneById(zoneId);
+        controller.loadZoneById(int.parse(zoneId));
       }
     });
 

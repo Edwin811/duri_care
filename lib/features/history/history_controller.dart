@@ -8,15 +8,17 @@ class HistoryController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
   final isLoading = false.obs;
   final historyList = <Map<String, dynamic>>[].obs;
-  final selectedZoneId = ''.obs;
+  final selectedZoneId = 0.obs;
   final selectedZoneName = ''.obs;
   final RxMap<String, String> userNameCache = <String, String>{}.obs;
+
   @override
   void onInit() {
     super.onInit();
 
     if (Get.arguments != null && Get.arguments['zoneId'] != null) {
-      selectedZoneId.value = Get.arguments['zoneId'].toString();
+      selectedZoneId.value =
+          int.tryParse(Get.arguments['zoneId'].toString()) ?? 0;
       if (Get.arguments['zoneName'] != null) {
         selectedZoneName.value = Get.arguments['zoneName'].toString();
       }
@@ -40,8 +42,8 @@ class HistoryController extends GetxController {
       }
 
       final zoneModels = await _zoneService.loadZones(userId);
-      if (zoneModels.isNotEmpty && selectedZoneId.isEmpty) {
-        selectedZoneId.value = zoneModels.first.id.toString();
+      if (zoneModels.isNotEmpty && selectedZoneId.value == 0) {
+        selectedZoneId.value = zoneModels.first.id;
         selectedZoneName.value = zoneModels.first.name;
       }
     } catch (e) {
@@ -53,7 +55,7 @@ class HistoryController extends GetxController {
   }
 
   Future<void> loadHistory() async {
-    if (selectedZoneId.value.isEmpty) return;
+    if (selectedZoneId.value == 0) return;
 
     isLoading.value = true;
     historyList.clear();
@@ -109,7 +111,7 @@ class HistoryController extends GetxController {
     }
   }
 
-  void changeSelectedZone(String zoneId, String zoneName) {
+  void changeSelectedZone(int zoneId, String zoneName) {
     selectedZoneId.value = zoneId;
     selectedZoneName.value = zoneName;
     loadHistory();

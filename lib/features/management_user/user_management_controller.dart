@@ -4,7 +4,6 @@ import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/models/role_model.dart';
 import 'package:duri_care/models/user_model.dart';
 import 'package:duri_care/models/zone_model.dart';
-import 'package:duri_care/models/permission_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,7 +30,6 @@ class UserManagementController extends GetxController {
   final RxList<RoleModel> roles = <RoleModel>[].obs;
   final RxList<ZoneModel> allZones = <ZoneModel>[].obs;
   final RxList<int> userZoneIds = <int>[].obs;
-  final RxList<PermissionModel> allPermissions = <PermissionModel>[].obs;
   final RxList<String> userPermissionIds = <String>[].obs;
   final RxList<ZonePermissionModel> zonePermissions =
       <ZonePermissionModel>[].obs;
@@ -236,38 +234,6 @@ class UserManagementController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  // Future<void> fetchUserPermissions() async {
-  //   final user = selectedUser.value;
-  //   if (user == null) return;
-  //   try {
-  //     isLoading.value = true;
-  //     final userId = user.id;
-  //     final perms = await _userService.getAllPermissions();
-  //     allPermissions.assignAll(
-  //       perms.map<PermissionModel>((p) => PermissionModel.fromMap(p)),
-  //     );
-  //     final userPermRows = await _supabase
-  //         .from('user_permissions')
-  //         .select('permission_id')
-  //         .eq('user_id', userId);
-  //     userPermissionIds.clear();
-  //     userPermissionIds.addAll(
-  //       userPermRows.map<String>((p) => p['permission_id'].toString()),
-  //     );
-  //     zoneChanges.clear();
-  //     permissionChanges.clear();
-  //     zonePermissionChanges.clear();
-  //     hasChanges.value = false;
-  //   } catch (e) {
-  //     DialogHelper.showErrorDialog(
-  //       title: 'Error',
-  //       message: 'Gagal memuat data permission: ${e.toString()}',
-  //     );
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
 
   Future<void> updateZonePermission(int zoneId, bool add) async {
     final user = selectedUser.value;

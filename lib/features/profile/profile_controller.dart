@@ -61,6 +61,12 @@ class ProfileController extends GetxController {
     await _initializeProfileData(forceServerRefresh: true);
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
+
+    // Also refresh home controller to update profile display there
+    if (Get.isRegistered<HomeController>()) {
+      final homeController = Get.find<HomeController>();
+      await homeController.refreshUserSpecificData();
+    }
   }
 
   void toggleNotification() {
@@ -391,6 +397,12 @@ class ProfileController extends GetxController {
     await _initializeProfileData(forceServerRefresh: true);
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
+
+    // Also refresh home controller to update profile display there
+    if (Get.isRegistered<HomeController>()) {
+      final homeController = Get.find<HomeController>();
+      await homeController.refreshUserSpecificData();
+    }
   }
 
   String? validateEmail(String email) {

@@ -15,6 +15,13 @@ class Zone extends GetView<ZoneController> {
   final void Function()? onPowerButtonPressed;
   final void Function()? onSelectZone;
   final Map<String, dynamic> zoneData;
+  int _getZoneDuration(Map<String, dynamic> currentZoneData, String zoneIdStr) {
+    if (controller.selectedZone.isNotEmpty &&
+        controller.selectedZone['id']?.toString() == zoneIdStr) {
+      return controller.manualDuration.value;
+    }
+    return currentZoneData['duration'] ?? 5;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +120,7 @@ class Zone extends GetView<ZoneController> {
                       Row(
                         children: [
                           Icon(
-                            Icons.water_drop_outlined,
+                            Icons.code,
                             color:
                                 isStatus
                                     ? AppColor.yellowPrimary
@@ -126,7 +133,7 @@ class Zone extends GetView<ZoneController> {
                               text: TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'Kelembaban Tanah',
+                                    text: 'Kode Zona: ',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -140,7 +147,7 @@ class Zone extends GetView<ZoneController> {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: ' ${zoneData['moisture'] ?? ' 0%'}',
+                                    text: ' ${zoneData['zone_code']}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -163,7 +170,7 @@ class Zone extends GetView<ZoneController> {
                       Row(
                         children: [
                           Icon(
-                            Icons.cloud_done_outlined,
+                            Icons.timer_outlined,
                             color:
                                 isStatus
                                     ? AppColor.yellowPrimary
@@ -172,37 +179,41 @@ class Zone extends GetView<ZoneController> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'Status IoT',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge?.copyWith(
-                                      color:
-                                          isStatus
-                                              ? AppColor.white
-                                              : AppColor.greenPrimary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      decoration: TextDecoration.none,
+                            child: Obx(
+                              () => RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: 'Durasi',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        color:
+                                            isStatus
+                                                ? AppColor.white
+                                                : AppColor.greenPrimary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        decoration: TextDecoration.none,
+                                      ),
                                     ),
-                                  ),
-                                  const WidgetSpan(child: SizedBox(width: 4)),
-                                  WidgetSpan(
-                                    child: Icon(
-                                      isStatus
-                                          ? Icons.check_circle_outline
-                                          : Icons.cancel_outlined,
-                                      color:
-                                          isStatus
-                                              ? AppColor.greenTertiary
-                                              : Colors.red,
-                                      size: 20,
+                                    TextSpan(
+                                      text:
+                                          ' ${_getZoneDuration(currentZoneData, zoneIdStr)} menit',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        color:
+                                            isStatus
+                                                ? AppColor.greenSecondary
+                                                : AppColor.greenPrimary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        decoration: TextDecoration.none,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),

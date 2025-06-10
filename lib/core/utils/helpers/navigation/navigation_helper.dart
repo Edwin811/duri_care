@@ -2,11 +2,25 @@ import 'package:duri_care/core/resources/resources.dart';
 import 'package:duri_care/features/home/home_controller.dart';
 import 'package:duri_care/features/home/home_view.dart';
 import 'package:duri_care/features/profile/profile_view.dart';
+import 'package:duri_care/features/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NavigationHelper extends GetxController {
   var currentIndex = 0.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Listen to navigation changes to trigger profile refresh
+    ever(currentIndex, (index) {
+      if (index == 1 && Get.isRegistered<ProfileController>()) {
+        // Profile tab selected, trigger refresh
+        final profileController = Get.find<ProfileController>();
+        profileController.onProfilePageEntered();
+      }
+    });
+  }
 
   void resetNavigation() {
     currentIndex.value = 0;

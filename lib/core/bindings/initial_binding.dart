@@ -3,6 +3,7 @@ import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
+import 'package:duri_care/core/services/sensor_service.dart';
 import 'package:duri_care/core/services/session_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/services/zone_service.dart';
@@ -23,6 +24,7 @@ class InitialBinding implements Bindings {
     Get.put(RoleService(), permanent: true);
     Get.put(ScheduleService(), permanent: true);
     Get.put(NotificationService(), permanent: true);
+    Get.put(SensorService(), permanent: true);
 
     Get.put(NetworkController(), permanent: true);
     Get.put(AuthController(), permanent: true);

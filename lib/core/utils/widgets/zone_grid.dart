@@ -68,19 +68,18 @@ class ZoneGrid extends GetView<ZoneController> {
       itemCount: totalZones,
       itemBuilder: (context, index) {
         final zoneData = controller.zones[index];
-        final zoneIdStr = zoneData['id']?.toString() ?? '';
-
+        final zoneId = zoneData['id'];
         return Zone(
           zoneData: Map<String, dynamic>.from(zoneData),
           onPowerButtonPressed: () {
-            if (zoneIdStr.isNotEmpty) {
-              controller.toggleActive(zoneIdStr);
+            if (zoneId != null) {
+              controller.toggleActive(zoneId);
             }
           },
           onSelectZone: () {
             controller.selectedZone.value = Map<String, dynamic>.from(zoneData);
-            if (zoneIdStr.isNotEmpty) {
-              controller.loadZoneById(zoneIdStr);
+            if (zoneId != null) {
+              controller.loadZoneById(zoneId);
             }
           },
         );
@@ -98,8 +97,7 @@ class ZoneGrid extends GetView<ZoneController> {
         message =
             'Silahkan tambahkan zona baru dengan menekan button plus di bawah';
       } else if (userRole == 'employee') {
-        message =
-            'Silahkan hubungi pemilik untuk mengakses zona';
+        message = 'Silahkan hubungi pemilik untuk mengakses zona';
       } else {
         message = 'Hubungi administrator untuk menambahkan zona';
       }

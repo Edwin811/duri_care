@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
 import 'package:duri_care/core/services/schedule_service.dart';
+import 'package:duri_care/core/services/sensor_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
@@ -10,8 +11,6 @@ import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/notification/notification_controller.dart';
 import 'package:duri_care/features/zone/zone_controller.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,15 +19,20 @@ class HomeController extends GetxController {
   final HomeService _homeService = Get.find<HomeService>();
   final RoleService _roleService = Get.find<RoleService>();
   final ScheduleService scheduleService = Get.find<ScheduleService>();
+  final SensorService sensorService = Get.find<SensorService>();
   final Rx<Upcomingschedule?> upcomingSchedule = Rx<Upcomingschedule?>(null);
   final ZoneController zoneController = Get.find<ZoneController>();
   final supabase = Supabase.instance.client;
 
   final RxString username = ''.obs;
   final RxString role = ''.obs;
-  final RxInt staffCount = 0.obs;
   final RxInt unreadCount = 0.obs;
+  final RxInt soilMoisture = 0.obs;
+  final RxInt airMoisture = 0.obs;
+  final RxInt airHumidity = 0.obs;
+  final RxInt rainfallIntensity = 0.obs;
   final RxBool hasUnreadNotifications = false.obs;
+  Timer? _sensorRefreshTimer;
 
   RxString ucapan = ''.obs;
   RxString profilePicture = ''.obs;
@@ -37,7 +41,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadGreeting();
-    // _getFCMToken();
+    _initializeSensorData();
 
     ever(authController.authState, _handleAuthStateChange);
     if (authController.isAuthenticated) {
@@ -49,14 +53,27 @@ class HomeController extends GetxController {
     _setupNotificationSync();
   }
 
-  // Future<void> _getFCMToken() async {
-  //   try {
-  //     final fcmToken = await FirebaseMessaging.instance.getToken();
-  //     print('Current FCM Token: $fcmToken');
-  //   } catch (e) {
-  //     print('Error getting FCM token: $e');
-  //   }
-  // }
+  @override
+  void onClose() {
+    _sensorRefreshTimer?.cancel();
+    super.onClose();
+  }
+
+  void _initializeSensorData() {
+    sensorService.initialLoad();
+
+    ever(sensorService.latestSensorData, (data) {
+      if (data != null) {
+        _updateSensorValues(data);
+      }
+    });
+
+    _sensorRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (authController.isAuthenticated) {
+        sensorService.refreshData();
+      }
+    });
+  }
 
   void _setupNotificationSync() {
     if (Get.isRegistered<NotificationController>()) {
@@ -85,7 +102,6 @@ class HomeController extends GetxController {
     role.value = '';
     profilePicture.value = '';
     upcomingSchedule.value = null;
-    staffCount.value = 0;
     unreadCount.value = 0;
     hasUnreadNotifications.value = false;
   }
@@ -97,7 +113,6 @@ class HomeController extends GetxController {
     }
 
     isLoading.value = true;
-
     try {
       await Future.wait([
         loadUpcomingSchedule(),
@@ -105,6 +120,7 @@ class HomeController extends GetxController {
         getProfilePicture(),
         getRoleName(),
         _loadNotificationCount(),
+        refreshSensorData(),
       ]);
     } catch (e) {
       DialogHelper.showErrorDialog(message: 'Failed to load user data: $e');
@@ -130,6 +146,49 @@ class HomeController extends GetxController {
     }
   }
 
+  Future<void> getSensorData({bool forceRefresh = false}) async {
+    try {
+      Map<String, dynamic>? data;
+
+      if (forceRefresh) {
+        data = await sensorService.forceRefresh();
+      } else {
+        data = sensorService.getCachedSensorData();
+      }
+
+      if (data != null) {
+        _updateSensorValues(data);
+      } else {
+        _resetSensorValues();
+      }
+    } catch (error) {
+      _resetSensorValues();
+    }
+  }
+
+  void _updateSensorValues(Map<String, dynamic> data) {
+    soilMoisture.value = data['soil_moisture'] ?? 0;
+    airMoisture.value = data['air_moisture'] ?? 0;
+    airHumidity.value = data['air_humidity'] ?? 0;
+    rainfallIntensity.value = data['rainfall_intensity'] ?? 0;
+
+    soilMoisture.refresh();
+    airMoisture.refresh();
+    airHumidity.refresh();
+    rainfallIntensity.refresh();
+  }
+
+  void _resetSensorValues() {
+    soilMoisture.value = 0;
+    airMoisture.value = 0;
+    airHumidity.value = 0;
+    rainfallIntensity.value = 0;
+  }
+
+  Future<void> refreshSensorData() async {
+    await sensorService.refreshData();
+  }
+
   Future<void> getUsername() async {
     if (!authController.isAuthenticated) {
       username.value = 'Guest';
@@ -139,7 +198,7 @@ class HomeController extends GetxController {
       final user = await UserService.to.getCurrentUser(forceRefresh: true);
       username.value = user?.fullname ?? await authController.getUsername();
     } catch (e) {
-      username.value = await authController.getUsername();
+      username.value = await authController.getUsername(); 
     }
   }
 
@@ -233,10 +292,13 @@ class HomeController extends GetxController {
   Future<void> triggerUIRefresh() async {
     if (!authController.isAuthenticated) return;
     isLoading.value = true;
-    await getUsername();
-    await getProfilePicture();
-    await getRoleName();
-    await _loadNotificationCount();
+    await Future.wait([
+      getUsername(),
+      getProfilePicture(),
+      getRoleName(),
+      _loadNotificationCount(),
+      refreshSensorData(),
+    ]);
     isLoading.value = false;
   }
 
@@ -254,15 +316,12 @@ class HomeController extends GetxController {
         final count = notifications.where((n) => !n.isRead).length;
         unreadCount.value = count;
         hasUnreadNotifications.value = count > 0;
-
         if (Get.isRegistered<NotificationController>()) {
           final notificationController = Get.find<NotificationController>();
           notificationController.unreadCount.value = count;
         }
       }
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }
 
   void onNotificationRead() {
@@ -282,5 +341,14 @@ class HomeController extends GetxController {
       unreadCount.value = unreadCount.value - 1;
       hasUnreadNotifications.value = unreadCount.value > 0;
     }
+  }
+
+  void onPageVisible() {
+    sensorService.refreshData();
+  }
+
+  void onAppResumed() {
+    refreshUserSpecificData();
+    sensorService.refreshData();
   }
 }

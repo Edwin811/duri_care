@@ -13,12 +13,14 @@ class EditZoneView extends GetView<ZoneController> {
   Widget build(BuildContext context) {
     final zoneId = Get.parameters['zoneId'] ?? '';
 
-    if (controller.selectedZone.isNotEmpty) {
-      controller.zoneNameController.text =
-          controller.selectedZone['name'] ?? '';
-      controller.selectedZoneCode.value =
-          controller.selectedZone['zone_code'] ?? 1;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.selectedZone.isNotEmpty) {
+        controller.zoneNameController.text =
+            controller.selectedZone['name'] ?? '';
+        controller.selectedZoneCode.value =
+            controller.selectedZone['zone_code'] ?? 1;
+      }
+    });
 
     return GestureDetector(
       onTap: () {
@@ -26,7 +28,13 @@ class EditZoneView extends GetView<ZoneController> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: AppBackButton(iconColor: AppColor.white),
+          leading: AppBackButton(
+            onPressed: () {
+              controller.clearForm();
+              Get.back();
+            },
+            iconColor: AppColor.white,
+          ),
           title: Text(
             'Edit Zona',
             style: Theme.of(
@@ -75,29 +83,33 @@ class EditZoneView extends GetView<ZoneController> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     DropdownButtonHideUnderline(
-                      child: DropdownButtonFormField(
-                        value:
-                            controller.selectedZone['zone_code'] ??
-                            controller.selectedZoneCode.value,
-                        items:
-                            controller.zoneCodes.map((zoneCode) {
-                              return DropdownMenuItem<int>(
-                                value: zoneCode,
-                                child: Text('$zoneCode'),
-                              );
-                            }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            controller.selectedZoneCode.value = value as int;
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Pilih kode zona',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.grey),
+                      child: Obx(
+                        () => DropdownButtonFormField(
+                          value:
+                              controller.selectedZone.isNotEmpty
+                                  ? controller.selectedZone['zone_code'] ??
+                                      controller.selectedZoneCode.value
+                                  : controller.selectedZoneCode.value,
+                          items:
+                              controller.zoneCodes.map((zoneCode) {
+                                return DropdownMenuItem<int>(
+                                  value: zoneCode,
+                                  child: Text('$zoneCode'),
+                                );
+                              }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              controller.selectedZoneCode.value = value as int;
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Pilih kode zona',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                            prefixIcon: const Icon(Icons.code),
                           ),
-                          prefixIcon: const Icon(Icons.code),
                         ),
                       ),
                     ),

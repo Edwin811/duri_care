@@ -109,7 +109,6 @@ class ZoneController extends GetxController {
   }
 
   void _setupZoneTimers() {
-
     for (var zone in zones) {
       final zoneId = zone['id']?.toString();
       if (zoneId != null) {
@@ -170,8 +169,10 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> loadZoneById(String zoneId) async {
-    if (zoneId.isEmpty) return;
+  Future<void> loadZoneById(dynamic zoneId) async {
+    if (zoneId == null) return;
+    final zoneIdInt = int.tryParse(zoneId.toString());
+    if (zoneIdInt == null) return;
     isLoading.value = true;
     try {
       if (userID == null) {
@@ -181,15 +182,15 @@ class ZoneController extends GetxController {
         );
         return;
       }
-      ZoneModel zoneModel = await _zoneService.loadZoneById(zoneId, userID!);
+      ZoneModel zoneModel = await _zoneService.loadZoneById(zoneIdInt, userID!);
       Map<String, dynamic> zoneMap = _zoneModelToMap(zoneModel);
-      zoneMap['timer'] = zoneTimers[zoneId]?.value ?? '00:00:00';
+      zoneMap['timer'] = zoneTimers[zoneIdInt.toString()]?.value ?? '00:00:00';
       selectedZone.value = zoneMap;
       manualDuration.value = zoneModel.duration;
       loadSchedules();
       isActive.value = zoneModel.isActive;
-      getSoilMoisture(zoneId);
-      loadDevicesForZone(zoneId);
+      getSoilMoisture(zoneIdInt.toString());
+      loadDevicesForZone(zoneIdInt);
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Failed to Load Zone',
@@ -200,7 +201,7 @@ class ZoneController extends GetxController {
     }
   }
 
-  Future<void> loadDevicesForZone(String zoneId) async {
+  Future<void> loadDevicesForZone(int zoneId) async {
     try {
       devices.value = await _zoneService.loadDevicesForZone(zoneId);
     } catch (e) {
@@ -444,7 +445,6 @@ class ZoneController extends GetxController {
 
       final index = zones.indexWhere((z) => z['id'].toString() == zoneId);
       Map<String, dynamic>? originalZone;
-
       if (index != -1) {
         originalZone = Map<String, dynamic>.from(zones[index]);
         zones[index] = {
@@ -458,13 +458,6 @@ class ZoneController extends GetxController {
         selectedZone['name'] = newName.trim();
         selectedZone['zone_code'] = selectedZoneCode.value;
       }
-      Get.back();
-
-      DialogHelper.showSuccessDialog(
-        title: 'Berhasil',
-        message: 'Zona berhasil diperbarui',
-      );
-
       try {
         await _zoneService.updateZone(
           zoneId: zoneId,
@@ -477,11 +470,17 @@ class ZoneController extends GetxController {
         }
         Future.delayed(const Duration(milliseconds: 1500), () {
           DialogHelper.showErrorDialog(
-            title: 'Sinkronisasi Gagal',
-            message: 'Perubahan dibatalkan: ${dbError.toString()}',
+            title: 'Gagal Memperbarui Zona',
+            message: 'Kode zona sudah digunakan oleh zona lain.',
           );
         });
       }
+      Get.back();
+      zones.refresh();
+      DialogHelper.showSuccessDialog(
+        title: 'Berhasil',
+        message: 'Zona berhasil diperbarui',
+      );
     } catch (e) {
       DialogHelper.showErrorDialog(
         title: 'Gagal update',
@@ -558,12 +557,12 @@ class ZoneController extends GetxController {
   }
 
   Future<void> saveManualDuration() async {
-    final zoneId = selectedZone['id']?.toString();
+    final zoneId = selectedZone['id'];
     if (zoneId == null) return;
     try {
       await _zoneService.saveDuration(zoneId, manualDuration.value);
       await loadZones();
-      if (zoneId.isNotEmpty) await loadZoneById(zoneId);
+      await loadZoneById(zoneId);
       DialogHelper.showSuccessDialog(
         title: 'Berhasil',
         message: 'Durasi berhasil disimpan',
@@ -935,8 +934,8 @@ class ZoneController extends GetxController {
   }
 
   Future<void> loadSchedules({bool preserveFormDuration = false}) async {
-    final zoneId = selectedZone['id']?.toString();
-    if (zoneId == null || zoneId.isEmpty) {
+    final zoneId = selectedZone['id'];
+    if (zoneId == null) {
       isLoadingSchedules.value = false;
       return;
     }
@@ -1121,6 +1120,7 @@ class ZoneController extends GetxController {
   void clearForm() {
     zoneNameController.clear();
     selectedZoneCode.value = 1;
+    selectedZone.clear();
   }
 
   void clearFormSchedule() {
