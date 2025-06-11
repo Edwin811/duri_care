@@ -38,21 +38,17 @@ class HomeView extends GetView<HomeController> {
                           final initials = controller.getInitialsFromName(
                             controller.username.value,
                           );
-
                           return CircleAvatar(
                             radius: 25,
                             backgroundColor: AppColor.greenPrimary,
                             backgroundImage:
                                 isUrl ? NetworkImage(profilePic) : null,
-                            onBackgroundImageError: isUrl ? (_, __) {} : null,
                             child:
                                 !isUrl
                                     ? Text(
                                       initials,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyLarge?.copyWith(
-                                        fontSize: 20,
+                                      style: const TextStyle(
+                                        fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
                                       ),
@@ -185,7 +181,7 @@ class HomeView extends GetView<HomeController> {
                         () => _buildSensorCard(
                           context,
                           'Suhu Udara',
-                          '${controller.airMoisture.value}°C',
+                          '${controller.airTemperature.value}°C',
                           Icons.thermostat_outlined,
                         ),
                       ),

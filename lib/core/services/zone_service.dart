@@ -18,7 +18,7 @@ class ZoneService extends GetxService {
         .from('zones')
         .select('*, zone_users!inner(*)')
         .eq('zone_users.user_id', userId)
-        .filter('deleted_at', 'is', 'null')
+        .filter('deleted_at', 'is', null)
         .order('name', ascending: true);
 
     return response.map<ZoneModel>((data) {
@@ -113,6 +113,34 @@ class ZoneService extends GetxService {
       throw Exception('Zona dengan nama "$name" sudah ada');
     }
 
+    final existingActiveCode =
+        await _supabase
+            .from('zones')
+            .select('id, name')
+            .eq('zone_code', zoneCode)
+            .filter('deleted_at', 'is', null)
+            .maybeSingle();
+
+    if (existingActiveCode != null) {
+      throw Exception(
+        'Kode zona $zoneCode sudah digunakan oleh zona "${existingActiveCode['name']}"',
+      );
+    }
+    final existingDeletedCode =
+        await _supabase
+            .from('zones')
+            .select('id')
+            .eq('zone_code', zoneCode)
+            .not('deleted_at', 'is', null)
+            .maybeSingle();
+
+    if (existingDeletedCode != null) {
+      await _supabase
+          .from('zones')
+          .update({'zone_code': null})
+          .eq('id', existingDeletedCode['id']);
+    }
+
     final newZone =
         await _supabase
             .from('zones')
@@ -143,7 +171,10 @@ class ZoneService extends GetxService {
   Future<void> deleteZone(int zoneId) async {
     await _supabase
         .from('zones')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .update({
+          'deleted_at': DateTime.now().toIso8601String(),
+          'zone_code': null,
+        })
         .eq('id', zoneId);
   }
 
@@ -163,6 +194,21 @@ class ZoneService extends GetxService {
 
     if (existing != null) {
       throw Exception('Zona dengan nama "$newName" sudah ada');
+    }
+
+    final existingCode =
+        await _supabase
+            .from('zones')
+            .select('id, name')
+            .eq('zone_code', zoneCode)
+            .neq('id', zoneId)
+            .filter('deleted_at', 'is', null)
+            .maybeSingle();
+
+    if (existingCode != null) {
+      throw Exception(
+        'Kode zona $zoneCode sudah digunakan oleh zona "${existingCode['name']}"',
+      );
     }
 
     final updated =

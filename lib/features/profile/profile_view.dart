@@ -13,7 +13,6 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    // Trigger refresh when profile view is built/becomes visible
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.isRegistered<ProfileController>()) {
         controller.onProfilePageEntered();
@@ -237,18 +236,7 @@ class ProfileView extends GetView<ProfileController> {
           key: ValueKey('avatar_$avatarKey'),
           radius: 55,
           backgroundColor: AppColor.greenPrimary.withAlpha(200),
-          backgroundImage:
-              isUrl
-                  ? NetworkImage(
-                    profilePic,
-                  ) // Hapus cache_key parameter yang berlebihan
-                  : null,
-          onBackgroundImageError:
-              isUrl
-                  ? (exception, stackTrace) {
-                    // Handle error tanpa rebuild
-                  }
-                  : null,
+          backgroundImage: isUrl ? NetworkImage(profilePic) : null,
           child:
               !isUrl
                   ? Text(

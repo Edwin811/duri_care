@@ -26,14 +26,19 @@ class ZoneModel {
       duration: json['duration'],
     );
   }
-
   factory ZoneModel.fromMap(Map<String, dynamic> map) {
     return ZoneModel(
-      id: map['id'],
-      name: map['name'],
+      id: map['id'] is String ? int.parse(map['id']) : (map['id'] as int? ?? 0),
+      name: map['name'] ?? '',
       isActive: map['is_active'] ?? false,
-      zoneCode: map['zone_code'],
-      duration: map['manual_duration'] ?? 5,
+      zoneCode:
+          map['zone_code'] is String
+              ? int.parse(map['zone_code'])
+              : (map['zone_code'] as int? ?? 1),
+      duration:
+          map['manual_duration'] is String
+              ? int.parse(map['manual_duration'])
+              : (map['manual_duration'] as int? ?? 5),
       createdAt:
           map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
       deletedAt:

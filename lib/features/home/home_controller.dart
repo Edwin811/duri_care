@@ -23,16 +23,16 @@ class HomeController extends GetxController {
   final Rx<Upcomingschedule?> upcomingSchedule = Rx<Upcomingschedule?>(null);
   final ZoneController zoneController = Get.find<ZoneController>();
   final supabase = Supabase.instance.client;
-
   final RxString username = ''.obs;
   final RxString role = ''.obs;
   final RxInt unreadCount = 0.obs;
   final RxInt soilMoisture = 0.obs;
-  final RxInt airMoisture = 0.obs;
+  final RxInt airTemperature = 0.obs;
   final RxInt airHumidity = 0.obs;
   final RxInt rainfallIntensity = 0.obs;
   final RxBool hasUnreadNotifications = false.obs;
   Timer? _sensorRefreshTimer;
+  bool _isLoadingUserData = false;
 
   RxString ucapan = ''.obs;
   RxString profilePicture = ''.obs;
@@ -107,11 +107,12 @@ class HomeController extends GetxController {
   }
 
   Future<void> refreshUserSpecificData() async {
-    if (!authController.isAuthenticated) {
+    if (!authController.isAuthenticated || _isLoadingUserData) {
       clearUserData();
       return;
     }
 
+    _isLoadingUserData = true;
     isLoading.value = true;
     try {
       await Future.wait([
@@ -126,6 +127,7 @@ class HomeController extends GetxController {
       DialogHelper.showErrorDialog(message: 'Failed to load user data: $e');
     } finally {
       isLoading.value = false;
+      _isLoadingUserData = false;
     }
   }
 
@@ -168,19 +170,19 @@ class HomeController extends GetxController {
 
   void _updateSensorValues(Map<String, dynamic> data) {
     soilMoisture.value = data['soil_moisture'] ?? 0;
-    airMoisture.value = data['air_moisture'] ?? 0;
+    airTemperature.value = data['air_temperature'] ?? 0;
     airHumidity.value = data['air_humidity'] ?? 0;
     rainfallIntensity.value = data['rainfall_intensity'] ?? 0;
 
     soilMoisture.refresh();
-    airMoisture.refresh();
+    airTemperature.refresh();
     airHumidity.refresh();
     rainfallIntensity.refresh();
   }
 
   void _resetSensorValues() {
     soilMoisture.value = 0;
-    airMoisture.value = 0;
+    airTemperature.value = 0;
     airHumidity.value = 0;
     rainfallIntensity.value = 0;
   }
@@ -195,10 +197,10 @@ class HomeController extends GetxController {
       return;
     }
     try {
-      final user = await UserService.to.getCurrentUser(forceRefresh: true);
+      final user = await UserService.to.getCurrentUser(forceRefresh: false);
       username.value = user?.fullname ?? await authController.getUsername();
     } catch (e) {
-      username.value = await authController.getUsername(); 
+      username.value = await authController.getUsername();
     }
   }
 
@@ -232,18 +234,16 @@ class HomeController extends GetxController {
       return;
     }
     try {
-      final user = await UserService.to.getCurrentUser(forceRefresh: true);
+      final user = await UserService.to.getCurrentUser(forceRefresh: false);
       if (user?.profileUrl == null || user?.profileUrl?.isEmpty == true) {
         profilePicture.value = getInitialsFromName(username.value);
       } else if (user!.profileUrl!.startsWith('http')) {
-        profilePicture.value =
-            '${user.profileUrl!}?timestamp=${DateTime.now().millisecondsSinceEpoch}';
+        profilePicture.value = user.profileUrl!;
       } else {
         final publicUrl = Supabase.instance.client.storage
             .from('image')
             .getPublicUrl(user.profileUrl!);
-        profilePicture.value =
-            '$publicUrl?timestamp=${DateTime.now().millisecondsSinceEpoch}';
+        profilePicture.value = publicUrl;
       }
     } catch (e) {
       profilePicture.value = getInitialsFromName(username.value);
@@ -290,7 +290,8 @@ class HomeController extends GetxController {
   }
 
   Future<void> triggerUIRefresh() async {
-    if (!authController.isAuthenticated) return;
+    if (!authController.isAuthenticated || _isLoadingUserData) return;
+    _isLoadingUserData = true;
     isLoading.value = true;
     await Future.wait([
       getUsername(),
@@ -300,6 +301,7 @@ class HomeController extends GetxController {
       refreshSensorData(),
     ]);
     isLoading.value = false;
+    _isLoadingUserData = false;
   }
 
   Future<void> refreshNotificationCount() async {

@@ -39,6 +39,7 @@ class ProfileController extends GetxController {
   final ImagePicker _picker = ImagePicker();
 
   final RxInt avatarKey = 0.obs;
+  bool _isRefreshing = false;
   @override
   void onInit() {
     super.onInit();
@@ -58,6 +59,9 @@ class ProfileController extends GetxController {
   }
 
   Future<void> forceRefreshProfile() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+
     await _initializeProfileData(forceServerRefresh: true);
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
@@ -66,6 +70,8 @@ class ProfileController extends GetxController {
       final homeController = Get.find<HomeController>();
       await homeController.refreshUserSpecificData();
     }
+
+    _isRefreshing = false;
   }
 
   void toggleNotification() {
@@ -94,25 +100,13 @@ class ProfileController extends GetxController {
         } else {
           role.value = authController.currentRole ?? 'Pegawai';
         }
-
         if (user.profileUrl != null && user.profileUrl!.isNotEmpty) {
-          String rawUrl;
           if (user.profileUrl!.startsWith('http')) {
-            rawUrl = user.profileUrl!;
+            profilePicture.value = user.profileUrl!;
           } else {
-            rawUrl = Supabase.instance.client.storage
+            profilePicture.value = Supabase.instance.client.storage
                 .from('image')
                 .getPublicUrl(user.profileUrl!);
-          }
-
-          if (rawUrl.isNotEmpty) {
-            final baseUrl = rawUrl.split('?')[0];
-            final timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-            final randomSuffix = (timestamp.hashCode % 10000).toString();
-            profilePicture.value =
-                '$baseUrl?v=$timestamp&t=${DateTime.now().microsecondsSinceEpoch}&r=$randomSuffix';
-          } else {
-            profilePicture.value = '';
           }
         } else {
           profilePicture.value = '';
@@ -393,6 +387,9 @@ class ProfileController extends GetxController {
   }
 
   Future<void> refreshProfileData() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+
     await _initializeProfileData(forceServerRefresh: true);
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
@@ -401,6 +398,8 @@ class ProfileController extends GetxController {
       final homeController = Get.find<HomeController>();
       await homeController.refreshUserSpecificData();
     }
+
+    _isRefreshing = false;
   }
 
   String? validateEmail(String email) {

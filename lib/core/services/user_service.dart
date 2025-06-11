@@ -1,19 +1,46 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:duri_care/models/role_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:duri_care/models/user_model.dart';
-import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 
 class UserService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   final RxString roleName = ''.obs;
+  UserModel? _cachedUser;
 
   static UserService get to => Get.find<UserService>();
 
   Future<UserService> init() async {
+    await _preloadUserData();
     return this;
+  }
+
+  Future<void> _preloadUserData() async {
+    final authUser = _supabase.auth.currentUser;
+    if (authUser != null) {
+      final cachedData = _createUserFromAuth(authUser);
+      currentUser.value = cachedData;
+      _cachedUser = cachedData;
+      unawaited(getCurrentUser(forceRefresh: true));
+    }
+  }
+
+  UserModel _createUserFromAuth(User authUser) {
+    return UserModel(
+      id: authUser.id,
+      email: authUser.email ?? '',
+      lastSignInAt:
+          authUser.lastSignInAt != null
+              ? DateTime.tryParse(authUser.lastSignInAt!)
+              : null,
+      fullname: authUser.userMetadata?['fullname'] ?? '',
+      profileUrl: authUser.userMetadata?['profile_image'],
+      roleId: null,
+      roleName: null,
+    );
   }
 
   User? getCurrentUserRaw() {
@@ -52,13 +79,17 @@ class UserService extends GetxService {
 
       if (updateData.isNotEmpty) {
         await _supabase.from('users').update(updateData).eq('id', userId);
+        _cachedUser = null;
       }
     } catch (e) {
       throw Exception('Failed to update profile: $e');
     }
   }
 
-  Future<String?> uploadProfileImage(File file, {required String userId}) async {
+  Future<String?> uploadProfileImage(
+    File file, {
+    required String userId,
+  }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('User tidak terautentikasi');
 
@@ -83,6 +114,8 @@ class UserService extends GetxService {
   }
 
   Future<void> signOut() async {
+    _cachedUser = null;
+    currentUser.value = null;
     await _supabase.auth.signOut();
   }
 
@@ -142,28 +175,6 @@ class UserService extends GetxService {
       await _supabase.from('users').update(updates).eq('id', userId);
     }
   }
-
-  // Future<void> updateUserRole(String userId, String roleId) async {
-  //   try {
-  //     final existingRoles = await _supabase
-  //         .from('user_roles')
-  //         .select()
-  //         .eq('user_id', userId);
-  //     if (existingRoles.isNotEmpty) {
-  //       await _supabase
-  //           .from('user_roles')
-  //           .update({'role_id': roleId})
-  //           .eq('user_id', userId);
-  //     } else {
-  //       await _supabase.from('user_roles').insert({
-  //         'user_id': userId,
-  //         'role_id': roleId,
-  //       });
-  //     }
-  //   } catch (e) {
-  //     throw Exception('Failed to update user role: $e');
-  //   }
-  // }
 
   Future<void> deleteUser(String userId) async {
     try {
@@ -263,7 +274,7 @@ class UserService extends GetxService {
         data['user'],
       );
     } else {
-      currentUser.value = UserModel(
+      final userModel = UserModel(
         id: data['id'] ?? '',
         email: data['email'],
         lastSignInAt:
@@ -275,6 +286,8 @@ class UserService extends GetxService {
         roleId: data['role_id'],
         roleName: data['role_name'],
       );
+      currentUser.value = userModel;
+      _cachedUser = userModel;
     }
   }
 
@@ -282,8 +295,8 @@ class UserService extends GetxService {
     final authUser = _supabase.auth.currentUser;
     if (authUser == null) return null;
 
-    if (!forceRefresh && currentUser.value != null) {
-      return currentUser.value;
+    if (!forceRefresh && _cachedUser != null) {
+      return _cachedUser;
     }
 
     try {
@@ -307,7 +320,7 @@ class UserService extends GetxService {
         if (userRoles != null && userRoles.isNotEmpty) {
           final roleData = userRoles.first['roles'];
           roleId = roleData['id']?.toString();
-          roleName = roleData['name'];
+          roleName = roleData['role_name'];
         }
 
         final userModel = UserModel(
@@ -324,6 +337,7 @@ class UserService extends GetxService {
         );
 
         currentUser.value = userModel;
+        _cachedUser = userModel;
         return userModel;
       } else {
         final userModel = UserModel(
@@ -335,15 +349,13 @@ class UserService extends GetxService {
           roleName: null,
         );
         currentUser.value = userModel;
+        _cachedUser = userModel;
         return userModel;
       }
     } catch (e) {
       try {
         return await _getCurrentUserWithSeparateRoleQuery(authUser);
       } catch (fallbackError) {
-        DialogHelper.showErrorDialog(
-          message: 'Gagal mendapatkan data user: $fallbackError',
-        );
         return null;
       }
     }
@@ -371,7 +383,7 @@ class UserService extends GetxService {
       if (roleResponse != null) {
         final roleData = roleResponse['roles'];
         roleId = roleData['id']?.toString();
-        roleName = roleData['name'];
+        roleName = roleData['role_name'];
       }
 
       final userModel = UserModel(
@@ -388,6 +400,7 @@ class UserService extends GetxService {
       );
 
       currentUser.value = userModel;
+      _cachedUser = userModel;
       return userModel;
     } catch (e) {
       throw Exception('Failed to get user with separate queries: $e');
@@ -439,6 +452,10 @@ class UserService extends GetxService {
       final currentUserId = userId ?? _supabase.auth.currentUser?.id;
       if (currentUserId == null) return false;
 
+      if (_cachedUser?.roleName?.toLowerCase() == 'owner') {
+        return true;
+      }
+
       final userResponse =
           await _supabase
               .from('users')
@@ -466,6 +483,10 @@ class UserService extends GetxService {
     try {
       final currentUserId = userId ?? _supabase.auth.currentUser?.id;
       if (currentUserId == null) return false;
+
+      if (_cachedUser?.roleName?.toLowerCase() == 'owner') {
+        return true;
+      }
 
       final userResponse =
           await _supabase
@@ -501,6 +522,10 @@ class UserService extends GetxService {
     try {
       final currentUserId = userId ?? _supabase.auth.currentUser?.id;
       if (currentUserId == null) return false;
+
+      if (_cachedUser?.roleName?.toLowerCase() == 'owner') {
+        return true;
+      }
 
       final userResponse =
           await _supabase

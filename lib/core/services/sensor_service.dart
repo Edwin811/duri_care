@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +10,13 @@ class SensorService extends GetxService {
   final Rx<Map<String, dynamic>?> latestSensorData = Rx<Map<String, dynamic>?>(
     null,
   );
+
+  Timer? _reconnectTimer;
+  Timer? _fallbackTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5;
+  static const Duration _initialReconnectDelay = Duration(seconds: 2);
+  bool _isReconnecting = false;
 
   Future<SensorService> init() async {
     return this;
@@ -24,12 +30,24 @@ class SensorService extends GetxService {
 
   @override
   void onClose() {
-    _sensorSubscription?.cancel();
+    _cleanup();
     super.onClose();
   }
 
+  void _cleanup() {
+    _sensorSubscription?.cancel();
+    _reconnectTimer?.cancel();
+    _fallbackTimer?.cancel();
+    _sensorSubscription = null;
+    _reconnectTimer = null;
+    _fallbackTimer = null;
+  }
+
   void _startRealtimeSubscription() {
+    if (_isReconnecting) return;
+
     try {
+      _sensorSubscription?.cancel();
       _sensorSubscription = _supabase
           .from('sensor_datas')
           .stream(primaryKey: ['id'])
@@ -37,32 +55,90 @@ class SensorService extends GetxService {
           .limit(1)
           .listen(
             (data) {
-              if (data.isNotEmpty) {
-                final newData = {
-                  'soil_moisture': data.first['soil_moisture'],
-                  'air_moisture': data.first['air_moisture'],
-                  'air_humidity': data.first['air_humidity'],
-                  'rainfall_intensity': data.first['rainfall_intensity'],
-                };
-                latestSensorData.value = newData;
-              }
+              _onRealtimeSuccess(data);
             },
             onError: (error) {
-              _fallbackRefresh();
+              _handleRealtimeError(error);
+            },
+            onDone: () {
+              _handleRealtimeDisconnect();
             },
           );
+
+      _reconnectAttempts = 0;
+      _fallbackTimer?.cancel();
     } catch (e) {
-      _fallbackRefresh();
+      _handleRealtimeError(e);
     }
   }
 
-  void _fallbackRefresh() {
-    Timer.periodic(const Duration(seconds: 30), (timer) {
+  void _onRealtimeSuccess(List<Map<String, dynamic>> data) {
+    if (data.isNotEmpty) {
+      final newData = {
+        'soil_moisture': data.first['soil_moisture'],
+        'air_temperature': data.first['air_temperature'],
+        'air_humidity': data.first['air_humidity'],
+        'rainfall_intensity': data.first['rainfall_intensity'],
+      };
+      latestSensorData.value = newData;
+    }
+  }
+
+  void _handleRealtimeError(dynamic error) {
+    if (_isReconnecting) return;
+
+    _sensorSubscription?.cancel();
+    _sensorSubscription = null;
+
+    if (_reconnectAttempts < _maxReconnectAttempts) {
+      _scheduleReconnect();
+    } else {
+      _startFallbackPolling();
+    }
+  }
+
+  void _handleRealtimeDisconnect() {
+    if (!_isReconnecting && _reconnectAttempts < _maxReconnectAttempts) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    if (_isReconnecting) return;
+
+    _isReconnecting = true;
+    _reconnectAttempts++;
+
+    final delay = Duration(
+      seconds: (_initialReconnectDelay.inSeconds * _reconnectAttempts).clamp(
+        2,
+        30,
+      ),
+    );
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      _isReconnecting = false;
+      if (Get.isRegistered<SensorService>()) {
+        _startRealtimeSubscription();
+      }
+    });
+  }
+
+  void _startFallbackPolling() {
+    _fallbackTimer?.cancel();
+    _fallbackTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (!Get.isRegistered<SensorService>()) {
         timer.cancel();
         return;
       }
       getSensorDataManual();
+
+      if (_reconnectAttempts < _maxReconnectAttempts) {
+        timer.cancel();
+        _reconnectAttempts = 0;
+        _startRealtimeSubscription();
+      }
     });
   }
 
@@ -72,11 +148,12 @@ class SensorService extends GetxService {
           await _supabase
               .from('sensor_datas')
               .select(
-                'soil_moisture, air_moisture, air_humidity, rainfall_intensity',
+                'soil_moisture, air_temperature, air_humidity, rainfall_intensity',
               )
               .order('created_at', ascending: false)
               .limit(1)
               .maybeSingle();
+
       if (response != null) {
         latestSensorData.value = response;
         updateLatestData(response);
@@ -112,5 +189,12 @@ class SensorService extends GetxService {
 
   Future<void> refreshData() async {
     await getSensorData();
+  }
+
+  void retryRealtimeConnection() {
+    _reconnectAttempts = 0;
+    _isReconnecting = false;
+    _fallbackTimer?.cancel();
+    _startRealtimeSubscription();
   }
 }
