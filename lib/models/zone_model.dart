@@ -41,11 +41,13 @@ class ZoneModel {
     );
   }
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,
     'is_active': isActive,
     'zone_code': zoneCode,
     'duration': duration,
+    'created_at': createdAt?.toIso8601String(),
+    'deleted_at': deletedAt?.toIso8601String(),
   };
 }

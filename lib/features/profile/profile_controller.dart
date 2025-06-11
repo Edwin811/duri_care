@@ -62,7 +62,6 @@ class ProfileController extends GetxController {
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
 
-    // Also refresh home controller to update profile display there
     if (Get.isRegistered<HomeController>()) {
       final homeController = Get.find<HomeController>();
       await homeController.refreshUserSpecificData();
@@ -398,7 +397,6 @@ class ProfileController extends GetxController {
 
     avatarKey.value = DateTime.now().microsecondsSinceEpoch;
 
-    // Also refresh home controller to update profile display there
     if (Get.isRegistered<HomeController>()) {
       final homeController = Get.find<HomeController>();
       await homeController.refreshUserSpecificData();

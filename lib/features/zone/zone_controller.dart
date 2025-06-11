@@ -42,15 +42,12 @@ class ZoneController extends GetxController {
   final isLoading = false.obs;
   final RxInt manualDuration = 5.obs;
 
-  Map<String, dynamic> _zoneModelToMap(ZoneModel model) => {
-    'id': model.id,
-    'zone_code': model.zoneCode,
-    'name': model.name,
-    'is_active': model.isActive,
-    'duration': model.duration,
-    'created_at': model.createdAt?.toIso8601String(),
-    'deleted_at': model.deletedAt?.toIso8601String(),
-  };
+  
+  Map<String, dynamic> _zoneModelToMap(ZoneModel model) {
+    final map = model.toMap();
+    return map;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -189,7 +186,6 @@ class ZoneController extends GetxController {
       manualDuration.value = zoneModel.duration;
       loadSchedules();
       isActive.value = zoneModel.isActive;
-      getSoilMoisture(zoneIdInt.toString());
       loadDevicesForZone(zoneIdInt);
     } catch (e) {
       DialogHelper.showErrorDialog(
@@ -209,19 +205,6 @@ class ZoneController extends GetxController {
         title: 'Error Loading Devices',
         message: 'Failed to load devices: ${e.toString()}',
       );
-    }
-  }
-
-  Future<void> getSoilMoisture(String zoneId) async {
-    try {
-      moisture.value = '${60 + DateTime.now().second % 20}%';
-      temperature.value = '${25 + DateTime.now().minute % 10}°C';
-      humidity.value = '${60 + DateTime.now().hour % 25}%';
-      if (selectedZone.isNotEmpty) selectedZone['moisture'] = moisture.value;
-    } catch (e) {
-      moisture.value = '60%';
-      temperature.value = '28°C';
-      humidity.value = '65%';
     }
   }
 
@@ -265,7 +248,9 @@ class ZoneController extends GetxController {
     }
 
     final existingZoneWithCode = zones.firstWhereOrNull(
-      (zone) => zone['zone_code'] == selectedZoneCode.value,
+      (zone) =>
+          zone['zone_code'] == selectedZoneCode.value &&
+          zone['deleted_at'] == null,
     );
     if (existingZoneWithCode != null) {
       DialogHelper.showErrorDialog(
