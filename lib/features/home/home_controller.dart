@@ -6,6 +6,7 @@ import 'package:duri_care/core/services/sensor_service.dart';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/mixins/connectivity_mixin.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/auth/auth_state.dart' as auth_state_enum;
 import 'package:duri_care/features/notification/notification_controller.dart';
@@ -14,7 +15,7 @@ import 'package:duri_care/models/upcomingschedule.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class HomeController extends GetxController {
+class HomeController extends GetxController with ConnectivityMixin {
   final AuthController authController = Get.find<AuthController>();
   final HomeService _homeService = Get.find<HomeService>();
   final RoleService _roleService = Get.find<RoleService>();
@@ -80,7 +81,7 @@ class HomeController extends GetxController {
       final notificationController = Get.find<NotificationController>();
       unreadCount.value = notificationController.unreadCount.value;
       hasUnreadNotifications.value =
-          notificationController.hasUnreadNotifications;
+          notificationController.unreadCount.value > 0;
 
       ever(notificationController.unreadCount, (int count) {
         unreadCount.value = count;
@@ -113,22 +114,24 @@ class HomeController extends GetxController {
     }
 
     _isLoadingUserData = true;
-    isLoading.value = true;
-    try {
-      await Future.wait([
-        loadUpcomingSchedule(),
-        getUsername(),
-        getProfilePicture(),
-        getRoleName(),
-        _loadNotificationCount(),
-        refreshSensorData(),
-      ]);
-    } catch (e) {
-      DialogHelper.showErrorDialog(message: 'Failed to load user data: $e');
-    } finally {
-      isLoading.value = false;
-      _isLoadingUserData = false;
-    }
+
+    unawaited(() async {
+      try {
+        await Future.wait([
+          getUsername(),
+          getProfilePicture(),
+          getRoleName(),
+        ], eagerError: false);
+        await _loadNotificationCount();
+      } catch (e) {
+        // Silent fail
+      } finally {
+        _isLoadingUserData = false;
+      }
+    }());
+
+    refreshSensorData();
+    loadUpcomingSchedule();
   }
 
   void _loadGreeting() {
@@ -196,11 +199,12 @@ class HomeController extends GetxController {
       username.value = 'Guest';
       return;
     }
+
     try {
       final user = await UserService.to.getCurrentUser(forceRefresh: false);
-      username.value = user?.fullname ?? await authController.getUsername();
+      username.value = user?.fullname ?? 'Guest';
     } catch (e) {
-      username.value = await authController.getUsername();
+      username.value = 'Guest';
     }
   }
 
@@ -233,6 +237,7 @@ class HomeController extends GetxController {
       profilePicture.value = '';
       return;
     }
+
     try {
       final user = await UserService.to.getCurrentUser(forceRefresh: false);
       if (user?.profileUrl == null || user?.profileUrl?.isEmpty == true) {
@@ -255,9 +260,9 @@ class HomeController extends GetxController {
       role.value = '';
       return;
     }
+
     try {
       final userId = supabase.auth.currentUser?.id;
-
       if (userId != null) {
         final roleFromService = await _roleService.getRoleName(userId);
         role.value = roleFromService;
@@ -277,11 +282,21 @@ class HomeController extends GetxController {
     }
 
     try {
-      if (Get.isRegistered<NotificationController>()) {
-        final notificationController = Get.find<NotificationController>();
-        await notificationController.loadNotifications();
-      } else {
-        await refreshNotificationCount();
+      final notificationService = Get.find<NotificationService>();
+      final userId = supabase.auth.currentUser?.id;
+
+      if (userId != null) {
+        final notifications = await notificationService
+            .getUserNotifications(userId)
+            .timeout(const Duration(seconds: 2));
+        final count = notifications.where((n) => !n.isRead).length;
+        unreadCount.value = count;
+        hasUnreadNotifications.value = count > 0;
+
+        if (Get.isRegistered<NotificationController>()) {
+          final notificationController = Get.find<NotificationController>();
+          notificationController.unreadCount.value = count;
+        }
       }
     } catch (e) {
       unreadCount.value = 0;
@@ -297,9 +312,9 @@ class HomeController extends GetxController {
       getUsername(),
       getProfilePicture(),
       getRoleName(),
-      _loadNotificationCount(),
       refreshSensorData(),
     ]);
+    await _loadNotificationCount();
     isLoading.value = false;
     _isLoadingUserData = false;
   }

@@ -1,4 +1,5 @@
 import 'package:duri_care/core/services/auth_service.dart';
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:duri_care/core/services/home_service.dart';
 import 'package:duri_care/core/services/notification_service.dart';
 import 'package:duri_care/core/services/role_service.dart';
@@ -16,6 +17,7 @@ import 'package:get/get.dart';
 class InitialBinding implements Bindings {
   @override
   void dependencies() {
+    Get.put(ConnectivityService(), permanent: true);
     Get.put(SessionService(), permanent: true);
     Get.put(AuthService(), permanent: true);
     Get.put(UserService(), permanent: true);

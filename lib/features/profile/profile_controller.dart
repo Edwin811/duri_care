@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
 import 'package:duri_care/core/utils/helpers/navigation/navigation_helper.dart';
+import 'package:duri_care/core/mixins/connectivity_mixin.dart';
 import 'package:duri_care/features/auth/auth_controller.dart';
 import 'package:duri_care/features/home/home_controller.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ProfileController extends GetxController {
+class ProfileController extends GetxController with ConnectivityMixin {
   final AuthController authController = Get.find<AuthController>();
   final UserService _userService = Get.find<UserService>();
   final NavigationHelper navigationHelper = Get.find<NavigationHelper>();

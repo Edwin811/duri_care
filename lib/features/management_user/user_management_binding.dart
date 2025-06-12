@@ -9,6 +9,10 @@ class UserManagementBinding extends Bindings {
       Get.put<UserService>(UserService());
     }
 
-    Get.lazyPut<UserManagementController>(() => UserManagementController());
+    if (Get.isRegistered<UserManagementController>()) {
+      Get.find<UserManagementController>();
+    } else {
+      Get.put<UserManagementController>(UserManagementController());
+    }
   }
 }

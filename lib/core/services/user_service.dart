@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:duri_care/models/role_model.dart';
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:duri_care/models/user_model.dart';
 
 class UserService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final ConnectivityService _connectivity = Get.find<ConnectivityService>();
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   final RxString roleName = ''.obs;
   UserModel? _cachedUser;
@@ -299,6 +301,10 @@ class UserService extends GetxService {
       return _cachedUser;
     }
 
+    if (!await _connectivity.hasInternetConnection()) {
+      return _cachedUser;
+    }
+
     try {
       final response =
           await _supabase
@@ -356,7 +362,7 @@ class UserService extends GetxService {
       try {
         return await _getCurrentUserWithSeparateRoleQuery(authUser);
       } catch (fallbackError) {
-        return null;
+        return _cachedUser;
       }
     }
   }

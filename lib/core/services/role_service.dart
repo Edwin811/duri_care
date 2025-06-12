@@ -1,8 +1,10 @@
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RoleService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final ConnectivityService _connectivity = Get.find<ConnectivityService>();
 
   static RoleService get to => Get.find<RoleService>();
 
@@ -11,6 +13,10 @@ class RoleService extends GetxService {
   }
 
   Future<String> getRoleName(String userId) async {
+    if (!await _connectivity.hasInternetConnection()) {
+      return 'user';
+    }
+
     try {
       final response =
           await _supabase

@@ -1,8 +1,10 @@
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final ConnectivityService _connectivity = Get.find<ConnectivityService>();
 
   static AuthService get to => Get.find<AuthService>();
 
@@ -22,6 +24,10 @@ class AuthService extends GetxService {
   }
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    if (!await _connectivity.hasInternetConnection()) {
+      return null;
+    }
+
     return await _supabase
         .from('users')
         .select('profile_image, fullname')
@@ -30,6 +36,10 @@ class AuthService extends GetxService {
   }
 
   Future<String?> getUserRole(String userId) async {
+    if (!await _connectivity.hasInternetConnection()) {
+      return null;
+    }
+
     final response =
         await _supabase
             .from('user_roles')

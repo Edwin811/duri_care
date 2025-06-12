@@ -104,7 +104,7 @@ class HomeView extends GetView<HomeController> {
                               size: 32,
                             ),
                           ),
-                          if (controller.hasUnreadNotifications.value)
+                          if (controller.unreadCount.value > 0)
                             Positioned(
                               right: 6,
                               top: 6,

@@ -254,6 +254,77 @@ abstract class DialogHelper {
     ).then((_) => autoCloseTimer?.cancel());
   }
 
+  static Future<void> showInformationDialog({
+    required String title,
+    required String message,
+    VoidCallback? onConfirm,
+    String confirmText = 'OK',
+    int autoCloseTime = 10,
+  }) async {
+    if (Get.context == null) return;
+
+    Timer? autoCloseTimer;
+    autoCloseTimer = Timer(Duration(seconds: autoCloseTime), () {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    });
+
+    return Get.dialog(
+      Dialog(
+        backgroundColor: Get.theme.scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Lottie.asset(
+                'assets/animations/info.json',
+                width: 100,
+                height: 100,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  autoCloseTimer?.cancel();
+                  if (onConfirm != null) {
+                    onConfirm();
+                  } else {
+                    Get.back();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  minimumSize: const Size(120, 50),
+                ),
+                child: Text(confirmText, style: const TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) => autoCloseTimer?.cancel());
+  }
+
   static void closeDialog() {
     if (Get.isDialogOpen ?? false) {
       Get.back();

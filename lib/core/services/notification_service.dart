@@ -1,4 +1,5 @@
 import 'package:duri_care/models/notification_model.dart';
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,8 +7,13 @@ class NotificationService extends GetxService {
   static NotificationService get to => Get.find<NotificationService>();
 
   final supabase = Supabase.instance.client;
+  final ConnectivityService _connectivity = Get.find<ConnectivityService>();
 
   Future<List<NotificationModel>> getUserNotifications(String userId) async {
+    if (!await _connectivity.hasInternetConnection()) {
+      return <NotificationModel>[];
+    }
+
     final response = await supabase
         .from('notifications')
         .select()

@@ -1,6 +1,7 @@
 import 'package:duri_care/core/services/user_service.dart';
 import 'package:duri_care/core/services/zone_service.dart';
 import 'package:duri_care/core/utils/helpers/dialog_helper.dart';
+import 'package:duri_care/core/mixins/connectivity_mixin.dart';
 import 'package:duri_care/models/role_model.dart';
 import 'package:duri_care/models/user_model.dart';
 import 'package:duri_care/models/zone_model.dart';
@@ -20,7 +21,7 @@ class ZonePermissionModel {
   });
 }
 
-class UserManagementController extends GetxController {
+class UserManagementController extends GetxController with ConnectivityMixin {
   final UserService _userService = Get.find<UserService>();
   final ZoneService _zoneService =
       Get.isRegistered<ZoneService>() ? Get.find<ZoneService>() : ZoneService();
@@ -83,6 +84,12 @@ class UserManagementController extends GetxController {
   }
 
   @override
+  void onReady() {
+    super.onReady();
+    fetchAllZones();
+  }
+
+  @override
   void onClose() {
     emailController.dispose();
     fullnameController.dispose();
@@ -100,6 +107,8 @@ class UserManagementController extends GetxController {
   }
 
   Future<void> fetchUsers() async {
+    if (!await requiresConnection()) return;
+
     try {
       isLoading.value = true;
       users.value = await _userService.fetchAllUsers();
@@ -130,6 +139,8 @@ class UserManagementController extends GetxController {
       );
       return;
     }
+
+    if (!await requiresConnection()) return;
 
     try {
       isCreating.value = true;
@@ -166,6 +177,8 @@ class UserManagementController extends GetxController {
   }
 
   Future<void> deleteUser(String userId) async {
+    if (!await requiresConnection()) return;
+
     try {
       isLoading.value = true;
 
@@ -196,33 +209,38 @@ class UserManagementController extends GetxController {
   }
 
   Future<void> fetchAllZones() async {
-    final user = selectedUser.value;
-    if (user == null) return;
+    if (!await requiresConnection()) return;
+
     try {
       isLoading.value = true;
-      final userId = _supabase.auth.currentUser?.id ?? '';
-      if (userId.isEmpty) {
-        throw Exception('User not authenticated');
+
+      final zones = await _zoneService.loadAllZones();
+      if (zones != null) {
+        allZones.assignAll(zones);
+      } else {
+        allZones.clear();
       }
-      final zones = await _zoneService.loadZones(userId);
-      allZones.assignAll(zones);
-      final zoneUserRows = await _supabase
-          .from('zone_users')
-          .select('zone_id, allow_auto_schedule')
-          .eq('user_id', user.id);
-      userZoneIds.clear();
-      zonePermissions.clear();
-      for (var row in zoneUserRows) {
-        final zoneId = row['zone_id'] as int;
-        userZoneIds.add(zoneId);
-        if (row.containsKey('allow_auto_schedule')) {
-          zonePermissions.add(
-            ZonePermissionModel(
-              zoneId: zoneId,
-              key: 'allow_auto_schedule',
-              value: row['allow_auto_schedule'] ?? false,
-            ),
-          );
+
+      final user = selectedUser.value;
+      if (user != null) {
+        final zoneUserRows = await _supabase
+            .from('zone_users')
+            .select('zone_id, allow_auto_schedule')
+            .eq('user_id', user.id);
+        userZoneIds.clear();
+        zonePermissions.clear();
+        for (var row in zoneUserRows) {
+          final zoneId = row['zone_id'] as int;
+          userZoneIds.add(zoneId);
+          if (row.containsKey('allow_auto_schedule')) {
+            zonePermissions.add(
+              ZonePermissionModel(
+                zoneId: zoneId,
+                key: 'allow_auto_schedule',
+                value: row['allow_auto_schedule'] ?? false,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -330,6 +348,8 @@ class UserManagementController extends GetxController {
 
   Future<void> saveChanges() async {
     final user = selectedUser.value;
+    if (!await requiresConnection()) return;
+
     try {
       isSaving.value = true;
       if (!hasChanges.value) {

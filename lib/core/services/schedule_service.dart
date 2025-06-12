@@ -1,11 +1,18 @@
 import 'package:duri_care/models/irrigation_schedule.dart';
 import 'package:duri_care/models/upcomingschedule.dart';
+import 'package:duri_care/core/services/connectivity_service.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScheduleService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final ConnectivityService _connectivity = Get.find<ConnectivityService>();
+
   Future<Upcomingschedule?> getUpcomingScheduleWithZone() async {
+    if (!await _connectivity.hasInternetConnection()) {
+      return null;
+    }
+
     try {
       final data =
           await _supabase
@@ -19,8 +26,7 @@ class ScheduleService extends GetxService {
       final schedule = IrrigationScheduleModel(
         id: data['schedule_id'],
         scheduledAt: DateTime.parse(data['scheduled_at']),
-        duration:
-            data['duration_minutes'],
+        duration: data['duration_minutes'],
         executed: data['executed'],
         statusId: data['status_id'],
       );
